@@ -1,54 +1,65 @@
 # VetAI 开发记录
 
-> 最后更新：2026-06-12
+> 最后更新：2026-06-28
 
 ## 项目概述
 
-宠物皮肤病 AI 问诊微信小程序。用户上传宠物皮肤照片，AI 多模态大模型分析后返回初筛报告。
+宠物皮肤病 AI 初筛微信小程序。用户上传宠物皮肤照片、填写基础信息并可圈选患处，系统调用多模态模型生成初筛报告。
 
 - **AppID**: `wxb4e65cab13830884`
+- **云开发环境**: `cloud1-d0gc4m26t135ca759`
 - **基础库**: 3.16.0
-- **运行方式**: 微信开发者工具编译，前端直连大模型 API（无后端服务器）
+- **当前分支**: `main`
+- **GitHub**: `https://github.com/Charon621/vetai-complete2`
 
 ---
 
-## 架构决策
+## 当前架构
 
-### 前端直连大模型（2026-06-12 决定）
+### 微信云函数代理大模型
 
-**弃用方案：**
-- ~~微信云函数 diagnose~~（已删除）
-- ~~本地 FastAPI 后端~~
-- ~~Cloudflare Workers~~
-- ~~trycloudflare.com 隧道~~
+**当前方案：**
 
-**当前方案：** 小程序前端通过 `wx.request` 直连官方 API。
+小程序前端通过 `wx.cloud.callFunction` 调用云函数 `diagnose`，云函数从环境变量读取 `QWEN_API_KEY`，再请求 DashScope / Qwen 兼容接口。
 
-**理由：** 简化部署，不需要服务器，本地测试方便。
+```
+小程序前端
+  -> wx.cloud.callFunction('diagnose')
+  -> cloudfunctions/diagnose
+  -> DashScope Qwen API
+```
 
-**限制：**
-- 真机运行需要在微信公众平台配置 request 合法域名（需已认证的小程序）
-- 未认证的个人号只能在开发者工具的「真机调试」模式下绕过域名校验
-- API Key 写在前端代码里，不适合公开分发，仅适合本地测试或小范围使用
+**理由：**
+- API Key 不再打包进小程序前端。
+- 不需要自建服务器、域名或 HTTPS 证书。
+- 体验版和正式版用户调用同一套云端环境变量。
+
+**注意：**
+- 云函数配置里必须存在环境变量 `QWEN_API_KEY`。
+- 云函数超时时间建议设置为 `180` 秒。
+- 修改 `cloudfunctions/diagnose` 后，需要在微信开发者工具里右键云函数目录并选择“上传并部署：云端安装依赖”。
 
 ---
 
 ## 当前配置
 
-### API 配置（utils/config.js）
+### 前端配置（utils/config.js）
 
-| 厂商 | API Key | 模型 | 端点 |
-|------|---------|------|------|
-| 千问 Qwen（当前） | `见 utils/config.js，本地测试用` | `qwen3.7-plus` | `https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions` |
+| 配置 | 当前值 | 说明 |
+|------|--------|------|
+| `USE_CLOUD_FUNCTION` | `true` | 默认走微信云函数代理 |
+| `DIAGNOSE_CLOUD_FUNCTION` | `diagnose` | 云函数名称 |
+| `CLOUD_ENV` | `cloud1-d0gc4m26t135ca759` | 云开发环境 |
+| `QWEN_API_KEY` | 空字符串 | 前端不保存密钥 |
+| `QWEN_MODEL` | `qwen3.7-plus` | 当前模型 |
+| `QWEN_ENABLE_THINKING` | `false` | 关闭混合思考 |
 
-- 当前模型：**Qwen3.7-Plus**
-- 混合思考模式：关闭，优先识别速度
-- 请求超时：180 秒
+### 云函数环境变量
 
-### 真机域名白名单
-
-需要在微信公众平台 → 开发管理 → 服务器域名 → request 合法域名 中添加：
-- `https://dashscope.aliyuncs.com`
+| Key | Value |
+|-----|-------|
+| `QWEN_API_KEY` | DashScope API Key |
+| `QWEN_API_BASE` | 可选，默认 `https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions` |
 
 ---
 
@@ -56,145 +67,119 @@
 
 ```
 vetai-complete2/
-├── app.js                    # App 入口（已移除云开发初始化）
+├── app.js                    # App 入口，初始化微信云开发
 ├── app.json                  # 路由、tabBar 配置
-├── app.wxss                  # 全局样式（设计系统）
-├── project.config.json       # 项目配置（已移除云函数配置）
-├── project.private.config.json
+├── app.wxss                  # 全局样式
+├── project.config.json       # 小程序项目配置，含 cloudfunctionRoot
 ├── sitemap.json
+├── cloudfunctions/
+│   └── diagnose/             # 云函数：服务端代理 DashScope / Qwen 请求
 ├── images/                   # tabBar 图标等
 ├── pages/
-│   ├── index/                # 首页：上传照片、填写信息、提交问诊
-│   ├── profile/              # 宠物档案：创建/选择/删除
-│   ├── result/               # 诊断结果（子包）：展示报告、分享/保存图片
-│   ├── detail/               # 历史记录列表
-│   └── user/                 # 我的：本地登录、统计
+│   ├── index/                # 首页：上传照片、填写信息、提交初筛
+│   ├── profile/              # 宠物档案
+│   ├── result/               # 结果报告
+│   ├── detail/               # 历史记录
+│   └── user/                 # 我的
 ├── utils/
-│   ├── config.js             # API Key、模型、端点配置
-│   ├── api.js                # 核心：wx.request 直连大模型、prompt 构建、响应解析
-│   ├── storage.js            # 本地存储（按用户隔离，最多 80 条记录）
-│   ├── analytics.js          # 埋点与行为追踪
-│   ├── knowledge.js          # 知识库：物种/品种映射等
-│   ├── image.js              # 图片处理与转换
-│   └── lesion.js             # 病灶区域标注与处理
-└── DEV_LOG.md                # 本文件
+│   ├── config.js             # 前端配置，无明文 API Key
+│   ├── api.js                # prompt、RAG、云函数调用、响应解析
+│   ├── kb.js                 # 本地宠物皮肤病 RAG 知识库
+│   ├── knowledge.js          # 红线症状、常见病优先规则
+│   ├── storage.js            # 本地存储
+│   ├── analytics.js          # 本地埋点
+│   ├── image.js              # 图片处理与 ROI 裁剪
+│   └── lesion.js             # 患处圈选
+└── DEV_LOG.md
+```
+
+`项目总论/` 为暂存参考资料，当前不参与小程序运行，也不纳入 Git 版本管理。
+
+---
+
+## 核心流程
+
+### utils/api.js
+
+主函数：`diagnose(imageBase64List, petInfo)`
+
+流程：
+1. 清洗并限制图片数量。
+2. 标准化宠物信息。
+3. 若启用视觉 RAG 快路径：
+   - 调云函数做视觉特征提取。
+   - 用 `utils/kb.js` 本地知识库检索。
+   - 强命中则生成知识库版快速报告。
+   - 弱命中则回退完整模型诊断。
+4. 完整诊断时构建系统 prompt、病例 prompt 和图片消息。
+5. 通过云函数 `diagnose` 请求 Qwen。
+6. 解析 JSON，标准化报告字段。
+7. 应用红线症状和紧急度护栏。
+
+### cloudfunctions/diagnose
+
+职责：
+- 从 `process.env.QWEN_API_KEY` 读取 API Key。
+- 请求 DashScope OpenAI-compatible endpoint。
+- 统一返回 `{ success, data }` 或 `{ success: false, error }`。
+
+---
+
+## 已完成事项
+
+### 2026-06-28
+
+- [x] 恢复并接入微信云开发云函数 `diagnose`
+- [x] 前端默认从直连 API 改为 `wx.cloud.callFunction`
+- [x] 移除前端明文 DashScope API Key
+- [x] `app.js` 初始化云开发环境
+- [x] `project.config.json` 增加 `cloudfunctionRoot`
+- [x] 云函数改为读取环境变量 `QWEN_API_KEY`
+- [x] 修复云函数返回格式兼容问题
+- [x] 初始化 Git 仓库并提交初始版本
+- [x] 推送到 GitHub 私有仓库 `Charon621/vetai-complete2`
+
+### 既有功能
+
+- [x] 图片上传、压缩和多图角色标记
+- [x] 患处自由圈选 / 矩形圈选
+- [x] ROI 裁剪增强
+- [x] 本地 RAG 知识库和视觉预检快路径
+- [x] 红线症状与紧急度护栏
+- [x] 宠物档案管理
+- [x] 历史记录、搜索、分页
+- [x] 诊断结果分享 / 保存图片
+
+---
+
+## Git 使用约定
+
+当前远程仓库：
+
+```
+origin -> https://github.com/Charon621/vetai-complete2.git
+```
+
+常用同步命令：
+
+```
+git status
+git add .
+git commit -m "描述这次修改"
+git push
+```
+
+另一台电脑下载：
+
+```
+git clone https://github.com/Charon621/vetai-complete2.git
 ```
 
 ---
 
-## 核心模块说明
+## 注意事项
 
-### utils/api.js
-
-**主函数：** `diagnose(imageBase64List, petInfo)`
-
-流程：
-1. 校验图片（空检查）
-2. 选择 Provider（优先用户选择，回退另一个有 key 的）
-3. 构建 Prompt（包含宠物信息、部位、描述、圈选信息）
-4. 用 `wx.request` POST 到 API（OpenAI 兼容格式）
-5. 解析响应（`getMessageContent` → `parseModelJson`）
-6. 标准化结果（`normalizeDiagnosis`）
-7. 返回 `{ success, data, raw }` 或 `{ success: false, error }`
-
-**图片处理（index.js）：**
-- 压缩质量：25%
-- 超过 1280px 的图片用 Canvas 2D 缩放后再压缩
-- 最多 5 张图，提交前检查总大小
-
-**JSON 解析容错：**
-1. 直接 parse
-2. 提取 `{...}` 后 parse
-3. 修复尾逗号后 parse
-4. 提取 `result/data` 包裹后 parse
-5. 兜底：把原始文本包装成结构化结果
-
-### utils/storage.js
-
-- 数据按用户 ID 隔离（`guest` 或自定义 ID）
-- 问诊记录上限 80 条（超出自动丢弃最旧的）
-- 宠物档案无上限
-- 使用 `wx.getStorageSync` / `wx.setStorageSync`
-
----
-
-## 已完成的改进
-
-### 2026-06-12 改造
-
-- [x] 移除微信云函数，改为前端直连大模型 API
-- [x] 删除 `cloudfunctions/` 目录
-- [x] 删除废弃的 `utils/prompt.js`
-- [x] 修复 `wx.getUserProfile` 废弃问题（改用 showModal 输入昵称）
-- [x] 图片自动缩放（Canvas 2D，> 1280px 自动缩小）
-- [x] 图片压缩质量从 45% 降到 25%
-- [x] 增强 JSON 解析（多轮容错）
-- [x] 增强响应内容提取（兼容不同厂商格式）
-- [x] 修复 `project.config.json` 乱码
-- [x] 添加调试日志开关（正式版默认关闭原始响应日志）
-- [x] 诊断结果分享/导出（Canvas 2D 生成卡片图，保存到相册 + 微信转发）
-- [x] 默认模型改为 Qwen3.7-Plus，关闭混合思考模式，prompt 缩减为最小 JSON 格式约束
-
-### 2026-06-12 第二轮改进
-
-- [x] 代码重构：index.js 拆分为独立模块
-  - `utils/image.js` — 图片压缩、缩放、base64 转换
-  - `utils/lesion.js` — 患处圈选（Canvas 2D）
-  - index.js 从 600+ 行精简到 ~370 行
-- [x] Canvas API 升级：患处圈选从旧版 `wx.createCanvasContext` 升级到 Canvas 2D
-- [x] 宠物档案可编辑 + 头像
-  - 新增「编辑」按钮，可修改已有档案
-  - 新增头像上传（点击圆形区域选择图片）
-  - storage.js 支持 avatar 字段
-- [x] 历史记录搜索
-  - 详情页新增搜索栏
-  - 支持按宠物名、疾病、部位、日期等关键词搜索
-  - 显示「匹配数/总数」
-
----
-
-## 待做事项（按优先级）
-
-### 高优先
-- [ ] 真机域名白名单配置（需要已认证的小程序）— 已完成临时方案：真机调试模式
-
-### 中优先
-- [x] 历史记录分页加载（detail.js 已实现 `loadMore`，每页 20 条）
-- [x] 修复 tabBar 图标（「我的」tab 已使用独立的 `tab-user.png`）
-
-### 低优先
-- [ ] 暗色模式
-- [ ] 治疗跟进（同一问题多次拍照对比）
-- [ ] 导出 PDF 报告
-- [ ] 图片内容审核
-- [ ] 使用统计和错误追踪
-
----
-
-## 已知问题
-
-1. **真机网络请求失败**：未配置域名白名单时，真机上 `dashscope.aliyuncs.com` 会被拦截。需要在微信公众平台配置 request 合法域名。
-
-2. **API Key 安全**：Key 写在前端 config.js 里，代码泄露会导致 Key 被盗用。生产环境必须移到后端代理。
-
----
-
-## 2026-06-18 第三轮改进
-
-- [x] 修复图片处理并发竞态：选多张图时改为串行处理，避免共用 `#resizeCanvas` 互相覆盖
-- [x] prompt 最小化后 `max_tokens` 调整为 1800，减少生成耗时
-- [x] 请求超时统一为 180s（与 app.json 一致），网络/5xx 错误自动重试 1 次（1.5s 退避），4xx 不重试
-- [x] 图片压缩失败时回退到 Canvas 2D 缩放，不再直接读未压缩原图撑爆请求
-- [x] 诊断失败时清理本次新写入磁盘的持久化图片，避免孤儿文件堆积
-- [x] 统一 modelProvider 默认值为 `glm`（api.js 兜底与 UI 一致）
-- [x] DEV_LOG 同步：分页加载 / tabBar 图标 / Canvas 2D 升级均已标记完成
-
-
----
-
-## 开发者工具设置提醒
-
-每次打开项目时确认：
-- ✅ 详情 → 本地设置 → 勾选「不校验合法域名...」
-- ✅ 编译模式选「普通编译」
-- 调试器 → Console 面板可以看 `[VetAI]` 开头的 API 调试日志
+1. **不要把 API Key 写回 `utils/config.js`。**
+2. 修改云函数代码后，GitHub 推送不会自动更新微信云端函数，需要在微信开发者工具手动部署云函数。
+3. 修改前端页面或配置后，若要让体验版用户使用，需要重新上传体验版。
+4. 当前 `wx.cloud.callFunction` 传 base64 图片有体积限制；多图或大图后续建议改为“先传云存储，再让云函数处理”。
