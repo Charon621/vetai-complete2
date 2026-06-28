@@ -214,6 +214,41 @@
     </view>
   </view>
 
+  <!-- ═══ Feedback ═══ -->
+  <view class="report-block feedback-card">
+    <view class="block-head">
+      <view class="block-title-wrap">
+        <view class="block-title">报告反馈</view>
+      </view>
+      <view class="block-desc">帮助改进 AI 诊断准确性</view>
+    </view>
+    <view class="feedback-section" wx:if="{{!feedbackSubmitted}}">
+      <view class="feedback-question">这份报告对你有帮助吗？</view>
+      <view class="feedback-options">
+        <view class="feedback-chip {{feedbackHelpful === true ? 'feedback-chip-on' : ''}}" bindtap="onFeedbackHelpful" data-value="true">有帮助</view>
+        <view class="feedback-chip {{feedbackHelpful === false ? 'feedback-chip-on' : ''}}" bindtap="onFeedbackHelpful" data-value="false">没有帮助</view>
+      </view>
+      <view class="feedback-question" wx:if="{{feedbackHelpful === false}}">主要卡在哪里？</view>
+      <view class="feedback-options feedback-options-wrap" wx:if="{{feedbackHelpful === false}}">
+        <view class="feedback-chip feedback-chip-small {{feedbackIssue === item.value ? 'feedback-chip-on' : ''}}" wx:for="{{feedbackIssueOptions}}" wx:key="value" bindtap="onFeedbackIssue" data-value="{{item.value}}">{{item.label}}</view>
+      </view>
+      <view class="feedback-question" wx:if="{{feedbackHelpful !== null}}">你是否已带宠物就医？</view>
+      <view class="feedback-options" wx:if="{{feedbackHelpful !== null}}">
+        <view class="feedback-chip {{feedbackVet === true ? 'feedback-chip-on' : ''}}" bindtap="onFeedbackVet" data-value="true">已就医</view>
+        <view class="feedback-chip {{feedbackVet === false ? 'feedback-chip-on' : ''}}" bindtap="onFeedbackVet" data-value="false">未就医</view>
+      </view>
+      <view class="feedback-question" wx:if="{{feedbackVet === true}}">兽医结论和报告方向一致吗？</view>
+      <view class="feedback-options feedback-options-wrap" wx:if="{{feedbackVet === true}}">
+        <view class="feedback-chip feedback-chip-small {{feedbackVetOutcome === item.value ? 'feedback-chip-on' : ''}}" wx:for="{{feedbackVetOutcomeOptions}}" wx:key="value" bindtap="onFeedbackVetOutcome" data-value="{{item.value}}">{{item.label}}</view>
+      </view>
+      <view class="feedback-hint" wx:if="{{feedbackHelpful !== null && !feedbackSubmitted}}">选完必要项后会自动保存。</view>
+    </view>
+    <view class="feedback-done" wx:else>
+      <text class="feedback-done-icon">✓</text>
+      <text>感谢你的反馈</text>
+    </view>
+  </view>
+
   <!-- ═══ Report Info ═══ -->
   <view class="report-block">
     <view class="block-head">

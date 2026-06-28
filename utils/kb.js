@@ -146,7 +146,7 @@ var DISEASE_KB = [
 
   {
     name: '皮肤癣菌病（犬猫）',
-    aliases: ['猫癣', '钱癣', '皮肤癣菌', '真菌', 'ringworm', 'dermatophytosis'],
+    aliases: ['猫癣', '犬癣', '钱癣', '皮肤癣菌', '真菌', 'ringworm', 'dermatophytosis'],
     species: ['犬', '猫'],
     keywords: {
       breeds: ['英短', '美短', '布偶', '加菲', '异短', '田园猫', '狸花猫', '暹罗'],
@@ -608,12 +608,322 @@ var DISEASE_KB = [
     typicalFeatures: '皮肤结节或肿块，大小不一，可能溃疡或波动，肥大细胞瘤可红肿、波动',
     ddx: '与囊肿区分：肿瘤通常持续增大，活检是确诊手段；任何不愈合的溃疡或增大肿块需就医',
     urgency: 'urgent'
+  },
+
+  {
+    name: '脓肿/蜂窝织炎',
+    aliases: ['脓肿', '蜂窝织炎', 'abscess', 'cellulitis'],
+    species: ['犬', '猫'],
+    keywords: {
+      breeds: [],
+      locations: ['面部', '颈部', '四肢', '尾根', '背部'],
+      symptoms: ['突然', '红肿', '热痛', '波动', '流脓', '破溃', '咬伤', '疼痛']
+    },
+    typicalFeatures: '局部突然红肿热痛，可有波动感、破溃或脓性分泌物，常见于咬伤或穿刺后感染',
+    ddx: '与肿瘤区分：脓肿常急性、疼痛和发热，肿瘤通常持续增大但不一定热痛',
+    urgency: 'urgent'
+  },
+
+  {
+    name: '皮肤创伤/擦伤',
+    aliases: ['擦伤', '外伤', '抓伤', 'trauma', 'abrasion'],
+    species: ['犬', '猫'],
+    keywords: {
+      breeds: [],
+      locations: ['四肢', '面部', '腹部', '背部', '尾部'],
+      symptoms: ['破皮', '擦伤', '出血', '结痂', '疼痛', '舔舐', '外伤', '抓伤']
+    },
+    typicalFeatures: '局部线状或片状表浅破损、结痂或少量出血，常有明确外伤、抓挠或摩擦史',
+    ddx: '与感染性皮炎区分：创伤边界常与摩擦/抓伤路径一致，若继发红肿流脓需考虑感染',
+    urgency: 'moderate'
+  },
+
+  {
+    name: '压力性胼胝/肘部胼胝',
+    aliases: ['胼胝', '肘部胼胝', 'callus dermatitis', 'pressure callus'],
+    species: ['犬'],
+    keywords: {
+      breeds: ['拉布拉多', '金毛', '德牧', '大丹', '大型犬'],
+      locations: ['肘部', '跗关节', '胸骨', '压力点'],
+      symptoms: ['增厚', '脱毛', '硬皮', '粗糙', '裂纹', '结痂', '压力点']
+    },
+    typicalFeatures: '大型犬压力点局部脱毛、皮肤增厚粗糙和角化，长期卧硬地更明显，可继发感染',
+    ddx: '与锌反应性皮病区分：胼胝局限压力点并与卧地摩擦相关，锌反应性常累及鼻唇和多处角化',
+    urgency: 'low'
+  },
+
+  {
+    name: '鼻/足垫角化过度',
+    aliases: ['角化过度', '鼻部角化', '足垫角化', 'hyperkeratosis'],
+    species: ['犬'],
+    keywords: {
+      breeds: ['拉布拉多', '金毛', '可卡', '法斗', '老年犬'],
+      locations: ['鼻部', '足垫', '爪部'],
+      symptoms: ['角化', '增厚', '干裂', '硬皮', '裂纹', '粗糙', '跛行']
+    },
+    typicalFeatures: '鼻镜或足垫过度角化、干裂和硬皮样增厚，严重时可裂开疼痛或跛行',
+    ddx: '与天疱疮区分：单纯角化过度以厚硬角质为主，天疱疮常伴脓疱、结痂和多部位扩散',
+    urgency: 'low'
+  },
+
+  {
+    name: '甲状腺功能减退相关皮肤改变',
+    aliases: ['甲减皮肤病', '内分泌脱毛', 'hypothyroidism'],
+    species: ['犬'],
+    keywords: {
+      breeds: ['金毛', '拉布拉多', '杜宾', '可卡', '腊肠'],
+      locations: ['躯干', '尾部', '背部', '颈部'],
+      symptoms: ['对称脱毛', '尾巴脱毛', '皮肤增厚', '色素沉着', '乏力', '肥胖', '慢性']
+    },
+    typicalFeatures: '非瘙痒性双侧对称脱毛、尾部脱毛、皮肤增厚和色素沉着，常伴乏力或体重增加',
+    ddx: '与蠕形螨区分：甲减通常慢性对称、瘙痒轻或无，需血液内分泌检查而非仅靠皮肤外观',
+    urgency: 'moderate'
+  },
+
+  {
+    name: '库兴综合征相关皮肤改变',
+    aliases: ['库兴', '肾上腺皮质功能亢进', 'cushing', 'hyperadrenocorticism'],
+    species: ['犬'],
+    keywords: {
+      breeds: ['贵宾', '腊肠', '梗犬', '博美'],
+      locations: ['腹部', '躯干', '背部', '全身'],
+      symptoms: ['皮肤变薄', '对称脱毛', '黑头', '钙化', '腹部膨大', '多饮多尿', '慢性']
+    },
+    typicalFeatures: '躯干对称脱毛、皮肤变薄、黑头或钙化沉着，可伴腹部膨大、多饮多尿',
+    ddx: '与普通过敏区分：库兴相关皮肤改变通常不以剧痒为主，伴全身内分泌线索',
+    urgency: 'moderate'
+  },
+
+  {
+    name: '姬螯螨病（行走的皮屑）',
+    aliases: ['姬螯螨', '行走的皮屑', 'cheyletiellosis', 'walking dandruff'],
+    species: ['犬', '猫'],
+    keywords: {
+      breeds: [],
+      locations: ['背部', '颈部', '躯干'],
+      symptoms: ['大量皮屑', '鳞屑', '瘙痒', '传染', '幼宠', '多宠', '人也痒']
+    },
+    typicalFeatures: '背部和躯干大量白色皮屑样鳞屑，轻到中度瘙痒，多宠或幼宠环境可传播给人',
+    ddx: '与普通干性皮屑区分：姬螯螨更常多宠传播，胶带检查或梳检可能发现螨体/卵',
+    urgency: 'moderate'
+  },
+
+  {
+    name: '虱感染',
+    aliases: ['虱子', '咬虱', 'lice infestation', 'pediculosis'],
+    species: ['犬', '猫'],
+    keywords: {
+      breeds: [],
+      locations: ['颈部', '背部', '耳部', '全身'],
+      symptoms: ['虫体', '虱卵', '瘙痒', '皮屑', '毛发粗乱', '贫血', '多宠']
+    },
+    typicalFeatures: '毛干上可见虱卵或小虫体，伴瘙痒、皮屑和毛发粗乱，幼弱动物严重时可贫血',
+    ddx: '与跳蚤区分：虱卵常固定在毛干上，跳蚤和跳蚤粪多可在皮表或梳检中移动/脱落',
+    urgency: 'moderate'
   }
 ]
 
 // ============================================================
 // 检索函数
 // ============================================================
+
+var KB_VERSION = '2026-06-28'
+
+var SOURCE_LIBRARY = {
+  allergy: [
+    { title: 'AAHA 2023 Allergic Skin Diseases in Dogs and Cats Guidelines', url: 'https://www.aaha.org/resources/2023-aaha-management-of-allergic-skin-diseases-in-dogs-and-cats-guidelines/', tier: 'guideline' },
+    { title: 'Merck Veterinary Manual - Diagnosis of Skin Diseases in Small Animals', url: 'https://www.merckvetmanual.com/integumentary-system/integumentary-system-introduction/diagnosis-of-skin-diseases-in-small-animals', tier: 'manual' }
+  ],
+  parasite: [
+    { title: 'Merck Veterinary Manual - Mange in Dogs and Cats', url: 'https://www.merckvetmanual.com/integumentary-system/mange/mange-in-dogs-and-cats', tier: 'manual' },
+    { title: 'ACVD Clinical Consensus Guidelines', url: 'https://acvd.org/about-us/clinical-consensus-guidelines/', tier: 'consensus' }
+  ],
+  bacterial: [
+    { title: 'Merck Veterinary Manual - Pyoderma in Dogs and Cats', url: 'https://www.merckvetmanual.com/integumentary-system/pyoderma/pyoderma-in-dogs-and-cats', tier: 'manual' },
+    { title: 'WAVD Consensus Guidelines', url: 'https://wavd.org/continuing-education/consensus-guidelines/', tier: 'consensus' }
+  ],
+  fungal: [
+    { title: 'Merck Veterinary Manual - Dermatophytosis in Dogs and Cats', url: 'https://www.merckvetmanual.com/integumentary-system/dermatophytosis/dermatophytosis-in-dogs-and-cats', tier: 'manual' },
+    { title: 'WAVD Consensus Guidelines', url: 'https://wavd.org/continuing-education/consensus-guidelines/', tier: 'consensus' }
+  ],
+  yeast: [
+    { title: 'Merck Veterinary Manual - Malassezia Dermatitis in Dogs and Cats', url: 'https://www.merckvetmanual.com/integumentary-system/malassezia-dermatitis/malassezia-dermatitis-in-dogs-and-cats', tier: 'manual' },
+    { title: 'ACVD Clinical Consensus Guidelines', url: 'https://acvd.org/about-us/clinical-consensus-guidelines/', tier: 'consensus' }
+  ],
+  ear: [
+    { title: 'Merck Veterinary Manual - Otitis Externa in Animals', url: 'https://www.merckvetmanual.com/ear-disorders/otitis-externa/otitis-externa-in-animals', tier: 'manual' }
+  ],
+  paw: [
+    { title: 'Merck Veterinary Manual - Diagnosis of Skin Diseases in Small Animals', url: 'https://www.merckvetmanual.com/integumentary-system/integumentary-system-introduction/diagnosis-of-skin-diseases-in-small-animals', tier: 'manual' }
+  ],
+  feline: [
+    { title: 'Merck Veterinary Manual - Skin Disorders of Cats', url: 'https://www.merckvetmanual.com/cat-owners/skin-disorders-of-cats', tier: 'manual' }
+  ],
+  mass: [
+    { title: 'Merck Veterinary Manual - Tumors of the Skin in Dogs', url: 'https://www.merckvetmanual.com/dog-owners/skin-disorders-of-dogs/tumors-of-the-skin-in-dogs', tier: 'manual' },
+    { title: 'Merck Veterinary Manual - Tumors of the Skin in Cats', url: 'https://www.merckvetmanual.com/cat-owners/skin-disorders-of-cats/tumors-of-the-skin-in-cats', tier: 'manual' }
+  ],
+  rare_warning: [
+    { title: 'Merck Veterinary Manual - Diagnosis of Skin Diseases in Small Animals', url: 'https://www.merckvetmanual.com/integumentary-system/integumentary-system-introduction/diagnosis-of-skin-diseases-in-small-animals', tier: 'manual' }
+  ]
+}
+
+var CATEGORY_TESTS = {
+  allergy: ['跳蚤梳检和驱虫史复核', '皮肤刮片排除螨虫', '皮肤细胞学检查继发感染', '食物排除试验或环境过敏评估'],
+  parasite: ['皮肤刮片或胶带检查', '跳蚤梳检/耳垢镜检', '驱虫史和同住动物检查', '必要时治疗性试验'],
+  bacterial: ['皮肤细胞学检查', '细菌培养和药敏（反复或深部病变）', '皮肤刮片排除螨虫', '评估过敏或内分泌等基础病'],
+  fungal: ['伍德灯检查', '真菌培养或PCR', '毛发镜检', '皮肤刮片排除螨虫'],
+  yeast: ['皮肤或耳道细胞学检查', '耳镜检查', '评估过敏、褶皱潮湿或基础病', '必要时细菌培养'],
+  ear: ['耳镜检查', '耳垢显微镜检查', '耳道细胞学检查', '必要时细菌培养和药敏'],
+  paw: ['趾间细胞学检查', '皮肤刮片', '异物/外伤检查', '反复病例评估过敏和足部结构'],
+  feline: ['跳蚤梳检', '真菌培养或PCR', '皮肤细胞学检查', '必要时活检或排除过敏'],
+  mass: ['细针抽吸细胞学', '活检/病理检查', '测量并记录大小变化', '评估区域淋巴结和全身状态'],
+  rare_warning: ['皮肤细胞学检查', '皮肤刮片和真菌检查', '活检/病理检查', '基础病筛查']
+}
+
+var CATEGORY_HOME_CARE = {
+  allergy: ['记录瘙痒、舔咬和发作时间', '避免反复抓挠舔咬', '按兽医建议做好跳蚤预防', '不要自行混用人用止痒药或激素药膏'],
+  parasite: ['同住动物一起观察', '清洗垫子和常接触织物', '避免徒手挤压或强行拔除不明皮损', '疑似传染性寄生虫时减少密切接触'],
+  bacterial: ['保持患处清洁干燥', '避免舔咬和抓挠扩大破损', '不要自行使用抗生素或人用药膏', '记录是否有渗出、脓液或疼痛'],
+  fungal: ['减少与儿童、老人和免疫低下者密切接触', '清洗环境织物', '不要自行混用人用抗真菌药', '多宠家庭同步观察'],
+  yeast: ['保持褶皱、爪缝或耳周干燥', '不要向耳道内自行滴不明药水', '记录异味和分泌物颜色', '避免反复潮湿闷热'],
+  ear: ['不要深入掏耳或使用尖锐工具', '记录甩头、抓耳和分泌物颜色', '多宠家庭观察是否同时抓耳', '避免自行滴不明耳药'],
+  paw: ['减少舔爪', '散步后擦干爪缝', '观察是否跛行或单侧疼痛', '不要挤压趾间结节'],
+  feline: ['减少应激并记录过度舔毛', '检查跳蚤和同住动物情况', '避免自行剃毛或涂刺激性药膏', '若人也有皮损应减少接触并就医咨询'],
+  mass: ['拍照并测量肿块大小', '不要挤压、挑破或热敷肿块', '记录是否增大、出血或破溃', '尽快预约线下检查'],
+  rare_warning: ['记录范围和扩散速度', '避免自行上药掩盖病变', '若破溃、疼痛或精神食欲异常应尽快就医', '准备既往用药和病史给兽医']
+}
+
+var GENERIC_VISUAL_SIGNS = ['红肿', '脱毛', '瘙痒', '结痂', '红斑', '皮屑', '鳞屑', '抓挠', '舔舐', '发红']
+var RED_FLAG_TERMS = ['快速扩大', '大面积破溃', '流脓', '明显疼痛', '精神食欲异常', '不愈', '出血', '呼吸困难', '面部肿胀', '幼猫严重感染', '人也出现皮损']
+
+function uniq(list) {
+  var seen = {}
+  var out = []
+  for (var i = 0; i < (list || []).length; i++) {
+    var item = list[i]
+    if (!item || seen[item]) continue
+    seen[item] = true
+    out.push(item)
+  }
+  return out
+}
+
+function inferCategory(entry) {
+  var text = [entry.name].concat(entry.aliases || []).join(' ').toLowerCase()
+  if (text.indexOf('耳') >= 0 || text.indexOf('otitis') >= 0 || text.indexOf('ear') >= 0 || text.indexOf('otodectes') >= 0) return 'ear'
+  if (text.indexOf('跳蚤') >= 0 || text.indexOf('螨') >= 0 || text.indexOf('蜱') >= 0 || text.indexOf('虫') >= 0 || text.indexOf('mange') >= 0 || text.indexOf('mite') >= 0) return 'parasite'
+  if (text.indexOf('脓') >= 0 || text.indexOf('细菌') >= 0 || text.indexOf('pyoderma') >= 0 || text.indexOf('folliculitis') >= 0) return 'bacterial'
+  if (text.indexOf('癣') >= 0 || text.indexOf('真菌') >= 0 || text.indexOf('ringworm') >= 0 || text.indexOf('dermatophytosis') >= 0) return 'fungal'
+  if (text.indexOf('马拉色') >= 0 || text.indexOf('酵母') >= 0 || text.indexOf('malassezia') >= 0) return 'yeast'
+  if (text.indexOf('过敏') >= 0 || text.indexOf('特应') >= 0 || text.indexOf('接触') >= 0 || text.indexOf('allergy') >= 0 || text.indexOf('atopic') >= 0) return 'allergy'
+  if (text.indexOf('趾间') >= 0 || text.indexOf('足') >= 0 || text.indexOf('爪') >= 0 || text.indexOf('pododermatitis') >= 0) return 'paw'
+  if (text.indexOf('肿瘤') >= 0 || text.indexOf('癌') >= 0 || text.indexOf('肉瘤') >= 0 || text.indexOf('囊肿') >= 0 || text.indexOf('tumor') >= 0 || text.indexOf('carcinoma') >= 0 || text.indexOf('sarcoma') >= 0 || text.indexOf('cyst') >= 0) return 'mass'
+  if ((entry.species || []).length === 1 && entry.species[0] === '猫') return 'feline'
+  return 'rare_warning'
+}
+
+function makeId(entry, index) {
+  var english = ''
+  for (var i = 0; i < (entry.aliases || []).length; i++) {
+    if (/^[a-z0-9 -]+$/i.test(entry.aliases[i])) {
+      english = entry.aliases[i].toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+      break
+    }
+  }
+  return (english || ('clinical_card_' + (index + 1))) + '_' + (entry.species || []).join('_')
+}
+
+function inferBaselinePriority(entry, category) {
+  var name = entry.name
+  if (category === 'mass' || entry.urgency === 'urgent' || entry.urgency === 'emergency') return 5
+  if (['特应性皮炎（环境过敏）', '跳蚤过敏性皮炎', '浅表脓皮病', '马拉色菌皮炎', '皮肤癣菌病（犬猫）', '耳螨感染'].indexOf(name) >= 0) return 4
+  if (category === 'allergy' || category === 'bacterial' || category === 'parasite' || category === 'ear' || category === 'yeast') return 3
+  return 2
+}
+
+function inferPrevalence(priority, category) {
+  if (priority >= 4 && category !== 'mass') return 'common'
+  if (category === 'mass' || category === 'rare_warning') return 'low_frequency_warning'
+  return 'uncommon'
+}
+
+function buildDifferentials(entry) {
+  if (!entry.ddx) return []
+  var name = '相似皮肤问题'
+  var match = entry.ddx.match(/与(.+?)区分/)
+  if (match && match[1]) name = match[1]
+  return [{ name: name, distinguish: entry.ddx }]
+}
+
+function buildVetAdvice(entry, category) {
+  if (category === 'mass') return '出现持续增大、破溃、不愈合或位置异常的肿块时，建议线下兽医做细针抽吸或活检评估。'
+  if (entry.urgency === 'urgent' || entry.urgency === 'emergency') return '该方向存在较高就医必要性，建议尽快线下检查确认。'
+  if (category === 'fungal') return '疑似传染性真菌或多宠家庭病例，建议线下检查确认后再处理。'
+  if (category === 'ear') return '耳道问题建议通过耳镜和耳垢/细胞学检查确认，避免自行深入清理。'
+  return '若皮损扩散、破溃渗出、持续瘙痒或反复发作，建议线下兽医检查确认。'
+}
+
+function displayDiseaseName(entry, species) {
+  if (entry.name === '皮肤癣菌病（犬猫）') {
+    if (species === '猫') return '猫癣'
+    if (species === '犬') return '犬癣'
+    return '皮肤癣菌病'
+  }
+  return entry.name
+}
+
+function toClinicalCard(entry, index) {
+  var category = inferCategory(entry)
+  var priority = inferBaselinePriority(entry, category)
+  var visualSigns = uniq((entry.visualSigns || []).concat((entry.keywords && entry.keywords.symptoms) || []))
+  var historySigns = uniq((entry.historySigns || []).concat(
+    (entry.keywords && entry.keywords.breeds && entry.keywords.breeds.length ? ['易感品种'] : []),
+    category === 'fungal' ? ['幼年或新宠接触', '多宠家庭', '人也有皮损'] : [],
+    category === 'parasite' ? ['户外活动', '同住动物瘙痒', '驱虫不规律'] : [],
+    category === 'allergy' ? ['反复发作', '季节性或全年性瘙痒', '既往过敏史'] : [],
+    category === 'ear' ? ['频繁甩头或抓耳', '耳道分泌物增多'] : []
+  ))
+  var redFlags = uniq((entry.redFlags || []).concat(
+    category === 'mass' ? ['持续增大', '破溃不愈', '出血', '快速变化'] : [],
+    entry.urgency === 'urgent' ? ['明显疼痛', '流脓', '范围快速扩大'] : [],
+    category === 'fungal' ? ['人也出现皮损', '幼猫严重感染'] : [],
+    ['精神食欲异常', '大面积破溃']
+  ))
+
+  return {
+    id: entry.id || makeId(entry, index),
+    name: entry.name,
+    aliases: entry.aliases || [],
+    species: entry.species || [],
+    category: category,
+    prevalence: inferPrevalence(priority, category),
+    baselinePriority: priority,
+    visualSigns: visualSigns,
+    historySigns: historySigns,
+    locations: (entry.keywords && entry.keywords.locations) || entry.locations || [],
+    breeds: (entry.keywords && entry.keywords.breeds) || entry.breeds || [],
+    typicalFeatures: entry.typicalFeatures || '',
+    keyDifferentials: entry.keyDifferentials || buildDifferentials(entry),
+    recommendedTests: entry.recommendedTests || CATEGORY_TESTS[category] || CATEGORY_TESTS.rare_warning,
+    homeCareSafe: entry.homeCareSafe || CATEGORY_HOME_CARE[category] || CATEGORY_HOME_CARE.rare_warning,
+    vetAdvice: entry.vetAdvice || buildVetAdvice(entry, category),
+    redFlags: redFlags,
+    urgency: entry.urgency || 'moderate',
+    report: entry.report || {
+      possibleDirection: '照片表现可将“' + entry.name + '”作为候选鉴别方向之一。',
+      evidenceTemplate: '支持点包括：{matchedSigns}。',
+      uncertainty: '单靠照片不能确诊，需要结合病史、体检和必要的实验室检查。'
+    },
+    sources: entry.sources || SOURCE_LIBRARY[category] || SOURCE_LIBRARY.rare_warning,
+    reviewStatus: entry.reviewStatus || 'draft',
+    version: entry.version || KB_VERSION,
+    keywords: entry.keywords || { breeds: [], locations: [], symptoms: [] },
+    ddx: entry.ddx || ''
+  }
+}
+
+DISEASE_KB = DISEASE_KB.map(toClinicalCard)
 
 function expandQueryTerms(text) {
   var source = String(text || '').toLowerCase()
@@ -658,6 +968,140 @@ function hasAny(text, terms) {
   return false
 }
 
+function matchedTerms(text, terms) {
+  var out = []
+  for (var i = 0; i < (terms || []).length; i++) {
+    var term = String(terms[i] || '').toLowerCase()
+    if (term && text.indexOf(term) >= 0) out.push(terms[i])
+  }
+  return out
+}
+
+function isGenericSign(term) {
+  return GENERIC_VISUAL_SIGNS.indexOf(term) >= 0
+}
+
+function addMatches(state, label, terms, weight, options) {
+  options = options || {}
+  for (var i = 0; i < (terms || []).length; i++) {
+    var term = terms[i]
+    if (!term || state.seen[label + term]) continue
+    state.score += weight
+    state.seen[label + term] = true
+    state.matched.push(label + ':' + term)
+    if (options.strong) state.strongVisualCount++
+    if (options.generic) state.genericOnlyCount++
+    if (options.history) state.historyCount++
+    if (options.location) state.locationCount++
+    if (options.alias) state.aliasCount++
+    if (options.breed) state.breedCount++
+  }
+}
+
+function applyCombinationRules(disease, searchText, bodyPart, state) {
+  var name = disease.name
+  var locationText = String(bodyPart || '').toLowerCase()
+
+  if (name === '皮肤癣菌病（犬猫）') {
+    var hasHairLoss = hasAny(searchText, ['脱毛', '圆形脱毛', '断毛'])
+    var hasScaleOrCrust = hasAny(searchText, ['鳞屑', '结痂', '断毛'])
+    var hasShape = hasAny(searchText, ['圆形脱毛', '圆形', '环形', '边界清楚', '局灶'])
+    if (hasHairLoss && hasScaleOrCrust && hasShape) {
+      state.score += 6
+      state.comboCount++
+      state.matched.push('组合:圆形脱毛+鳞屑/结痂+断毛')
+    }
+  }
+
+  if (name === '跳蚤过敏性皮炎' || name === '猫粟粒性皮炎（跳蚤过敏）') {
+    var hasTailBack = hasAny(searchText + ' ' + locationText, ['尾根', '腰背', '背部', '后躯', '头颈'])
+    var hasItch = hasAny(searchText, ['剧烈瘙痒', '瘙痒', '抓挠', '舔咬'])
+    var hasFleaDirt = hasAny(searchText, ['黑色颗粒', '跳蚤', '粟粒', '小米粒'])
+    if (hasTailBack && hasItch && hasFleaDirt) {
+      state.score += 6
+      state.comboCount++
+      state.matched.push('组合:尾根/背部+瘙痒+跳蚤线索')
+    }
+  }
+
+  if (name === '猫粟粒性皮炎（跳蚤过敏）' && hasAny(searchText, ['粟粒', '小米粒', '小丘疹多发', '多发丘疹'])) {
+    state.score += 8
+    state.comboCount++
+    state.matched.push('组合:猫粟粒样多发丘疹/结痂')
+  }
+
+  if (name === '耳螨感染') {
+    var hasEar = hasAny(searchText + ' ' + locationText, ['耳部', '耳道', '耳朵'])
+    var hasBlackWax = hasAny(searchText, ['黑褐色', '黑色', '蜡样', '耳垢'])
+    var hasHeadShake = hasAny(searchText, ['甩头', '抓耳', '搔抓'])
+    if (hasEar && hasBlackWax && hasHeadShake) {
+      state.score += 6
+      state.comboCount++
+      state.matched.push('组合:耳道+黑褐色蜡样分泌物+甩头/抓耳')
+    }
+  }
+
+  if (name === '马拉色菌皮炎' || name === '马拉色菌性外耳炎') {
+    var hasOily = hasAny(searchText, ['油腻', '油', '耳垢'])
+    var hasOdor = hasAny(searchText, ['异味', '臭味', '酸臭', '霉味'])
+    var hasFoldEarPaw = hasAny(searchText + ' ' + locationText, ['褶皱', '耳部', '耳道', '爪部', '腋下', '腹股沟'])
+    if (hasOily && hasOdor && hasFoldEarPaw) {
+      state.score += 6
+      state.comboCount++
+      state.matched.push('组合:油腻+异味+褶皱/耳/爪')
+    }
+  }
+
+  if (name === '浅表脓皮病' || name === '毛囊炎' || name === '猫浅表脓皮病') {
+    if (hasAny(searchText, ['丘疹', '脓疱']) && hasAny(searchText, ['表皮领圈', '环形', '结痂'])) {
+      state.score += 5
+      state.comboCount++
+      state.matched.push('组合:丘疹/脓疱+表皮领圈/结痂')
+    }
+  }
+
+  if (disease.category === 'mass') {
+    if (hasAny(searchText, ['肿块', '结节', '包块', '隆起']) && hasAny(searchText, ['增大', '不愈', '溃疡', '出血', '硬'])) {
+      state.score += 5
+      state.comboCount++
+      state.matched.push('组合:肿块+增大/不愈/破溃')
+    }
+  }
+}
+
+function buildSearchResult(disease, state) {
+  var redFlagMatches = matchedTerms(state.searchText, disease.redFlags.concat(RED_FLAG_TERMS))
+  var urgency = disease.urgency
+  if (redFlagMatches.length && urgency === 'low') urgency = 'moderate'
+  if (redFlagMatches.length && disease.category === 'mass') urgency = 'urgent'
+
+  return {
+    id: disease.id,
+    name: displayDiseaseName(disease, state.species),
+    canonicalName: disease.name,
+    score: Math.round(state.score * 10) / 10,
+    matched: state.matched,
+    redFlagMatches: uniq(redFlagMatches),
+    typicalFeatures: disease.typicalFeatures,
+    ddx: disease.keyDifferentials.map(function (item) { return item.distinguish }).join('；') || disease.ddx,
+    keyDifferentials: disease.keyDifferentials,
+    recommendedTests: disease.recommendedTests,
+    homeCareSafe: disease.homeCareSafe,
+    vetAdvice: disease.vetAdvice,
+    report: disease.report,
+    sources: disease.sources,
+    urgency: urgency,
+    category: disease.category,
+    prevalence: disease.prevalence,
+    baselinePriority: disease.baselinePriority,
+    visualSigns: disease.visualSigns,
+    historySigns: disease.historySigns,
+    locations: disease.locations,
+    reviewStatus: disease.reviewStatus,
+    version: disease.version
+  }
+}
+
 /**
  * 根据病例信息检索知识库
  * @param {Object} query - { species, breed, bodyPart, complaint }
@@ -675,90 +1119,66 @@ function search(query) {
 
   for (var i = 0; i < DISEASE_KB.length; i++) {
     var disease = DISEASE_KB[i]
-    var score = 0
-    var matched = []
+    var state = {
+      score: 0,
+      matched: [],
+      seen: {},
+      strongVisualCount: 0,
+      genericOnlyCount: 0,
+      historyCount: 0,
+      locationCount: 0,
+      aliasCount: 0,
+      breedCount: 0,
+      comboCount: 0,
+      searchText: searchText,
+      species: species
+    }
 
     // 物种过滤：species 不匹配且不是共患的，跳过
     if (species && disease.species.indexOf(species) < 0) {
       continue
     }
 
-    // 品种匹配（可选：breed 为空时跳过，靠部位+症状即可命中）
-    if (breed && disease.keywords.breeds && disease.keywords.breeds.length > 0) {
-      for (var j = 0; j < disease.keywords.breeds.length; j++) {
-        var bkw = disease.keywords.breeds[j]
-        if (breed.indexOf(bkw) >= 0 || bkw.indexOf(breed) >= 0) {
-          score += 3
-          matched.push('品种:' + bkw)
-        }
+    var breedMatches = []
+    if (breed && disease.breeds && disease.breeds.length > 0) {
+      for (var j = 0; j < disease.breeds.length; j++) {
+        var bkw = disease.breeds[j]
+        if (breed.indexOf(bkw) >= 0 || bkw.indexOf(breed) >= 0) breedMatches.push(bkw)
       }
+      addMatches(state, '品种', breedMatches, breedMatches.length > 1 ? 2 : 1, { breed: true })
     }
 
-    // 部位匹配
-    if (bodyPart && disease.keywords.locations) {
-      for (var j = 0; j < disease.keywords.locations.length; j++) {
-        var lkw = disease.keywords.locations[j]
-        if (bodyPart.indexOf(lkw) >= 0 || lkw.indexOf(bodyPart) >= 0) {
-          score += 2
-          matched.push('部位:' + lkw)
-        }
+    var locationMatches = []
+    if (bodyPart && disease.locations) {
+      for (var k = 0; k < disease.locations.length; k++) {
+        var lkw = disease.locations[k]
+        if (bodyPart.indexOf(lkw) >= 0 || lkw.indexOf(bodyPart) >= 0) locationMatches.push(lkw)
       }
+      addMatches(state, '部位', locationMatches, 2, { location: true })
     }
 
-    // 症状匹配（从主诉文本中检索）
-    if (complaint && disease.keywords.symptoms) {
-      for (var j = 0; j < disease.keywords.symptoms.length; j++) {
-        var skw = disease.keywords.symptoms[j]
-        if (complaint.indexOf(skw) >= 0) {
-          score += 2
-          matched.push('症状:' + skw)
-        }
-      }
-    }
-
-    // 别名匹配（从全文搜索）
-    if (disease.aliases) {
-      for (var j = 0; j < disease.aliases.length; j++) {
-        if (searchText.indexOf(disease.aliases[j].toLowerCase()) >= 0) {
-          score += 2
-          matched.push('别名:' + disease.aliases[j])
-          break
-        }
-      }
-    }
-
-    // 组合特征加权：让知识库更贴近视觉预检模板，而不是只靠单个泛词。
-    if (disease.name === '皮肤癣菌病（犬猫）') {
-      var hasHairLoss = hasAny(searchText, ['脱毛', '圆形脱毛', '断毛'])
-      var hasScaleOrCrust = hasAny(searchText, ['鳞屑', '结痂', '断毛'])
-      var hasShape = hasAny(searchText, ['圆形脱毛', '圆形', '环形', '边界清楚', '局灶'])
-      if (hasHairLoss && hasScaleOrCrust) {
-        score += 3
-        matched.push('组合:脱毛+鳞屑/结痂')
-      }
-      if (hasHairLoss && hasScaleOrCrust && hasShape) {
-        score += 4
-        matched.push('组合:圆形/局灶脱毛')
-      }
-    }
-
-    if (disease.name === '猫粟粒性皮炎（跳蚤过敏）') {
-      var hasMiliaryPattern = hasAny(searchText, ['粟粒', '小米粒', '小丘疹多发', '多发丘疹'])
-      if (hasMiliaryPattern) {
-        score += 4
-        matched.push('组合:粟粒样多发丘疹')
-      }
-    }
-
-    if (score > 0) {
-      results.push({
-        name: disease.name,
-        score: score,
-        matched: matched,
-        typicalFeatures: disease.typicalFeatures,
-        ddx: disease.ddx,
-        urgency: disease.urgency
+    var visualMatches = matchedTerms(complaint, disease.visualSigns)
+    for (var v = 0; v < visualMatches.length; v++) {
+      var sign = visualMatches[v]
+      addMatches(state, '视觉', [sign], isGenericSign(sign) ? 1 : 4, {
+        strong: !isGenericSign(sign),
+        generic: isGenericSign(sign)
       })
+    }
+
+    var historyMatches = matchedTerms(complaint, disease.historySigns)
+    addMatches(state, '病史', historyMatches, 3, { history: true })
+
+    var aliasMatches = matchedTerms(searchText, disease.aliases)
+    if (aliasMatches.length) addMatches(state, '别名', [aliasMatches[0]], 2, { alias: true })
+
+    applyCombinationRules(disease, searchText, bodyPart, state)
+
+    if (state.score > 0) {
+      var hasSpecificEvidence = state.strongVisualCount > 0 || state.locationCount > 0 || state.historyCount > 0 || state.aliasCount > 0 || state.comboCount > 0
+      if (!hasSpecificEvidence && state.genericOnlyCount > 0) continue
+      state.score += Math.min(2, disease.baselinePriority * 0.25)
+      results.push(buildSearchResult(disease, state))
     }
   }
 
@@ -776,21 +1196,39 @@ function buildRagPrompt(query) {
   var results = search(query)
   if (results.length === 0) return ''
 
-  var parts = ['--- 知识库参考（根据品种/部位/症状检索，仅供对照）---']
+  var parts = ['--- 临床知识库候选方向（根据物种/部位/视觉特征/病史加权检索，仅供初筛对照）---']
 
   for (var i = 0; i < results.length; i++) {
     var r = results[i]
-    parts.push('[' + (i + 1) + '] ' + r.name + '（匹配度 ' + r.score + '）')
+    parts.push('[' + (i + 1) + '] ' + r.name + '（匹配分 ' + r.score + '；' + r.prevalence + '；' + r.reviewStatus + '）')
+    if (r.matched && r.matched.length) {
+      parts.push('  观察依据：' + r.matched.join('、'))
+    }
     if (r.typicalFeatures) {
       parts.push('  典型特征：' + r.typicalFeatures)
     }
-    if (r.ddx) {
-      parts.push('  鉴别要点：' + r.ddx)
+    if (r.keyDifferentials && r.keyDifferentials.length) {
+      parts.push('  鉴别要点：' + r.keyDifferentials.map(function (item) {
+        return item.name + '：' + item.distinguish
+      }).join('；'))
+    }
+    if (r.recommendedTests && r.recommendedTests.length) {
+      parts.push('  建议检查：' + r.recommendedTests.slice(0, 4).join('、'))
+    }
+    if (r.redFlagMatches && r.redFlagMatches.length) {
+      parts.push('  已触发红旗：' + r.redFlagMatches.join('、'))
+    }
+    if (r.vetAdvice) {
+      parts.push('  下一步：' + r.vetAdvice)
+    }
+    if (r.report && r.report.uncertainty) {
+      parts.push('  不确定性：' + r.report.uncertainty)
     }
     parts.push('')
   }
 
-  parts.push('以上为知识库检索结果，仅作参考。请以图片实际所见为准，知识库未覆盖的情况按你的判断输出。')
+  parts.push('输出时只能写“可能方向/鉴别方向/建议检查”，不要写“确诊”“就是”或药物处方。报告必须包含：观察依据、不确定性、下一步。')
+  parts.push('若只有红肿、脱毛、瘙痒、结痂等泛词，不要单独把某个低频病推为第一；优先使用组合特征和常见病解释。')
 
   return parts.join('\n')
 }

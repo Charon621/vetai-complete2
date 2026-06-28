@@ -307,7 +307,57 @@
   border-color: var(--sev-urgent);
 }
 
-/* ── 5. Space Actions ── */
+/* ── 5. Feedback Analysis ── */
+.feedback-stat-value {
+  color: var(--brand);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.kb-accuracy-section {
+  margin-top: var(--sp-3);
+}
+
+.kb-accuracy-title {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  margin-bottom: var(--sp-2);
+  padding: 0 var(--sp-1);
+}
+
+.kb-detail-text {
+  color: var(--muted);
+  font-size: var(--fs-mini);
+  margin-top: 4rpx;
+  line-height: 1.4;
+}
+
+.feedback-pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.feedback-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  border: 1rpx solid var(--line);
+  color: var(--body);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+}
+
+.feedback-pill .text-numeric {
+  color: var(--brand);
+}
+
+/* ── 6. Space Actions ── */
 .space-actions {
   display: flex;
   flex-direction: column;

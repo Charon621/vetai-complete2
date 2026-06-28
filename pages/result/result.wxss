@@ -659,6 +659,87 @@
 }
 
 /* ═══════════════════════════════════════
+   9.5 Feedback Card
+   ═══════════════════════════════════════ */
+.feedback-card {
+  margin-top: var(--sp-3);
+}
+
+.feedback-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.feedback-question {
+  color: var(--body);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.feedback-options {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.feedback-options-wrap {
+  flex-wrap: wrap;
+}
+
+.feedback-chip {
+  flex: 1;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1rpx solid var(--line);
+  color: var(--body);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.feedback-chip-small {
+  flex: 0 0 calc(50% - var(--sp-1));
+  box-sizing: border-box;
+  font-size: var(--fs-caption);
+}
+
+.feedback-chip:active {
+  opacity: 0.8;
+}
+
+.feedback-chip-on {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #ffffff;
+}
+
+.feedback-done {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--brand-light);
+  color: var(--brand);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.feedback-done-icon {
+  font-size: var(--fs-title);
+  font-weight: 700;
+}
+
+.feedback-hint {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════
    10. Bottom Actions
    ═══════════════════════════════════════ */
 .bottom-actions {

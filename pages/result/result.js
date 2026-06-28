@@ -1,4 +1,5 @@
 var storage = require('../../utils/storage')
+var analytics = require('../../utils/analytics')
 
 var REPORT_DISCLAIMER = '本报告由 AI 根据图片和你填写的信息生成，仅用于初步观察和就医沟通参考，不构成确诊、处方或治疗方案。若症状加重、扩散、破溃、流脓或宠物精神食欲异常，请及时就医。'
 
@@ -11,9 +12,61 @@ var URGENCY_MAP = {
 
 var SCORE_NOTE = '候选项数值是系统独立可能性评分，不是相加为 100% 的真实概率，也不代表医学确诊概率。'
 
+var FEEDBACK_ISSUE_OPTIONS = [
+  { value: 'diagnosis_wrong', label: '方向不准' },
+  { value: 'evidence_weak', label: '依据不清' },
+  { value: 'advice_unclear', label: '建议难用' },
+  { value: 'roi_ignored', label: '圈选没用上' },
+  { value: 'risk_level_wrong', label: '风险级别不对' },
+  { value: 'other', label: '其他' }
+]
+
+var FEEDBACK_VET_OUTCOME_OPTIONS = [
+  { value: 'consistent', label: '基本一致' },
+  { value: 'partial', label: '部分一致' },
+  { value: 'different', label: '不一致' },
+  { value: 'unknown', label: '还不确定' }
+]
+
 function cleanText(value) {
   if (typeof value !== 'string') return value || ''
   return value.replace(/[*#`]/g, '').replace(/^\s*[-•]\s+/gm, '').trim()
+}
+
+function inferRecordSpecies(record) {
+  var text = [
+    record && record.petType,
+    record && record.petTypeLabel,
+    record && record.species
+  ].join(' ')
+  if (text.indexOf('猫') >= 0 || text.indexOf('cat') >= 0) return 'cat'
+  if (text.indexOf('犬') >= 0 || text.indexOf('狗') >= 0 || text.indexOf('dog') >= 0) return 'dog'
+  return ''
+}
+
+function displayDiagnosisName(name, record) {
+  var text = cleanText(name)
+  if (text === '皮肤癣菌病（犬猫）') {
+    var species = inferRecordSpecies(record || {})
+    if (species === 'cat') return '猫癣'
+    if (species === 'dog') return '犬癣'
+    return '皮肤癣菌病'
+  }
+  return text
+}
+
+function sanitizeReportText(value) {
+  var text = cleanText(value)
+  if (!text) return ''
+  return text
+    .replace(/视觉预检特征与本地知识库中的“([^”]+)”方向相符，建议作为候选鉴别方向之一；?/g, '照片表现与“$1”的部分特征相似，建议作为候选鉴别方向之一。')
+    .replace(/该结果来自视觉特征预检\s*\+\s*本地临床知识库快速匹配，仅作初筛参考；?/g, '该结果仅作初筛参考；')
+    .replace(/知识库匹配：[^\n]*(\n)?/g, '')
+    .replace(/本地知识库中的/g, '')
+    .replace(/知识库快速匹配/g, '临床特征匹配')
+    .replace(/本地临床知识库/g, '临床参考')
+    .replace(/知识库/g, '临床参考')
+    .trim()
 }
 
 function normalizePercent(value) {
@@ -69,7 +122,14 @@ Page({
       watchList: [],
       vetList: []
     },
-    severityInfo: URGENCY_MAP.moderate
+    severityInfo: URGENCY_MAP.moderate,
+    feedbackHelpful: null,
+    feedbackVet: null,
+    feedbackIssue: '',
+    feedbackVetOutcome: '',
+    feedbackIssueOptions: FEEDBACK_ISSUE_OPTIONS,
+    feedbackVetOutcomeOptions: FEEDBACK_VET_OUTCOME_OPTIONS,
+    feedbackSubmitted: false
   },
 
   onLoad: function (options) {
@@ -86,7 +146,13 @@ Page({
       return
     }
 
-    this.setData(this.buildDisplayRecord(record))
+    this.setData(Object.assign(this.buildDisplayRecord(record), {
+      feedbackHelpful: record.feedback ? record.feedback.helpful : null,
+      feedbackVet: record.feedback ? record.feedback.wentToVet : null,
+      feedbackIssue: record.feedback ? (record.feedback.issueType || '') : '',
+      feedbackVetOutcome: record.feedback ? (record.feedback.vetOutcome || '') : '',
+      feedbackSubmitted: !!record.feedback
+    }))
   },
 
   buildDisplayRecord: function (record) {
@@ -105,12 +171,12 @@ Page({
     var diseaseList = candidates.map(function (item) {
       var percent = normalizePercent(item.probability !== undefined ? item.probability : item.percent)
       return {
-        name: cleanText(item.name || '未明确'),
+        name: displayDiagnosisName(item.name || '未明确', record),
         percent: percent === null ? 0 : percent,
         scoreText: percent === null ? '暂无概率' : percent + '%',
-        reason: cleanText(item.reason || ''),
-        supporting: cleanText(item.supporting || ''),
-        against: cleanText(item.against || '')
+        reason: sanitizeReportText(item.reason || ''),
+        supporting: sanitizeReportText(item.supporting || ''),
+        against: sanitizeReportText(item.against || '')
       }
     }).slice(0, 5)
 
@@ -133,8 +199,10 @@ Page({
     }
     if (!uncertainty) uncertainty = record.diagnosisProbabilityNote || SCORE_NOTE
 
-    // 查找同宠物的上一条记录
-    var prevRecord = self.findPreviousRecord(record)
+    var urgency = record.urgency || 'moderate'
+
+    // 只有通过宠物档案发起的问诊，才展示同档案历史趋势；临时问诊不做“好转/加重”判断。
+    var prevRecord = record.profileId && !record.isTemporary ? self.findPreviousRecord(record) : null
     var prevCompare = null
     if (prevRecord) {
       var prevUrgency = prevRecord.urgency || 'moderate'
@@ -152,11 +220,10 @@ Page({
       }
     }
 
-    var urgency = record.urgency || 'moderate'
     var display = Object.assign({}, record, {
-      disease: cleanText(record.disease || record.primaryDiagnosis || record.lesionNameCn || ''),
-      primaryDiagnosis: cleanText(record.primaryDiagnosis || ''),
-      possibleMeaning: cleanText(record.possibleMeaning || ''),
+      disease: displayDiagnosisName(record.disease || record.primaryDiagnosis || record.lesionNameCn || '', record),
+      primaryDiagnosis: displayDiagnosisName(record.primaryDiagnosis || '', record),
+      possibleMeaning: sanitizeReportText(record.possibleMeaning || ''),
       urgency: urgency,
       imageItems: imageItems,
       hasLesion: hasLesion,
@@ -164,10 +231,10 @@ Page({
       confidenceText: confidenceText,
       hasConfidence: hasConfidence,
       diseaseList: diseaseList,
-      diagnosisProbabilityNote: cleanText(record.diagnosisProbabilityNote || SCORE_NOTE),
-      observationText: shortText(record.observations || record.symptoms || '', 160),
-      supportText: shortText(record.explanation || record.ragBasis || record.possibleMeaning || '', 160),
-      uncertaintyText: shortText(uncertainty, 160),
+      diagnosisProbabilityNote: sanitizeReportText(record.diagnosisProbabilityNote || SCORE_NOTE),
+      observationText: shortText(sanitizeReportText(record.observations || record.symptoms || ''), 160),
+      supportText: shortText(sanitizeReportText(record.explanation || record.ragBasis || record.possibleMeaning || ''), 160),
+      uncertaintyText: shortText(sanitizeReportText(uncertainty), 160),
       modelProviderText: modelProviderText,
       generatedAtText: formatTimestamp(record.generatedAt),
       homeCareList: splitAdvice(record.homeCare || record.careSuggestion || record.treatment, '保持患处干燥清洁'),
@@ -225,6 +292,99 @@ Page({
 
   goHistory: function () {
     wx.switchTab({ url: '/pages/detail/detail' })
+  },
+
+  onFeedbackHelpful: function (e) {
+    var helpful = e.currentTarget.dataset.value === 'true'
+    if (this.data.feedbackSubmitted) return
+    var self = this
+    this.setData({
+      feedbackHelpful: helpful,
+      feedbackIssue: helpful ? '' : this.data.feedbackIssue
+    }, function () {
+      self._submitFeedback()
+    })
+    analytics.track('feedback', { recordId: this.data.recordId, action: 'helpful', value: helpful })
+  },
+
+  onFeedbackVet: function (e) {
+    var vet = e.currentTarget.dataset.value === 'true'
+    if (this.data.feedbackSubmitted) return
+    var self = this
+    this.setData({
+      feedbackVet: vet,
+      feedbackVetOutcome: vet ? this.data.feedbackVetOutcome : ''
+    }, function () {
+      self._submitFeedback()
+    })
+    analytics.track('feedback', { recordId: this.data.recordId, action: 'wentToVet', value: vet })
+  },
+
+  onFeedbackIssue: function (e) {
+    var issue = e.currentTarget.dataset.value || ''
+    if (this.data.feedbackSubmitted) return
+    var self = this
+    this.setData({ feedbackIssue: issue }, function () {
+      self._submitFeedback()
+    })
+    analytics.track('feedback', { recordId: this.data.recordId, action: 'issueType', value: issue })
+  },
+
+  onFeedbackVetOutcome: function (e) {
+    var outcome = e.currentTarget.dataset.value || ''
+    if (this.data.feedbackSubmitted) return
+    var self = this
+    this.setData({ feedbackVetOutcome: outcome }, function () {
+      self._submitFeedback()
+    })
+    analytics.track('feedback', { recordId: this.data.recordId, action: 'vetOutcome', value: outcome })
+  },
+
+  buildFeedbackSnapshot: function () {
+    var record = this.data.record || {}
+    var imageItems = record.imageItems || []
+    var lesionCount = 0
+    for (var i = 0; i < imageItems.length; i++) {
+      if (imageItems[i] && imageItems[i].hasLesion) lesionCount++
+    }
+    return {
+      disease: record.disease || '',
+      urgency: record.urgency || '',
+      confidencePercent: record.confidencePercent || 0,
+      modelProvider: record.modelProvider || record.modelProviderText || '',
+      ragMatchName: record.ragMatchName || '',
+      ragMatchScore: record.ragMatchScore || 0,
+      bodyPart: record.bodyPartLabel || record.bodyPart || '',
+      petType: record.petTypeLabel || record.petType || '',
+      imageCount: imageItems.length,
+      lesionCount: lesionCount,
+      hasLesion: lesionCount > 0
+    }
+  },
+
+  _submitFeedback: function () {
+    if (this.data.feedbackHelpful === null || this.data.feedbackVet === null) return
+    if (this.data.feedbackHelpful === false && !this.data.feedbackIssue) return
+    if (this.data.feedbackVet === true && !this.data.feedbackVetOutcome) return
+    var result = storage.addFeedback(this.data.recordId, {
+      helpful: this.data.feedbackHelpful,
+      wentToVet: this.data.feedbackVet,
+      issueType: this.data.feedbackHelpful === false ? this.data.feedbackIssue : '',
+      vetOutcome: this.data.feedbackVet === true ? this.data.feedbackVetOutcome : '',
+      snapshot: this.buildFeedbackSnapshot()
+    })
+    if (result) {
+      this.setData({ feedbackSubmitted: true })
+      analytics.track('feedback', {
+        recordId: this.data.recordId,
+        action: 'submitted',
+        helpful: this.data.feedbackHelpful,
+        wentToVet: this.data.feedbackVet,
+        issueType: this.data.feedbackIssue,
+        vetOutcome: this.data.feedbackVetOutcome
+      })
+      wx.showToast({ title: '感谢反馈', icon: 'success' })
+    }
   },
 
   findHospital: function () {

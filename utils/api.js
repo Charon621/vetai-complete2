@@ -142,6 +142,8 @@ function buildSystemPrompt() {
   parts.push('')
   parts.push('--- 诊断思路指引 ---')
   parts.push(knowledge.buildCommonFirstPrompt(''))
+  parts.push('')
+  parts.push('用户可见字段里不要提到“知识库”“RAG”“本地库”“检索结果”等内部机制；可以直接写照片表现、病史线索、候选方向、鉴别点和建议检查。')
 
   return parts.join('\n')
 }
@@ -458,6 +460,19 @@ function cleanDiagName(name) {
   return s.trim() || name.trim()
 }
 
+function cleanUserVisibleText(value) {
+  return cleanModelText(value)
+    .replace(/视觉预检特征与本地知识库中的“([^”]+)”方向相符，建议作为候选鉴别方向之一；?/g, '照片表现与“$1”的部分特征相似，建议作为候选鉴别方向之一。')
+    .replace(/该结果来自视觉特征预检\s*\+\s*本地临床知识库快速匹配，仅作初筛参考；?/g, '该结果仅作初筛参考；')
+    .replace(/知识库匹配：[^\n]*(\n)?/g, '')
+    .replace(/本地临床知识库/g, '临床特征')
+    .replace(/本地知识库/g, '临床特征')
+    .replace(/知识库快速匹配/g, '临床特征匹配')
+    .replace(/知识库/g, '临床特征')
+    .replace(/\bRAG\b/gi, '临床参考')
+    .trim()
+}
+
 /**
  * 标准化输出结构
  */
@@ -467,28 +482,29 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
 
   var candidates = Array.isArray(data.diagnosisCandidates)
     ? data.diagnosisCandidates.map(function (item) {
+      var itemName = displayDiagnosisForSpecies(cleanDiagName(item.name || '未明确'), petInfo && petInfo.species)
       return {
-        name: cleanDiagName(item.name || '未明确'),
+        name: itemName,
         probability: normalizePercent(item.probability, 0),
-        reason: cleanModelText(item.reason || ''),
-        supporting: cleanModelText(item.supporting || ''),
-        against: cleanModelText(item.against || '')
+        reason: cleanUserVisibleText(item.reason || ''),
+        supporting: cleanUserVisibleText(item.supporting || ''),
+        against: cleanUserVisibleText(item.against || '')
       }
     }).slice(0, 5)
     : []
 
-  var primaryDiagnosis = cleanDiagName(data.primaryDiagnosis || (candidates[0] && candidates[0].name) || '未明确')
+  var primaryDiagnosis = displayDiagnosisForSpecies(cleanDiagName(data.primaryDiagnosis || (candidates[0] && candidates[0].name) || '未明确'), petInfo && petInfo.species)
   var rawConf = normalizePercent(data.confidence, candidates[0] ? candidates[0].probability : 0)
   var calibratedConf = calibrateConfidence(rawConf)
   var confLabel = confidenceToLabel(calibratedConf)
 
   // 建议分段
-  var homeCare = cleanModelText(data.homeCare || data.careSuggestion || '')
-  var whenToWatch = cleanModelText(data.whenToWatch || '')
-  var whenToSeeVet = cleanModelText(data.whenToSeeVet || data.vetWarning || '')
+  var homeCare = cleanUserVisibleText(data.homeCare || data.careSuggestion || '')
+  var whenToWatch = cleanUserVisibleText(data.whenToWatch || '')
+  var whenToSeeVet = cleanUserVisibleText(data.whenToSeeVet || data.vetWarning || '')
 
   // 合并 careSuggestion（兼容旧字段）
-  var careSuggestion = cleanModelText(data.careSuggestion || '')
+  var careSuggestion = cleanUserVisibleText(data.careSuggestion || '')
   if (!careSuggestion && (homeCare || whenToWatch)) {
     careSuggestion = [homeCare, whenToWatch].filter(Boolean).join('\n')
   }
@@ -499,7 +515,7 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
   return {
     // 核心诊断
     lesionType: 'aiMultimodal',
-    lesionNameCn: cleanModelText(data.lesionNameCn || '皮肤照片观察'),
+    lesionNameCn: displayDiagnosisForSpecies(cleanUserVisibleText(data.lesionNameCn || '皮肤照片观察'), petInfo && petInfo.species),
     confidence: calibratedConf,
     confidenceRaw: rawConf,
     confidenceLabel: confLabel,
@@ -512,12 +528,12 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
     whenToWatch: whenToWatch,
     whenToSeeVet: whenToSeeVet,
     careSuggestion: careSuggestion,
-    vetWarning: cleanModelText(data.vetWarning || whenToSeeVet || '如症状加重、扩散、破溃、流脓、明显疼痛或精神食欲异常，请尽快线下就医。'),
+    vetWarning: cleanUserVisibleText(data.vetWarning || whenToSeeVet || '如症状加重、扩散、破溃、流脓、明显疼痛或精神食欲异常，请尽快线下就医。'),
 
     // 描述
-    observations: cleanModelText(data.observations || ''),
-    explanation: cleanModelText(data.explanation || data.observations || ''),
-    possibleMeaning: cleanModelText(data.possibleMeaning || ''),
+    observations: cleanUserVisibleText(data.observations || ''),
+    explanation: cleanUserVisibleText(data.explanation || data.observations || ''),
+    possibleMeaning: cleanUserVisibleText(data.possibleMeaning || ''),
 
     // 严重度
     urgency: urgency,
@@ -533,22 +549,22 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
 
     // RAG 字段（兼容）
     ragTitle: '初筛诊断说明',
-    ragSummary: cleanModelText(data.possibleMeaning || ''),
-    ragBasis: cleanModelText(data.explanation || data.observations || ''),
-    ragRecommendation: cleanModelText([careSuggestion, data.vetWarning || whenToSeeVet].filter(Boolean).join(' ')),
-    ragSources: [],
+    ragSummary: cleanUserVisibleText(data.possibleMeaning || ''),
+    ragBasis: cleanUserVisibleText(data.explanation || data.observations || ''),
+    ragRecommendation: cleanUserVisibleText([careSuggestion, data.vetWarning || whenToSeeVet].filter(Boolean).join(' ')),
+    ragSources: Array.isArray(data.ragSources) ? data.ragSources : [],
 
     // 前端展示映射
     disease: primaryDiagnosis,
     diseaseList: candidates.length > 0 ? candidates : [{
       name: primaryDiagnosis,
       probability: normalizePercent(data.primaryDiagnosisProbability, 0),
-      reason: cleanModelText(data.explanation || '')
+      reason: cleanUserVisibleText(data.explanation || '')
     }],
-    symptoms: cleanModelText(data.explanation || data.observations || ''),
+    symptoms: cleanUserVisibleText(data.explanation || data.observations || ''),
     treatment: careSuggestion,
-    urgencyLabel: cleanModelText(data.vetWarning || whenToSeeVet || '建议结合症状变化咨询线下兽医'),
-    urgencyDesc: cleanModelText(data.vetWarning || whenToSeeVet || ''),
+    urgencyLabel: cleanUserVisibleText(data.vetWarning || whenToSeeVet || '建议结合症状变化咨询线下兽医'),
+    urgencyDesc: cleanUserVisibleText(data.vetWarning || whenToSeeVet || ''),
     yoloConfidence: 0,
     bbox: [],
     detections: [],
@@ -807,17 +823,33 @@ function countMatchedType(hit, typePrefix) {
   }).length
 }
 
+function countEvidenceMatches(hit) {
+  return countMatchedType(hit, '视觉:') +
+    countMatchedType(hit, '病史:') +
+    countMatchedType(hit, '别名:') +
+    countMatchedType(hit, '组合:')
+}
+
+function displayDiagnosisForSpecies(name, species) {
+  if (name === '皮肤癣菌病（犬猫）' || name === '皮肤癣菌病') {
+    if (species === '猫') return '猫癣'
+    if (species === '犬') return '犬癣'
+    return '皮肤癣菌病'
+  }
+  return name
+}
+
 function isStrongVisionRagHit(results) {
   if (!results || !results.length) return false
   var top = results[0]
   var minScore = config.VISION_RAG_MIN_SCORE || 8
   var minSymptoms = config.VISION_RAG_MIN_SYMPTOM_MATCHES || 2
-  var symptomMatches = countMatchedType(top, '症状:') + countMatchedType(top, '别名:')
+  var evidenceMatches = countEvidenceMatches(top)
   if (top.score < minScore) return false
-  if (symptomMatches < minSymptoms) return false
+  if (evidenceMatches < minSymptoms) return false
 
   // 症状/别名命中足够多时，说明视觉特征和知识库已经对齐，可以快速输出。
-  if (top.score >= 12 || symptomMatches >= 3) return true
+  if (top.score >= 12 || evidenceMatches >= 3) return true
 
   // Top1 没有明显优势且证据不够密时，仍交给完整 AI 诊断，避免相似病被规则检索误带偏。
   if (results[1] && top.score - results[1].score < 2 && top.score < 12) return false
@@ -831,16 +863,19 @@ function scoreToFastProbability(score, rank) {
 
 function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, petInfo) {
   var top = results[0]
+  var topDisplayName = displayDiagnosisForSpecies(top.name, petInfo && petInfo.species)
   var candidates = results.slice(0, 3).map(function (hit, index) {
+    var hitName = displayDiagnosisForSpecies(hit.name, petInfo && petInfo.species)
     return {
-      name: hit.name,
+      name: hitName,
       probability: scoreToFastProbability(hit.score, index),
       reason: [
-        hit.matched && hit.matched.length ? '命中：' + hit.matched.join('、') : '',
+        hit.matched && hit.matched.length ? '观察依据：' + hit.matched.join('、') : '',
+        hit.recommendedTests && hit.recommendedTests.length ? '建议检查：' + hit.recommendedTests.slice(0, 2).join('、') : '',
         hit.typicalFeatures ? '典型特征：' + hit.typicalFeatures : ''
       ].filter(Boolean).join('；'),
       supporting: hit.typicalFeatures || '',
-      against: hit.ddx || ''
+      against: (hit.report && hit.report.uncertainty) || hit.ddx || ''
     }
   })
 
@@ -849,31 +884,39 @@ function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, 
   var explanation = [
     observation,
     features ? '视觉预检特征：' + features : '',
-    top.matched && top.matched.length ? '知识库匹配：' + top.matched.join('、') : '',
+    top.matched && top.matched.length ? '支持线索：' + top.matched.join('、') : '',
     top.typicalFeatures ? '参考特征：' + top.typicalFeatures : '',
-    top.ddx ? '鉴别要点：' + top.ddx : ''
+    top.ddx ? '鉴别要点：' + top.ddx : '',
+    top.recommendedTests && top.recommendedTests.length ? '建议检查：' + top.recommendedTests.slice(0, 4).join('、') : ''
   ].filter(Boolean).join('\n')
+  var safeHomeCare = top.homeCareSafe && top.homeCareSafe.length
+    ? top.homeCareSafe.slice(0, 4).join('；')
+    : '保持患处清洁干燥，避免反复舔咬和抓挠；暂不自行使用人用药或不明药膏。'
+  var vetAdvice = top.vetAdvice || '如皮损扩大、破溃流脓、明显疼痛、持续瘙痒或精神食欲异常，应线下就医。'
+  var uncertainty = (top.report && top.report.uncertainty) || '单靠照片不能确诊，需要结合病史、体检和必要的实验室检查。'
+  var sourceTitles = (top.sources || []).map(function (source) { return source.title || source.url || '' }).filter(Boolean)
 
   return normalizeDiagnosis({
     observations: observation,
-    primaryDiagnosis: top.name,
+    primaryDiagnosis: topDisplayName,
     primaryDiagnosisProbability: candidates[0] ? candidates[0].probability : 50,
     diagnosisCandidates: candidates,
-    lesionNameCn: featureData.lesionPattern || top.name,
+    lesionNameCn: featureData.lesionPattern || topDisplayName,
     confidence: candidates[0] ? candidates[0].probability : 50,
     explanation: explanation,
-    possibleMeaning: '视觉预检特征与本地知识库中的“' + top.name + '”高度匹配，建议作为优先鉴别方向。',
-    homeCare: '保持患处清洁干燥，避免反复舔咬和抓挠；暂不自行使用人用药或不明药膏。',
+    possibleMeaning: '照片表现与“' + topDisplayName + '”的部分特征相似，建议作为候选鉴别方向之一；' + uncertainty,
+    homeCare: safeHomeCare,
     whenToWatch: '若范围稳定、无明显疼痛渗出、精神食欲正常，可记录照片并持续观察变化。',
     whenToSeeVet: top.urgency === 'urgent' || top.urgency === 'emergency'
-      ? '该方向存在较高就医必要性，建议尽快联系线下兽医进一步检查。'
-      : '如皮损扩大、破溃流脓、明显疼痛、持续瘙痒或精神食欲异常，应线下就医。',
-    careSuggestion: '该结果来自视觉特征预检 + 本地知识库快速匹配，仅作初筛参考；如症状变化或不确定，请线下就医。',
+      ? vetAdvice
+      : vetAdvice,
+    careSuggestion: '该结果仅作初筛参考；下一步可结合线下检查确认：' + ((top.recommendedTests || []).slice(0, 3).join('、') || '皮肤/耳道基础检查') + '。',
     vetWarning: top.urgency === 'urgent' || top.urgency === 'emergency'
-      ? '建议尽快线下就医确认。'
+      ? vetAdvice
       : '如症状加重、扩散、破溃、流脓、明显疼痛或精神食欲异常，请尽快线下就医。',
     urgency: top.urgency || 'moderate',
-    diagnosisProbabilityNote: DIAGNOSIS_SCORE_NOTE
+    diagnosisProbabilityNote: DIAGNOSIS_SCORE_NOTE,
+    ragSources: sourceTitles
   }, providerName, providerCfg, petInfo)
 }
 
@@ -897,7 +940,7 @@ function diagnoseWithVisionRag(images, petInfo, providerName, providerCfg) {
             topName: results[0] ? results[0].name : '',
             topScore: results[0] ? results[0].score : 0,
             secondScore: results[1] ? results[1].score : 0,
-            symptomMatches: results[0] ? countMatchedType(results[0], '症状:') + countMatchedType(results[0], '别名:') : 0,
+            evidenceMatches: results[0] ? countEvidenceMatches(results[0]) : 0,
             featureCount: featureData.visualFeatures.length,
             visualFeatures: featureData.visualFeatures,
             lesionPattern: featureData.lesionPattern,
@@ -923,9 +966,18 @@ function diagnoseWithVisionRag(images, petInfo, providerName, providerCfg) {
       data.ragSummary = featureData.shortObservation || data.ragSummary
       data.ragBasis = results[0].typicalFeatures || data.ragBasis
       data.ragRecommendation = results[0].ddx || data.ragRecommendation
-      data.ragSources = results.map(function (r) { return r.name })
+      data.ragSources = results.reduce(function (list, r) {
+        (r.sources || []).forEach(function (source) {
+          var title = source.title || source.url || ''
+          if (title && list.indexOf(title) < 0) list.push(title)
+        })
+        return list
+      }, [])
       data._fastRag = true
       data._visualFeatures = featureData.visualFeatures
+      data._ragMatchName = results[0].name
+      data._ragMatchScore = results[0].score
+      data._ragMatched = results[0].matched || []
 
       analytics.track('visionRag', {
         hit: true,
@@ -939,7 +991,7 @@ function diagnoseWithVisionRag(images, petInfo, providerName, providerCfg) {
           topName: results[0].name,
           topScore: results[0].score,
           secondScore: results[1] ? results[1].score : 0,
-          symptomMatches: countMatchedType(results[0], '症状:') + countMatchedType(results[0], '别名:'),
+          evidenceMatches: countEvidenceMatches(results[0]),
           featureCount: featureData.visualFeatures.length,
           visualFeatures: featureData.visualFeatures,
           lesionPattern: featureData.lesionPattern,
@@ -1039,6 +1091,17 @@ function runFullDiagnosis(images, petInfo, providerName, providerCfg, options) {
         isReject: !!data.isReject,
         parseLevel: parsed.level  // 1=直接成功 … 5=兜底，>2 都值得关注
       })
+
+      // 记录本次诊断对应的 KB 检索结果（供反馈闭环使用）
+      var kbResults = kb.search({
+        species: petInfo.species || '',
+        breed: petInfo.breed || '',
+        bodyPart: petInfo.bodyPartLabel || petInfo.bodyPart || '',
+        complaint: petInfo.complaint || ''
+      })
+      data._ragMatchName = kbResults[0] ? kbResults[0].name : ''
+      data._ragMatchScore = kbResults[0] ? kbResults[0].score : 0
+      data._ragMatched = kbResults[0] ? (kbResults[0].matched || []) : []
 
       return {
         success: true,

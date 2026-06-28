@@ -2,6 +2,7 @@ var api = require('../../utils/api')
 var storage = require('../../utils/storage')
 var imageUtil = require('../../utils/image')
 var lesionUtil = require('../../utils/lesion')
+var analytics = require('../../utils/analytics')
 
 var IMAGE_ROLES = [
   { value: '', label: '' },
@@ -215,6 +216,7 @@ Page({
     var idx = parseInt(e.currentTarget.dataset.index)
     var imagePath = self.data.imagePaths[idx]
     if (!imagePath) return
+    analytics.track('lesionOpen', { imageIndex: idx, hasExisting: !!self.data.lesionBoxes[idx] })
 
     var existing = self.data.lesionBoxes[idx]
     var existingMode = existing && existing.type === 'rectangle' ? 'rectangle' : 'freehand'
@@ -385,6 +387,7 @@ Page({
     boxes[idx] = savedBox
     this._canvasData = null
     this._isDrawingLesion = false
+    analytics.track('lesionSave', { imageIndex: idx, mode: this.data.selectorMode, pointCount: (points || []).length })
     var self = this
     this.setData({
       lesionBoxes: boxes,
@@ -410,6 +413,7 @@ Page({
   clearLesion: function () {
     var idx = this.data.selectorImageIndex
     if (idx < 0) return
+    analytics.track('lesionClear', { imageIndex: idx })
     var boxes = this.data.lesionBoxes.slice()
     boxes[idx] = null
     this._canvasData = null
@@ -614,6 +618,7 @@ Page({
       .then(function (bundle) {
         var saved = bundle[0]
         var roiImages = bundle[1]
+        analytics.track('roiCrop', { total: self.data.lesionBoxes.filter(Boolean).length, cropped: roiImages.length })
         var imageBundle = imageUtil.buildModelImageBundle(
           self.data.imageBase64List,
           self.data.imageRoles,
@@ -686,6 +691,8 @@ Page({
                   disease: d.disease, diseaseList: d.diseaseList,
                   symptoms: d.symptoms, treatment: d.treatment,
                   urgencyLabel: d.urgencyLabel, urgencyDesc: d.urgencyDesc,
+                  ragMatchName: d._ragMatchName || '', ragMatchScore: d._ragMatchScore || 0,
+                  ragMatched: d._ragMatched || [],
                   yoloConfidence: 0, bbox: [], detections: [],
                   notes: d.notes, rawResponse: res.raw
                 })

@@ -131,11 +131,94 @@
         </view>
         <view class="setting-arrow"></view>
       </view>
+      <view class="setting-item" bindtap="exportFeedbackData">
+        <view class="setting-copy">
+          <view class="setting-title">导出反馈日志</view>
+        </view>
+        <view class="setting-arrow"></view>
+      </view>
+      <view class="setting-item" bindtap="exportAnalyticsEvents">
+        <view class="setting-copy">
+          <view class="setting-title">导出埋点日志</view>
+        </view>
+        <view class="setting-arrow"></view>
+      </view>
       <view class="setting-item danger" bindtap="clearData">
         <view class="setting-copy">
           <view class="setting-title">清除数据</view>
         </view>
         <view class="setting-arrow"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 反馈分析 -->
+  <view class="settings-section vet-fade-up" style="animation-delay:210ms" wx:if="{{feedbackSummary}}">
+    <view class="section-heading">
+      <view class="section-title">反馈分析</view>
+      <view class="section-note">基于 {{feedbackSummary.total}} 条反馈</view>
+    </view>
+    <view class="settings-list">
+      <view class="setting-item">
+        <view class="setting-copy">
+          <view class="setting-title">有帮助率</view>
+        </view>
+        <view class="feedback-stat-value text-numeric">{{feedbackSummary.helpfulRate}}%</view>
+      </view>
+      <view class="setting-item">
+        <view class="setting-copy">
+          <view class="setting-title">有帮助 / 无帮助</view>
+        </view>
+        <view class="feedback-stat-value text-numeric">{{feedbackSummary.helpful}} / {{feedbackSummary.notHelpful}}</view>
+      </view>
+      <view class="setting-item">
+        <view class="setting-copy">
+          <view class="setting-title">已就医 / 未就医</view>
+        </view>
+        <view class="feedback-stat-value text-numeric">{{feedbackSummary.wentVet}} / {{feedbackSummary.notVet}}</view>
+      </view>
+      <view class="setting-item">
+        <view class="setting-copy">
+          <view class="setting-title">问题反馈率</view>
+        </view>
+        <view class="feedback-stat-value text-numeric">{{feedbackSummary.issueRate}}%</view>
+      </view>
+      <view class="setting-item">
+        <view class="setting-copy">
+          <view class="setting-title">兽医方向一致率</view>
+        </view>
+        <view class="feedback-stat-value text-numeric">{{feedbackSummary.vetAlignedRate}}%</view>
+      </view>
+    </view>
+    <view class="kb-accuracy-section" wx:if="{{upgradeSignals && upgradeSignals.topIssues.length > 0}}">
+      <view class="kb-accuracy-title">主要问题类型</view>
+      <view class="feedback-pill-list">
+        <view class="feedback-pill" wx:for="{{upgradeSignals.topIssues}}" wx:key="key">
+          <text>{{item.label}}</text>
+          <text class="text-numeric">{{item.count}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="kb-accuracy-section" wx:if="{{upgradeSignals && upgradeSignals.weakSegments.length > 0}}">
+      <view class="kb-accuracy-title">优先复盘方向</view>
+      <view class="settings-list">
+        <view class="setting-item" wx:for="{{upgradeSignals.weakSegments}}" wx:key="name">
+          <view class="setting-copy">
+            <view class="setting-title">{{item.name}}</view>
+            <view class="kb-detail-text">{{item.bodyPart}} · 无帮助 {{item.notHelpful}} · 兽医不一致 {{item.vetDifferent}} · {{item.mainIssueLabel}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="kb-accuracy-section" wx:if="{{kbAccuracyList.length > 0}}">
+      <view class="kb-accuracy-title">知识库匹配反馈（按次数排序）</view>
+      <view class="settings-list">
+        <view class="setting-item" wx:for="{{kbAccuracyList}}" wx:key="name">
+          <view class="setting-copy">
+            <view class="setting-title">{{item.name}}</view>
+            <view class="kb-detail-text">有帮助率 {{item.helpfulRate}}% · 无帮助 {{item.notHelpful}} · 兽医不一致 {{item.vetDifferent}} · {{item.mainIssueLabel}}</view>
+          </view>
+        </view>
       </view>
     </view>
   </view>
