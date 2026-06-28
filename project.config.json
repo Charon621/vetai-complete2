@@ -1,0 +1,66 @@
+{
+  "description": "项目配置文件",
+  "packOptions": {
+    "ignore": [
+      {
+        "value": "backend",
+        "type": "folder"
+      },
+      {
+        "value": ".venv-yolo",
+        "type": "folder"
+      },
+      {
+        "value": "runs",
+        "type": "folder"
+      },
+      {
+        "value": "decks",
+        "type": "folder"
+      },
+      {
+        "value": "yolov8n.pt",
+        "type": "file"
+      },
+      {
+        "value": "yolo26n.pt",
+        "type": "file"
+      }
+    ],
+    "include": []
+  },
+  "setting": {
+    "urlCheck": true,
+    "compileHotReLoad": true,
+    "useCompilerPlugins": false,
+    "es6": true,
+    "postcss": false,
+    "compileWorklet": false,
+    "minified": true,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": false,
+    "enhance": false,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "compileType": "miniprogram",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "libVersion": "3.16.0",
+  "appid": "wxb4e65cab13830884",
+  "projectname": "vetai-complete",
+  "condition": {},
+  "simulatorPluginLibVersion": {},
+  "editorSetting": {}
+}

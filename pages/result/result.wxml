@@ -1,0 +1,248 @@
+<view class="vet-page report-page sev-{{record.urgency || 'moderate'}}">
+  <!-- ═══ Report Header ═══ -->
+  <view class="report-sheet">
+    <view class="report-header">
+      <view class="report-badge-row">
+        <view class="report-badge">
+          <text class="report-badge-icon">◉</text>
+          <text class="report-badge-text">AI 初筛报告</text>
+        </view>
+      </view>
+      <view class="report-meta-row">
+        <view class="report-meta-item">
+          <text class="meta-label">生成时间</text>
+          <text class="meta-value">{{record.generatedAtText || record.timestamp || '--'}}</text>
+        </view>
+        <view class="report-meta-divider"></view>
+        <view class="report-meta-item">
+          <text class="meta-label">照片数量</text>
+          <text class="meta-value">{{record.imageItems.length}} 张</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- ═══ Triage Banner ═══ -->
+    <view class="triage-banner">
+      <view class="triage-sev-bar"></view>
+      <view class="triage-copy">
+        <view class="triage-title">{{severityInfo.title}}</view>
+        <view class="triage-desc">{{severityInfo.desc}}</view>
+      </view>
+      <view class="triage-arrow">›</view>
+    </view>
+
+    <!-- ═══ History Compare ═══ -->
+    <view class="prev-compare" wx:if="{{record.prevCompare}}">
+      <view class="prev-compare-label">上次诊断</view>
+      <view class="prev-compare-body">
+        <text class="prev-compare-disease">{{record.prevCompare.disease}}</text>
+        <text class="prev-compare-time">{{record.prevCompare.timeAgo}}</text>
+      </view>
+      <view class="prev-compare-trend trend-{{record.prevCompare.trend}}">
+        <text class="trend-icon">{{record.prevCompare.trendIcon}}</text>
+        <text class="trend-text">{{record.prevCompare.trendText}}</text>
+      </view>
+    </view>
+
+    <!-- ═══ Primary Diagnosis ═══ -->
+    <view class="primary-summary">
+      <view class="summary-label">可能问题</view>
+      <view class="summary-name">{{record.disease || '暂无明确结果'}}</view>
+      <view class="summary-desc" wx:if="{{record.possibleMeaning}}">{{record.possibleMeaning}}</view>
+    </view>
+
+    <!-- ═══ Confidence ═══ -->
+    <view class="confidence-row {{record.hasConfidence ? '' : 'confidence-empty'}}">
+      <view class="confidence-left">
+        <view class="confidence-label">发生概率</view>
+        <view class="confidence-note">综合症状与影像的评估，非确诊概率</view>
+      </view>
+      <view class="confidence-value text-numeric" wx:if="{{record.hasConfidence}}">{{record.confidenceText}}</view>
+      <view class="confidence-value confidence-na" wx:else>{{record.confidenceText}}</view>
+    </view>
+    <view class="score-track" wx:if="{{record.hasConfidence}}">
+      <view style="width: {{record.confidencePercent}}%;"></view>
+    </view>
+  </view>
+
+  <!-- ═══ Image Evidence ═══ -->
+  <view class="report-block" wx:if="{{record.imageItems.length > 0}}">
+    <view class="block-head">
+      <view class="block-title-wrap">
+        <view class="block-title">影像依据</view>
+      </view>
+      <view class="block-desc">仅展示已上传照片与真实圈选状态</view>
+    </view>
+    <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="image-rail">
+      <view class="image-rail-inner">
+        <view class="image-proof" wx:for="{{record.imageItems}}" wx:key="path">
+          <image src="{{item.path}}" mode="aspectFill" lazy-load />
+          <view class="proof-status {{item.hasLesion ? 'on' : ''}}">
+            <text class="proof-dot">{{item.hasLesion ? '●' : '○'}}</text>
+            {{item.hasLesion ? '已圈选' : '未圈选'}}
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- ═══ Evidence Table ═══ -->
+  <view class="report-block">
+    <view class="block-head">
+      <view class="block-title-wrap">
+        <view class="block-title">判断依据</view>
+      </view>
+      <view class="block-desc">来自图片表现和你填写的信息</view>
+    </view>
+    <view class="evidence-list">
+      <view class="evidence-item">
+        <view class="evidence-dot-wrap">
+          <view class="evidence-dot dot-brand"></view>
+        </view>
+        <view class="evidence-content">
+          <view class="evidence-key">客观观察</view>
+          <view class="evidence-value">{{record.observationText || '暂无观察描述'}}</view>
+        </view>
+      </view>
+      <view class="evidence-item">
+        <view class="evidence-dot-wrap">
+          <view class="evidence-dot dot-accent"></view>
+        </view>
+        <view class="evidence-content">
+          <view class="evidence-key">支持理由</view>
+          <view class="evidence-value">{{record.supportText || '暂无理由分析'}}</view>
+        </view>
+      </view>
+      <view class="evidence-item">
+        <view class="evidence-dot-wrap">
+          <view class="evidence-dot dot-muted"></view>
+        </view>
+        <view class="evidence-content">
+          <view class="evidence-key">不确定因素</view>
+          <view class="evidence-value">{{record.uncertaintyText || '建议结合病程变化继续观察'}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ═══ Differential Diagnosis ═══ -->
+  <view class="report-block" wx:if="{{record.diseaseList.length > 0}}">
+    <view class="block-head">
+      <view class="block-title-wrap">
+        <view class="block-title">鉴别诊断</view>
+      </view>
+      <view class="block-desc">{{record.diagnosisProbabilityNote}}</view>
+    </view>
+    <view class="ddx-list">
+      <view class="ddx-item" wx:for="{{record.diseaseList}}" wx:key="index">
+        <view class="ddx-line">
+          <view class="ddx-rank">{{index + 1}}</view>
+          <view class="ddx-name">{{item.name}}</view>
+          <view class="ddx-score text-numeric">{{item.scoreText}}</view>
+        </view>
+        <view class="score-track small">
+          <view style="width: {{item.percent}}%;"></view>
+        </view>
+        <view class="ddx-reason" wx:if="{{item.reason}}">{{item.reason}}</view>
+        <view class="ddx-tags" wx:if="{{item.supporting || item.against}}">
+          <view class="ddx-tag tag-support" wx:if="{{item.supporting}}">
+            <text class="ddx-tag-label">支持</text>
+            <text class="ddx-tag-text">{{item.supporting}}</text>
+          </view>
+          <view class="ddx-tag tag-against" wx:if="{{item.against}}">
+            <text class="ddx-tag-label">不确定</text>
+            <text class="ddx-tag-text">{{item.against}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ═══ Care Advice ═══ -->
+  <view class="report-block">
+    <view class="block-head">
+      <view class="block-title-wrap">
+        <view class="block-title">护理与就医建议</view>
+      </view>
+      <view class="block-desc">用于居家观察和就医沟通，不构成治疗方案</view>
+    </view>
+    <view class="advice-list">
+      <view class="advice-card advice-green">
+        <view class="advice-header">
+          <view class="advice-indicator"></view>
+          <view class="advice-title">家庭护理</view>
+        </view>
+        <view class="advice-line" wx:for="{{record.homeCareList}}" wx:key="index">{{item}}</view>
+      </view>
+      <view class="advice-card advice-amber">
+        <view class="advice-header">
+          <view class="advice-indicator"></view>
+          <view class="advice-title">继续观察</view>
+        </view>
+        <view class="advice-line" wx:for="{{record.watchList}}" wx:key="index">{{item}}</view>
+      </view>
+      <view class="advice-card advice-red">
+        <view class="advice-header">
+          <view class="advice-indicator"></view>
+          <view class="advice-title">何时就医</view>
+        </view>
+        <view class="advice-line" wx:for="{{record.vetList}}" wx:key="index">{{item}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ═══ Vet Visit Card ═══ -->
+  <view class="vet-visit-card urgency-{{record.urgency || 'moderate'}}">
+    <view class="vet-visit-head">
+      <view class="vet-visit-icon-wrap">
+        <text class="vet-visit-icon">{{severityInfo.icon}}</text>
+      </view>
+      <view class="vet-visit-head-copy">
+        <view class="vet-visit-title">{{severityInfo.title}}</view>
+        <view class="vet-visit-desc">{{severityInfo.desc}}</view>
+      </view>
+    </view>
+    <view class="vet-visit-body" wx:if="{{record.urgency === 'urgent' || record.urgency === 'emergency'}}">
+      <view class="vet-visit-tip">
+        <text class="vet-visit-tip-label">就诊可告知兽医：</text>
+        <text class="vet-visit-tip-text">{{record.disease || '初筛结果'}} · {{record.confidenceText || '概率暂无'}} · {{record.bodyPartLabel || '部位未标注'}}</text>
+      </view>
+    </view>
+    <view class="vet-visit-actions">
+      <button class="vet-visit-btn" bindtap="findHospital">查找附近宠物医院</button>
+      <button class="vet-visit-btn-secondary" open-type="share">分享报告给兽医</button>
+    </view>
+  </view>
+
+  <!-- ═══ Report Info ═══ -->
+  <view class="report-block">
+    <view class="block-head">
+      <view class="block-title-wrap">
+        <view class="block-title">报告信息</view>
+      </view>
+    </view>
+    <view class="info-list">
+      <view><text>生成时间</text><text>{{record.generatedAtText || record.timestamp || '--'}}</text></view>
+      <view><text>图片数量</text><text>{{record.imageItems.length}} 张</text></view>
+      <view><text>患处圈选</text><text>{{record.hasLesion ? '已圈选' : '未圈选'}}</text></view>
+      <view><text>模型名称</text><text>{{record.modelProviderText || '--'}}</text></view>
+    </view>
+    <view class="disclaimer-box">{{record.reportDisclaimer}}</view>
+  </view>
+
+  <!-- ═══ Bottom Actions ═══ -->
+  <view class="bottom-actions">
+    <button class="vet-btn vet-btn-primary" bindtap="saveShareImage">保存报告</button>
+    <button class="vet-btn vet-btn-secondary" open-type="share">分享给兽医</button>
+    <button class="text-action" bindtap="goBack">返回首页</button>
+    <button class="text-action" bindtap="goHistory">查看历史</button>
+  </view>
+
+  <!-- ═══ Emergency FAB ═══ -->
+  <view class="urgent-fab" wx:if="{{record.urgency === 'urgent' || record.urgency === 'emergency'}}" bindtap="findHospital">
+    <text class="fab-icon">⊕</text>
+    查找附近宠物医院
+  </view>
+
+  <canvas type="2d" id="shareCanvas" canvas-id="shareCanvas" style="position:fixed;left:-9999px;top:-9999px;width:750px;height:1200px;"></canvas>
+</view>

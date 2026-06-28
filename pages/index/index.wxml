@@ -1,0 +1,234 @@
+<view class="vet-page triage-page">
+
+  <!-- 无档案状态：融入页面的引导横幅 -->
+  <view class="profile-guide" wx:if="{{!selectedProfile}}" bindtap="goProfile">
+    <view class="profile-guide-icon">
+      <view class="profile-guide-paw">🐾</view>
+    </view>
+    <view class="profile-guide-body">
+      <text class="profile-guide-title">创建宠物健康档案</text>
+      <text class="profile-guide-desc">填写品种、年龄等信息，诊断时可自动带入</text>
+    </view>
+    <view class="profile-guide-action">去添加</view>
+  </view>
+
+  <!-- 有档案状态：轻量状态条 -->
+  <view class="profile-bar" wx:else bindtap="goProfile">
+    <view class="profile-bar-left">
+      <view class="profile-bar-avatar">
+        <image wx:if="{{selectedProfile.avatar}}" src="{{selectedProfile.avatar}}" mode="aspectFill" />
+        <text wx:else>{{selectedProfileAvatarText}}</text>
+      </view>
+      <view class="profile-bar-text">
+        <text class="profile-bar-name">{{selectedProfile.petName}}</text>
+        <text class="profile-bar-sub">
+          {{selectedProfile.petTypeLabel}}{{selectedProfile.breed ? ' · ' + selectedProfile.breed : ''}}{{selectedProfile.ageLabel ? ' · ' + selectedProfile.ageLabel : ''}}
+        </text>
+      </view>
+    </view>
+    <view class="profile-bar-right">
+      <view class="mode-pill" wx:if="{{selectedProfile}}" catchtap="noop">
+        <view class="mode-pill-item {{mode === 'profile' ? 'mode-pill-on' : ''}}" bindtap="useProfileMode">档案</view>
+        <view class="mode-pill-item {{mode === 'quick' ? 'mode-pill-on' : ''}}" bindtap="useQuickMode">临时</view>
+      </view>
+      <view class="profile-bar-arrow">›</view>
+    </view>
+  </view>
+
+  <!-- 影像采集区 -->
+  <view class="evidence-board">
+    <view class="board-head">
+      <view class="board-head-left">
+        <view class="section-title-bar"></view>
+        <view>
+          <view class="board-title">影像采集</view>
+          <view class="board-desc">建议上传整体、近景和参照照片，最多 5 张</view>
+        </view>
+      </view>
+      <view class="board-count-badge">{{imagePaths.length}}<text class="board-count-sep">/</text>5</view>
+    </view>
+
+    <!-- 无图时：温暖引导区 -->
+    <view class="capture-hero" bindtap="chooseImage" wx:if="{{imagePaths.length === 0}}">
+      <view class="capture-hero-bg"></view>
+      <view class="capture-hero-inner">
+        <view class="capture-hero-icon">
+          <view class="capture-hero-camera"></view>
+        </view>
+        <view class="capture-hero-title">为TA拍一张，AI 帮你看看</view>
+        <view class="capture-hero-desc">光线充足、对焦清晰，尽量包含患处所在部位</view>
+        <view class="capture-hero-btn">
+          <text>拍照 / 相册上传</text>
+        </view>
+      </view>
+      <view class="capture-hero-tags">
+        <view class="capture-tag">整体</view>
+        <view class="capture-tag">近景</view>
+        <view class="capture-tag">参照</view>
+      </view>
+    </view>
+
+    <!-- 有图时：精致图片列表 -->
+    <view class="evidence-list" wx:else>
+      <view class="evidence-item" wx:for="{{previewItems}}" wx:key="path">
+        <view class="evidence-img-wrap">
+          <image src="{{item.path}}" mode="aspectFill" class="evidence-image" />
+          <view class="evidence-img-badge {{item.hasBox ? 'has-box' : ''}}">{{item.hasBox ? '已圈选' : '未圈选'}}</view>
+        </view>
+        <view class="evidence-info">
+          <view class="evidence-top">
+            <view>
+              <view class="evidence-label">照片 {{item.indexLabel}}</view>
+              <view class="evidence-state {{item.hasBox ? 'saved' : ''}}">{{item.hasBox ? '已保存圈选' : '未圈选患处'}}</view>
+            </view>
+            <view class="remove-btn" catchtap="removeImage" data-index="{{index}}">
+              <view class="remove-x"></view>
+            </view>
+          </view>
+          <view class="evidence-actions">
+            <view class="action-chip {{item.role ? 'active' : ''}}" catchtap="cycleImageRole" data-index="{{index}}">
+              {{item.roleLabel || '设置视角'}}
+            </view>
+            <view class="action-chip warning" wx:if="{{item.qualityText}}">{{item.qualityText}}</view>
+            <view class="action-chip primary" catchtap="openLesionSelector" data-index="{{index}}">
+              {{item.hasBox ? '重新圈选' : '圈选患处'}}
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="append-photo" bindtap="chooseImage" wx:if="{{canAddMore}}">
+        <view class="append-plus"></view>
+        <text>继续添加照片</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 宠物信息区 -->
+  <view class="case-section">
+    <view class="section-title-row">
+      <view class="section-title-bar"></view>
+      <view>
+        <view class="section-title">宠物信息</view>
+        <view class="section-desc">可临时填写，也可以带入宠物档案</view>
+      </view>
+    </view>
+
+    <view class="input-panel" wx:if="{{mode === 'quick' || !selectedProfile}}">
+      <view class="field-block">
+        <view class="field-title">物种</view>
+        <view class="choice-row">
+          <view class="choice {{quickPetType === item.value ? 'selected' : ''}}" wx:for="{{petTypeOptions}}" wx:key="value" bindtap="onQuickPetTypeTap" data-index="{{index}}">{{item.label}}</view>
+        </view>
+      </view>
+      <view class="field-block">
+        <view class="field-title">性别</view>
+        <view class="choice-row">
+          <view class="choice {{quickGender === item.value ? 'selected' : ''}}" wx:for="{{genderOptions}}" wx:key="value" bindtap="onQuickGenderTap" data-index="{{index}}">{{item.label}}</view>
+        </view>
+      </view>
+      <view class="field-block">
+        <view class="field-title">年龄阶段</view>
+        <view class="choice-row">
+          <view class="choice {{quickAge === item.value ? 'selected' : ''}}" wx:for="{{ageOptions}}" wx:key="value" bindtap="onQuickAgeTap" data-index="{{index}}">{{item.label}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 患处与症状区 -->
+  <view class="case-section">
+    <view class="section-title-row">
+      <view class="section-title-bar"></view>
+      <view>
+        <view class="section-title">患处与症状</view>
+        <view class="section-desc">补充病程、瘙痒、掉毛、抓挠、结痂或渗出</view>
+      </view>
+    </view>
+
+    <view class="input-panel">
+      <view class="field-block">
+        <view class="field-title">患处部位</view>
+        <view class="choice-row body-row">
+          <view class="choice {{bodyPart === item.value ? 'selected' : ''}}" wx:for="{{bodyPartOptions}}" wx:key="value" bindtap="onBodyPartTap" data-index="{{index}}">{{item.label}}</view>
+        </view>
+      </view>
+      <view class="field-block">
+        <view class="field-title">症状描述（可选）</view>
+        <textarea class="clinical-textarea" value="{{complaint}}" maxlength="500"
+          placeholder="发现多久了？是否瘙痒、掉毛、抓挠、结痂或渗出？"
+          bindinput="onComplaintInput" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部提交栏 -->
+  <view class="submit-area">
+    <view class="submit-progress-row">
+      <view class="submit-progress-bar">
+        <view class="submit-progress-fill" style="width: {{formProgress}}%"></view>
+      </view>
+      <text class="submit-progress-text">{{formProgressText}}</text>
+      <text class="submit-hint-inline">{{submitHint}}</text>
+    </view>
+    <button class="vet-btn vet-btn-primary submit-btn" bindtap="onSubmit" disabled="{{!canSubmitActive || isAnalyzing}}">
+      {{isAnalyzing ? '正在生成报告...' : '生成初筛报告'}}
+    </button>
+    <view class="submit-disclaimer">结果仅供参考，不能替代兽医诊断</view>
+  </view>
+
+  <!-- 分析中遮罩 -->
+  <view class="analyzing-mask" wx:if="{{isAnalyzing}}">
+    <view class="vet-loading-card analyzing-card">
+      <view class="analyzing-pulse-row">
+        <view class="analyzing-pulse"></view>
+        <view class="vet-title-md">正在生成初筛报告</view>
+      </view>
+      <view class="analyzing-desc-text">{{analyzingStepText}}</view>
+      <view class="vet-loading-line"></view>
+    </view>
+  </view>
+
+  <canvas type="2d" id="resizeCanvas" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;"></canvas>
+  <canvas type="2d" id="qualityCanvas" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;"></canvas>
+
+  <!-- 患处圈选浮层 -->
+  <view class="lesion-overlay" wx:if="{{selectorVisible}}" catchtouchmove="noop">
+    <view class="lesion-sheet">
+      <view class="lesion-top">
+        <view>
+          <view class="vet-label">患处圈选</view>
+          <view class="vet-title-lg">圈出最明显的位置</view>
+          <view class="vet-caption">可选步骤。标注后系统会额外关注这块区域。</view>
+        </view>
+        <view class="lesion-close" bindtap="closeLesionSelector">×</view>
+      </view>
+
+      <view class="lesion-toolbar">
+        <view class="tool-chip {{selectorMode === 'freehand' ? 'tool-chip-on' : ''}}" bindtap="setLesionMode" data-mode="freehand">自由圈选</view>
+        <view class="tool-chip {{selectorMode === 'rectangle' ? 'tool-chip-on' : ''}}" bindtap="setLesionMode" data-mode="rectangle">矩形框选</view>
+        <view class="tool-stat">{{selectorPointCount}} 点</view>
+      </view>
+
+      <view class="lesion-stage"
+        catchtouchstart="startDrawLesion"
+        catchtouchmove="moveDrawLesion"
+        catchtouchend="endDrawLesion"
+        catchtouchcancel="endDrawLesion">
+        <image src="{{selectorImagePath}}" mode="aspectFit" class="lesion-image" />
+        <view class="lesion-grid"></view>
+        <canvas type="2d" id="lesionCanvas" class="lesion-canvas"></canvas>
+      </view>
+
+      <view class="lesion-tip">
+        <text>{{selectorModeLabel}}</text>
+        <text>{{selectorCanSave ? '标注有效，可以保存' : '沿患处边缘拖动，形成一个区域'}}</text>
+      </view>
+
+      <view class="lesion-actions">
+        <button class="vet-btn vet-btn-primary lesion-save-main" bindtap="saveLesion">完成并保存圈选</button>
+        <button class="vet-btn vet-btn-ghost" bindtap="clearLesion">清除</button>
+        <button class="vet-btn vet-btn-secondary" bindtap="resetLesion">重画</button>
+      </view>
+    </view>
+  </view>
+</view>

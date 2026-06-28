@@ -1,0 +1,576 @@
+/* ═══════════════════════════════════════════
+   Profile Page — VetAI Design System v2
+   ═══════════════════════════════════════════ */
+
+.profile-page {
+  padding-bottom: calc(var(--sp-8) + env(safe-area-inset-bottom));
+}
+
+/* ── 页头 ────────────────────────────────── */
+.profile-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-1) 0 var(--sp-3);
+}
+
+.profile-head-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-title {
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-size: var(--fs-display);
+  font-weight: 700;
+  line-height: 1.22;
+}
+
+.profile-desc {
+  margin-top: var(--sp-1);
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.55;
+}
+
+/* 品牌色圆形新增按钮 */
+.head-add-btn {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-md);
+  margin-top: 4rpx;
+}
+
+.head-add-btn:active {
+  opacity: 0.85;
+  transform: scale(0.94);
+}
+
+.head-add-icon {
+  color: #ffffff;
+  font-size: var(--fs-title);
+  font-weight: 300;
+  line-height: 1;
+}
+
+/* ── 空状态 ───────────────────────────────── */
+.empty-panel {
+  margin-top: var(--sp-3);
+  padding: var(--sp-8) var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.empty-icon-wrap {
+  margin-bottom: var(--sp-3);
+}
+
+.empty-pet-icon {
+  width: 128rpx;
+  height: 128rpx;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-pet-face {
+  font-size: var(--fs-title);
+  font-weight: 700;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.empty-title {
+  color: var(--text);
+  font-size: 31rpx;
+  font-weight: 700;
+}
+
+.empty-desc {
+  max-width: 520rpx;
+  margin: var(--sp-2) auto var(--sp-4);
+  color: var(--muted);
+  font-size: 25rpx;
+  line-height: 1.6;
+}
+
+.empty-add-btn {
+  min-width: 320rpx;
+}
+
+/* ── 档案列表 ─────────────────────────────── */
+.profile-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+
+/* ── 档案卡片 ─────────────────────────────── */
+.pet-card {
+  overflow: hidden;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.pet-card-active {
+  border-left: 6rpx solid var(--brand);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+
+.pet-body {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+}
+
+.pet-body:active {
+  opacity: 0.92;
+}
+
+/* 头像区域 */
+.pet-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.pet-avatar-img,
+.pet-avatar-placeholder {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+}
+
+.pet-avatar-placeholder {
+  background: var(--surface);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-title);
+  font-weight: 700;
+}
+
+.current-badge {
+  position: absolute;
+  right: -2rpx;
+  bottom: -2rpx;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #ffffff;
+  border: 3rpx solid var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-mini);
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+/* 信息区 */
+.pet-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pet-top {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.pet-name {
+  min-width: 0;
+  color: var(--text);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.34;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 当前使用标签 */
+.current-tag {
+  min-height: 38rpx;
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--brand);
+  color: #ffffff;
+  font-size: var(--fs-mini);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* 信息 chips */
+.pet-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+}
+
+.info-chip {
+  max-width: 100%;
+  min-height: 44rpx;
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--brand-light);
+  color: var(--brand);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* 最近问诊行 */
+.last-row {
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-2);
+  border-top: 1rpx solid var(--line-light);
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.last-label {
+  color: var(--faint);
+  font-size: var(--fs-mini);
+  font-weight: 600;
+}
+
+.last-value {
+  color: var(--muted);
+  font-size: 23rpx;
+  line-height: 1.45;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ── 操作区 ──────────────────────────────── */
+.pet-actions {
+  display: flex;
+  border-top: 1rpx solid var(--line-light);
+}
+
+.pet-action {
+  flex: 1;
+  min-height: 76rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  padding: 0 var(--sp-3);
+}
+
+.pet-action + .pet-action {
+  border-left: 1rpx solid var(--line-light);
+}
+
+.pet-action:active {
+  background: var(--surface);
+}
+
+.action-icon {
+  font-size: var(--fs-caption);
+  line-height: 1;
+}
+
+.action-text {
+  font-size: var(--fs-caption);
+  font-weight: 600;
+}
+
+.action-edit {
+  color: var(--brand);
+}
+
+.action-delete {
+  color: var(--sev-urgent);
+}
+
+/* ── 添加档案卡片 ─────────────────────────── */
+.add-profile-card {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  border: 2rpx dashed var(--line);
+  background: var(--card);
+  box-sizing: border-box;
+  margin-top: 4rpx;
+}
+
+.add-profile-card:active {
+  opacity: 0.9;
+  background: var(--brand-light);
+}
+
+.add-mark {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: var(--brand-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.add-mark-icon {
+  color: var(--brand);
+  font-size: var(--fs-title);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.add-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.add-title {
+  color: var(--text);
+  font-size: 29rpx;
+  font-weight: 700;
+}
+
+.add-desc {
+  margin-top: 6rpx;
+  color: var(--faint);
+  font-size: 23rpx;
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════
+   表单抽屉
+   ═══════════════════════════════════════════ */
+
+.form-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.form-drawer {
+  width: 100%;
+  height: 85vh;
+  padding: 0 var(--sp-3) 0;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  background: var(--bg);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  overflow: hidden;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.drawer-handle {
+  width: 72rpx;
+  height: 8rpx;
+  margin: var(--sp-3) auto var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--line);
+  flex-shrink: 0;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  padding: 0 4rpx;
+}
+
+.form-close {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  border: 1rpx solid var(--line);
+  color: var(--muted);
+  font-size: var(--fs-title);
+  flex-shrink: 0;
+  margin-top: 4rpx;
+}
+
+.form-close:active {
+  background: var(--surface);
+}
+
+.form-scroll {
+  flex: 1;
+  min-height: 0;
+}
+
+/* 头像上传区 */
+.avatar-section {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.avatar-upload,
+.avatar-img,
+.avatar-placeholder {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.avatar-upload {
+  flex-shrink: 0;
+}
+
+.avatar-img {
+  border: 1rpx solid var(--line);
+}
+
+.avatar-placeholder {
+  background: var(--surface);
+  border: 2rpx dashed var(--line);
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.avatar-plus {
+  font-size: var(--fs-title);
+  font-weight: 300;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.avatar-label {
+  margin-top: 4rpx;
+  font-size: var(--fs-mini);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.avatar-hint {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+}
+
+.avatar-remove {
+  margin-top: var(--sp-1);
+  color: var(--sev-urgent);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+}
+
+/* 表单卡片 */
+.form-card {
+  margin-bottom: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+}
+
+.form-section-title {
+  margin-bottom: var(--sp-3);
+  color: var(--text);
+  font-size: 30rpx;
+  font-weight: 700;
+  padding-bottom: var(--sp-2);
+  border-bottom: 1rpx solid var(--line-light);
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.picker-display {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+}
+
+/* 输入框聚焦态 */
+.vet-input:focus,
+.vet-textarea:focus {
+  border-color: var(--brand) !important;
+  background: var(--card) !important;
+  box-shadow: 0 0 0 4rpx rgba(91, 130, 232, 0.08);
+}
+
+/* chip 选中态 */
+.vet-chip-active {
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+  color: #ffffff !important;
+  box-shadow: none;
+}
+
+/* ── 底部按钮区 ──────────────────────────── */
+.form-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: var(--sp-2);
+  margin: 0 calc(var(--sp-4) * -1);
+  padding: var(--sp-3) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom));
+  border-top: 1rpx solid var(--line-light);
+  background: var(--card);
+}
+
+.form-actions .vet-btn-primary {
+  box-shadow: var(--shadow-sm);
+}

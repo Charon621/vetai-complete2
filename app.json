@@ -1,0 +1,70 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/detail/detail",
+    "pages/profile/profile",
+    "pages/user/user"
+  ],
+  "subPackages": [
+    {
+      "root": "pages/result",
+      "pages": ["result"]
+    }
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "VetAI",
+    "navigationBarBackgroundColor": "#F8FAFC",
+    "backgroundColor": "#F8FAFC",
+    "enablePullDownRefresh": false,
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#94A3B8",
+    "selectedColor": "#5B82E8",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "问诊",
+        "iconPath": "images/tab-home.png",
+        "selectedIconPath": "images/tab-home-active.png"
+      },
+      {
+        "pagePath": "pages/detail/detail",
+        "text": "记录",
+        "iconPath": "images/tab-history.png",
+        "selectedIconPath": "images/tab-history-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "档案",
+        "iconPath": "images/tab-profile.png",
+        "selectedIconPath": "images/tab-profile-active.png"
+      },
+      {
+        "pagePath": "pages/user/user",
+        "text": "我的",
+        "iconPath": "images/tab-user.png",
+        "selectedIconPath": "images/tab-user-active.png"
+      }
+    ]
+  },
+  "networkTimeout": {
+    "request": 180000,
+    "uploadFile": 180000
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于打开地图帮助查找附近宠物医院"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation"
+  ],
+  "darkmode": true,
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}

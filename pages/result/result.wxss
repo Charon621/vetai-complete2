@@ -1,0 +1,983 @@
+/* ═══ Result Page — v2 品质重设计 ═══ */
+
+.report-page {
+  padding-bottom: calc(280rpx + env(safe-area-inset-bottom));
+}
+
+/* ── Shared card style ── */
+.report-sheet,
+.report-block {
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+}
+
+/* ═══════════════════════════════════════
+   1. Report Header — 白底 + 品牌色文字
+   ═══════════════════════════════════════ */
+.report-sheet {
+  padding: 0;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.report-header {
+  background: var(--card);
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+  position: relative;
+  border-bottom: 1rpx solid var(--line);
+}
+
+/* ── History Compare ── */
+.prev-compare {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1rpx solid var(--line-light);
+}
+
+.prev-compare-label {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: var(--fs-mini);
+  font-weight: 600;
+}
+
+.prev-compare-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+}
+
+.prev-compare-disease {
+  color: var(--body);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prev-compare-time {
+  color: var(--faint);
+  font-size: var(--fs-mini);
+  flex-shrink: 0;
+}
+
+.prev-compare-trend {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 4rpx 12rpx;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-mini);
+  font-weight: 700;
+}
+
+.trend-icon {
+  font-size: var(--fs-caption);
+}
+
+.trend-improved {
+  background: rgba(76, 175, 80, 0.12);
+  color: var(--sev-low);
+}
+
+.trend-worsened {
+  background: rgba(244, 67, 54, 0.12);
+  color: var(--sev-urgent);
+}
+
+.trend-same {
+  background: rgba(255, 152, 0, 0.12);
+  color: var(--sev-mid);
+}
+
+.report-badge-row {
+  margin-bottom: var(--sp-3);
+}
+
+.report-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 6rpx var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--brand-light);
+  border: 1rpx solid var(--line);
+}
+
+.report-badge-icon {
+  font-size: var(--fs-mini);
+  color: var(--brand);
+}
+
+.report-badge-text {
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  color: var(--brand);
+  letter-spacing: 1rpx;
+}
+
+.report-meta-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.report-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.meta-label {
+  font-size: var(--fs-mini);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.meta-value {
+  font-size: var(--fs-body);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.report-meta-divider {
+  width: 1rpx;
+  height: var(--sp-5);
+  background: var(--line);
+}
+
+/* ═══════════════════════════════════════
+   2. Triage Banner — 左色块 + 右文字
+   ═══════════════════════════════════════ */
+.triage-banner {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  margin: var(--sp-3) var(--sp-4) 0;
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1rpx solid var(--line-light);
+}
+
+.triage-sev-bar {
+  width: 8rpx;
+  align-self: stretch;
+  border-radius: var(--r-sm);
+  background: var(--sev-mid);
+  flex-shrink: 0;
+}
+
+.sev-low .triage-sev-bar { background: var(--sev-low); }
+.sev-urgent .triage-sev-bar { background: var(--sev-urgent); }
+.sev-emergency .triage-sev-bar { background: var(--sev-emergency); }
+
+.sev-low .triage-banner { background: var(--brand-light); }
+.sev-urgent .triage-banner { background: var(--vet-vet-bg); }
+.sev-emergency .triage-banner { background: var(--vet-emg-bg); }
+
+.triage-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.triage-title {
+  color: var(--text);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.triage-desc {
+  margin-top: 4rpx;
+  color: var(--body);
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+}
+
+.triage-arrow {
+  font-size: var(--fs-title);
+  color: var(--muted);
+  font-weight: 300;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════
+   3. Primary Diagnosis
+   ═══════════════════════════════════════ */
+.primary-summary {
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+}
+
+.summary-label {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2rpx;
+}
+
+.summary-name {
+  margin-top: var(--sp-1);
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.summary-desc {
+  margin-top: var(--sp-2);
+  color: var(--body);
+  font-size: var(--fs-body);
+  line-height: 1.65;
+}
+
+/* ── Confidence ── */
+.confidence-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-4) var(--sp-3);
+}
+
+.confidence-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.confidence-label {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+}
+
+.confidence-note {
+  margin-top: 4rpx;
+  color: var(--faint);
+  font-size: var(--fs-mini);
+  line-height: 1.45;
+}
+
+.confidence-value {
+  color: var(--brand);
+  font-family: var(--font-mono);
+  font-size: var(--fs-display);
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.confidence-na {
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  color: var(--muted);
+  max-width: 220rpx;
+  text-align: right;
+  line-height: 1.35;
+}
+
+.confidence-empty .confidence-value {
+  max-width: 220rpx;
+  font-size: var(--fs-caption);
+  line-height: 1.35;
+  text-align: right;
+}
+
+.score-track {
+  height: 10rpx;
+  margin: 0 var(--sp-4) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--line-light);
+  overflow: hidden;
+}
+
+.score-track view {
+  height: 100%;
+  border-radius: var(--r-sm);
+  background: var(--brand);
+}
+
+.score-track.small {
+  height: 8rpx;
+  margin: var(--sp-1) 0 0;
+}
+
+/* ═══════════════════════════════════════
+   4. Report Blocks (shared)
+   ═══════════════════════════════════════ */
+.report-block {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-lg);
+}
+
+.block-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.block-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.block-title {
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.block-desc {
+  margin-top: 4rpx;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════
+   5. Image Evidence
+   ═══════════════════════════════════════ */
+.image-rail {
+  white-space: nowrap;
+  margin: 0 -6rpx;
+}
+
+.image-rail-inner {
+  display: inline-flex;
+  gap: var(--sp-2);
+  padding: 0 6rpx 6rpx;
+}
+
+.image-proof {
+  position: relative;
+  width: 256rpx;
+  height: 256rpx;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1rpx solid var(--line);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.image-proof image {
+  width: 100%;
+  height: 100%;
+}
+
+.proof-status {
+  position: absolute;
+  left: var(--sp-1);
+  bottom: var(--sp-1);
+  padding: 6rpx var(--sp-2);
+  border-radius: var(--r-sm);
+  background: rgba(0, 0, 0, 0.56);
+  color: #ffffff;
+  font-size: var(--fs-mini);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.proof-dot {
+  font-size: 14rpx;
+}
+
+.proof-status.on {
+  background: var(--brand);
+}
+
+/* ═══════════════════════════════════════
+   6. Evidence List — 圆点标记列表
+   ═══════════════════════════════════════ */
+.evidence-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.evidence-item {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 0;
+}
+
+.evidence-item + .evidence-item {
+  border-top: 1rpx solid var(--line-light);
+}
+
+.evidence-dot-wrap {
+  padding-top: var(--sp-1);
+  flex-shrink: 0;
+}
+
+.evidence-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+}
+
+.dot-brand { background: var(--brand); }
+.dot-accent { background: var(--accent); }
+.dot-muted { background: var(--muted); }
+
+.evidence-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.evidence-key {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  margin-bottom: 4rpx;
+}
+
+.evidence-value {
+  color: var(--body);
+  font-size: var(--fs-body);
+  line-height: 1.65;
+}
+
+/* ═══════════════════════════════════════
+   7. Differential Diagnosis
+   ═══════════════════════════════════════ */
+.ddx-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.ddx-item {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1rpx solid var(--line-light);
+}
+
+.ddx-line {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.ddx-rank {
+  width: var(--sp-5);
+  height: var(--sp-5);
+  border-radius: var(--r-sm);
+  background: var(--brand);
+  color: #ffffff;
+  font-size: var(--fs-mini);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ddx-name {
+  flex: 1;
+  color: var(--text);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.ddx-score {
+  color: var(--brand);
+  font-family: var(--font-mono);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ddx-reason {
+  margin-top: var(--sp-1);
+  color: var(--body);
+  font-size: var(--fs-caption);
+  line-height: 1.55;
+}
+
+.ddx-tags {
+  margin-top: var(--sp-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.ddx-tag {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+}
+
+.tag-support {
+  background: var(--brand-light);
+  border: 1rpx solid var(--line);
+}
+
+.tag-against {
+  background: var(--surface);
+  border: 1rpx solid var(--line);
+}
+
+.ddx-tag-label {
+  font-weight: 700;
+  flex-shrink: 0;
+  font-size: var(--fs-caption);
+}
+
+.tag-support .ddx-tag-label { color: var(--brand); }
+.tag-against .ddx-tag-label { color: var(--muted); }
+
+.ddx-tag-text {
+  color: var(--body);
+  font-size: var(--fs-caption);
+}
+
+/* ═══════════════════════════════════════
+   8. Care Advice — 柔和三色卡片
+   ═══════════════════════════════════════ */
+.advice-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.advice-card {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  border-left: 6rpx solid transparent;
+}
+
+.advice-green {
+  background: var(--vet-low-bg);
+  border-left-color: var(--sev-low);
+}
+
+.advice-amber {
+  background: var(--vet-mid-bg);
+  border-left-color: var(--sev-mid);
+}
+
+.advice-red {
+  background: var(--vet-vet-bg);
+  border-left-color: var(--sev-urgent);
+}
+
+.advice-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-1);
+}
+
+.advice-indicator {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+}
+
+.advice-green .advice-indicator { background: var(--sev-low); }
+.advice-amber .advice-indicator { background: var(--sev-mid); }
+.advice-red .advice-indicator { background: var(--sev-urgent); }
+
+.advice-title {
+  font-size: var(--fs-body);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.advice-green .advice-title { color: #2E7D32; }
+.advice-amber .advice-title { color: #E65100; }
+.advice-red .advice-title { color: #C62828; }
+
+.advice-line {
+  color: var(--body);
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  margin-top: 4rpx;
+}
+
+/* ═══════════════════════════════════════
+   9. Report Info
+   ═══════════════════════════════════════ */
+.info-list {
+  border-top: 1rpx solid var(--line);
+}
+
+.info-list view {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-bottom: 1rpx solid var(--line);
+  color: var(--body);
+  font-size: var(--fs-body);
+}
+
+.info-list text:first-child {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.info-list text:last-child {
+  text-align: right;
+  word-break: break-all;
+}
+
+.disclaimer-box {
+  margin-top: var(--sp-3);
+  padding: var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════
+   10. Bottom Actions
+   ═══════════════════════════════════════ */
+.bottom-actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom));
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  border-top: 1rpx solid var(--line);
+  background: var(--card);
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+}
+
+.bottom-actions .vet-btn {
+  min-height: 80rpx;
+  border-radius: var(--r-md);
+  font-size: var(--fs-body);
+  font-weight: 700;
+}
+
+.bottom-actions .vet-btn-primary {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: var(--shadow-md);
+}
+
+.bottom-actions .vet-btn-secondary {
+  background: var(--brand-light);
+  color: var(--brand-dark);
+  border: 1rpx solid var(--line);
+}
+
+.text-action {
+  min-height: 54rpx;
+  color: var(--brand);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.text-action:active {
+  opacity: 0.7;
+}
+
+/* ═══════════════════════════════════════
+   11. Emergency FAB
+   ═══════════════════════════════════════ */
+.urgent-fab {
+  position: fixed;
+  right: var(--sp-3);
+  bottom: calc(270rpx + env(safe-area-inset-bottom));
+  z-index: 30;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--sev-emergency);
+  color: #ffffff;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.fab-icon {
+  font-size: var(--fs-body);
+}
+
+.urgent-fab:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+
+/* ═══════════════════════════════════════
+   12. Vet Visit Card
+   ═══════════════════════════════════════ */
+.vet-visit-card {
+  margin-top: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  border-left: 8rpx solid var(--sev-mid);
+  box-shadow: var(--shadow-sm);
+}
+
+.vet-visit-card.urgency-low {
+  border-left-color: var(--sev-low);
+}
+
+.vet-visit-card.urgency-moderate {
+  border-left-color: var(--sev-mid);
+}
+
+.vet-visit-card.urgency-urgent {
+  border-left-color: var(--sev-urgent);
+  background: rgba(244, 67, 54, 0.04);
+}
+
+.vet-visit-card.urgency-emergency {
+  border-left-color: var(--sev-emergency);
+  background: rgba(183, 28, 28, 0.06);
+}
+
+.vet-visit-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+.vet-visit-icon-wrap {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+.urgency-low .vet-visit-icon-wrap { background: rgba(76, 175, 80, 0.12); }
+.urgency-moderate .vet-visit-icon-wrap { background: rgba(255, 152, 0, 0.12); }
+.urgency-urgent .vet-visit-icon-wrap { background: rgba(244, 67, 54, 0.12); }
+.urgency-emergency .vet-visit-icon-wrap { background: rgba(183, 28, 28, 0.15); }
+
+.vet-visit-icon {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--sev-mid);
+}
+
+.urgency-low .vet-visit-icon { color: var(--sev-low); }
+.urgency-urgent .vet-visit-icon { color: var(--sev-urgent); }
+.urgency-emergency .vet-visit-icon { color: var(--sev-emergency); }
+
+.vet-visit-head-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.vet-visit-title {
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.vet-visit-desc {
+  margin-top: 4rpx;
+  color: var(--body);
+  font-size: var(--fs-caption);
+  line-height: 1.55;
+}
+
+.vet-visit-body {
+  margin-top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.vet-visit-tip {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.vet-visit-tip-label {
+  color: var(--muted);
+  font-size: var(--fs-mini);
+  font-weight: 600;
+}
+
+.vet-visit-tip-text {
+  color: var(--body);
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+}
+
+.vet-visit-actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+.vet-visit-btn {
+  flex: 1;
+  min-height: 76rpx;
+  border-radius: var(--r-md);
+  background: var(--brand);
+  color: #ffffff;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.urgency-urgent .vet-visit-btn {
+  background: var(--sev-urgent);
+}
+
+.urgency-emergency .vet-visit-btn {
+  background: var(--sev-emergency);
+}
+
+.vet-visit-btn:active {
+  opacity: 0.85;
+}
+
+.vet-visit-btn-secondary {
+  flex: 1;
+  min-height: 76rpx;
+  border-radius: var(--r-md);
+  background: var(--brand-light);
+  color: var(--brand-dark);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  border: 1rpx solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vet-visit-btn-secondary:active {
+  opacity: 0.85;
+}
+
+/* ═══════════════════════════════════════
+   Dark Mode
+   ═══════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  .report-header {
+    background: var(--card);
+    border-bottom-color: var(--line);
+  }
+
+  .triage-banner {
+    background: var(--surface);
+    border-color: var(--line);
+  }
+
+  .sev-low .triage-banner {
+    background: var(--brand-light);
+    border-color: var(--line);
+  }
+
+  .sev-urgent .triage-banner {
+    background: var(--sev-urgent-bg);
+    border-color: rgba(244, 67, 54, 0.2);
+  }
+
+  .sev-emergency .triage-banner {
+    background: var(--sev-emergency-bg);
+    border-color: rgba(183, 28, 28, 0.3);
+  }
+
+  .ddx-item {
+    background: var(--surface);
+    border-color: var(--line);
+  }
+
+  .advice-green {
+    background: var(--sev-low-bg);
+  }
+
+  .advice-amber {
+    background: var(--sev-mid-bg);
+  }
+
+  .advice-red {
+    background: var(--sev-urgent-bg);
+  }
+
+  .bottom-actions {
+    background: var(--card);
+    border-top-color: var(--line);
+    box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.24);
+  }
+
+  .bottom-actions .vet-btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+    box-shadow: none;
+  }
+
+  .bottom-actions .vet-btn-secondary {
+    background: var(--brand-light);
+    color: var(--brand-mid);
+    border-color: var(--line);
+  }
+
+  .text-action {
+    color: var(--brand-mid);
+  }
+
+  .vet-visit-card {
+    background: var(--card);
+    border-color: var(--line);
+  }
+
+  .urgency-urgent .vet-visit-card {
+    background: rgba(244, 67, 54, 0.08);
+  }
+
+  .urgency-emergency .vet-visit-card {
+    background: rgba(183, 28, 28, 0.1);
+  }
+
+  .vet-visit-btn-secondary {
+    background: var(--brand-light);
+    border-color: var(--line);
+  }
+}

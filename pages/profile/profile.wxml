@@ -1,0 +1,167 @@
+<view class="vet-page profile-page">
+  <!-- 页头：简洁专业 -->
+  <view class="profile-head">
+    <view class="profile-head-left">
+      <view class="profile-title">宠物档案</view>
+      <view class="profile-desc">完善年龄、品种和过往情况，有助于生成更有参考价值的初筛报告。</view>
+    </view>
+    <view class="head-add-btn" wx:if="{{profiles.length > 0 && !showForm}}" bindtap="showCreateForm">
+      <text class="head-add-icon">+</text>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{profiles.length === 0 && !showForm}}" class="empty-panel">
+    <view class="empty-icon-wrap">
+      <view class="empty-pet-icon">
+        <text class="empty-pet-face">宠</text>
+      </view>
+    </view>
+    <view class="empty-title">还没有宠物档案</view>
+    <view class="empty-desc">添加宠物档案后，首页可直接带入基础信息，后续记录也更容易对比。</view>
+    <button class="vet-btn vet-btn-primary empty-add-btn" bindtap="showCreateForm">添加宠物档案</button>
+  </view>
+
+  <!-- 档案列表 -->
+  <view class="profile-list" wx:if="{{profiles.length > 0}}">
+    <view class="pet-card {{activeProfileId === item.id ? 'pet-card-active' : ''}}" wx:for="{{profiles}}" wx:key="id">
+      <view class="pet-body" bindtap="selectProfile" data-id="{{item.id}}">
+        <view class="pet-avatar-wrap">
+          <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" class="pet-avatar-img" />
+          <view wx:else class="pet-avatar-placeholder">{{item.avatarText}}</view>
+          <view class="current-badge" wx:if="{{activeProfileId === item.id}}">✓</view>
+        </view>
+        <view class="pet-info">
+          <view class="pet-top">
+            <view class="pet-name">{{item.petName}}</view>
+            <view class="current-tag" wx:if="{{activeProfileId === item.id}}">当前使用</view>
+          </view>
+          <view class="pet-chips">
+            <view class="info-chip" wx:if="{{item.petTypeLabel}}">{{item.petTypeLabel}}</view>
+            <view class="info-chip" wx:if="{{item.ageLabel}}">{{item.ageLabel}}</view>
+            <view class="info-chip" wx:if="{{item.genderLabel}}">{{item.genderLabel}}</view>
+            <view class="info-chip" wx:if="{{item.breed}}">{{item.breed}}</view>
+          </view>
+          <view class="last-row">
+            <text class="last-label">最近一次问诊</text>
+            <text class="last-value">{{item.lastRecordText || '暂无记录'}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="pet-actions">
+        <view class="pet-action action-edit" catchtap="showEditForm" data-id="{{item.id}}">
+          <text class="action-icon">✎</text>
+          <text class="action-text">编辑</text>
+        </view>
+        <view class="pet-action action-delete" catchtap="deleteProfile" data-id="{{item.id}}">
+          <text class="action-icon">✕</text>
+          <text class="action-text">删除</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 添加档案卡片 -->
+    <view class="add-profile-card" bindtap="showCreateForm">
+      <view class="add-mark">
+        <text class="add-mark-icon">+</text>
+      </view>
+      <view class="add-copy">
+        <view class="add-title">添加宠物档案</view>
+        <view class="add-desc">完善年龄、品种和过往情况，有助于生成更有参考价值的初筛报告。</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 表单抽屉 -->
+  <view class="form-overlay" wx:if="{{showForm}}" catchtap="hideCreateForm">
+    <view class="form-drawer" catchtap="noop">
+      <view class="drawer-handle"></view>
+      <view class="form-header">
+        <view>
+          <view class="vet-title-lg">{{editingId ? '编辑档案' : '添加宠物档案'}}</view>
+          <view class="vet-caption">基础信息会用于生成初筛报告</view>
+        </view>
+        <view class="form-close" bindtap="hideCreateForm">×</view>
+      </view>
+
+      <scroll-view class="form-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+        <view class="avatar-section">
+          <view class="avatar-upload" bindtap="chooseAvatar">
+            <image wx:if="{{form.avatar}}" src="{{form.avatar}}" mode="aspectFill" class="avatar-img" />
+            <view wx:else class="avatar-placeholder">
+              <text class="avatar-plus">+</text>
+              <text class="avatar-label">添加头像</text>
+            </view>
+          </view>
+          <view class="avatar-hint">
+            <view>头像可选</view>
+            <view wx:if="{{form.avatar}}" class="avatar-remove" catchtap="removeAvatar">移除头像</view>
+          </view>
+        </view>
+
+        <view class="form-card">
+          <view class="form-section-title">基础信息</view>
+          <view class="vet-field">
+            <text class="vet-field-label">名字</text>
+            <input class="vet-input" value="{{form.petName}}" maxlength="20" placeholder="例如：糯米" bindinput="onInput" data-key="petName" />
+          </view>
+          <view class="vet-field">
+            <text class="vet-field-label">品种</text>
+            <input class="vet-input" value="{{form.breed}}" maxlength="20" placeholder="可选" bindinput="onInput" data-key="breed" />
+          </view>
+          <view class="vet-field">
+            <view class="vet-field-label">种类</view>
+            <view class="chip-row">
+              <view class="vet-chip {{form.petType === item.value ? 'vet-chip-active' : ''}}"
+                wx:for="{{petTypeOptions}}" wx:key="value"
+                bindtap="onPetTypeTap" data-index="{{index}}">{{item.label}}</view>
+            </view>
+          </view>
+          <view class="vet-field">
+            <view class="vet-field-label">性别</view>
+            <view class="chip-row">
+              <view class="vet-chip {{form.gender === item.value ? 'vet-chip-active' : ''}}"
+                wx:for="{{genderOptions}}" wx:key="value"
+                bindtap="onGenderTap" data-index="{{index}}">{{item.label}}</view>
+            </view>
+          </view>
+          <view class="vet-field">
+            <view class="vet-field-label">年龄</view>
+            <view class="chip-row">
+              <view class="vet-chip {{form.age === item.value ? 'vet-chip-active' : ''}}"
+                wx:for="{{ageOptions}}" wx:key="value"
+                bindtap="onAgeTap" data-index="{{index}}">{{item.label}}</view>
+            </view>
+          </view>
+        </view>
+
+        <view class="form-card">
+          <view class="form-section-title">健康信息</view>
+          <view class="vet-field">
+            <text class="vet-field-label">体重 (kg)</text>
+            <input class="vet-input" type="digit" value="{{form.weight}}" maxlength="6" placeholder="可选" bindinput="onInput" data-key="weight" />
+          </view>
+          <view class="vet-field">
+            <text class="vet-field-label">绝育情况</text>
+            <picker bindchange="onSterilizedChange" range="{{sterilizedOptions}}" range-key="label">
+              <view class="vet-input picker-display">{{form.sterilizedLabel || '请选择'}}</view>
+            </picker>
+          </view>
+          <view class="vet-field">
+            <text class="vet-field-label">过敏史</text>
+            <input class="vet-input" value="{{form.allergy}}" maxlength="100" placeholder="如：对某药物过敏" bindinput="onInput" data-key="allergy" />
+          </view>
+          <view class="vet-field">
+            <text class="vet-field-label">既往病史</text>
+            <textarea class="vet-textarea" value="{{form.medicalHistory}}" maxlength="300" placeholder="反复耳炎、真菌感染、正在用药等" bindinput="onInput" data-key="medicalHistory" />
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="form-actions">
+        <button class="vet-btn vet-btn-ghost" bindtap="hideCreateForm">取消</button>
+        <button class="vet-btn vet-btn-primary" bindtap="saveProfile">{{editingId ? '保存修改' : '创建档案'}}</button>
+      </view>
+    </view>
+  </view>
+</view>

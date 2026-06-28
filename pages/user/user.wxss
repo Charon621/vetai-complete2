@@ -1,0 +1,366 @@
+/* ═══════════════════════════════════════════════════════
+   User Page — VetAI Design System v2
+   ═══════════════════════════════════════════════════════ */
+
+.user-page {
+  padding-bottom: calc(var(--sp-8) + env(safe-area-inset-bottom));
+}
+
+/* ── 1. Account Panel — 白底卡片 ── */
+.account-panel {
+  position: relative;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.account-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-3);
+}
+
+.user-avatar-wrap {
+  flex-shrink: 0;
+}
+
+.user-avatar-img,
+.user-avatar-placeholder {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+}
+
+.user-avatar-img {
+  object-fit: cover;
+  border: 1rpx solid var(--line);
+}
+
+.user-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: var(--fs-title);
+  font-weight: 700;
+}
+
+.user-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  color: var(--text);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.user-desc {
+  margin-top: var(--sp-1);
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+}
+
+.space-id {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  max-width: 100%;
+  margin-top: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--brand-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: background 160ms ease;
+}
+
+.space-id:active {
+  background: var(--surface);
+}
+
+.space-id-label {
+  color: var(--muted);
+  font-size: var(--fs-mini);
+  font-weight: 600;
+}
+
+.space-id-value {
+  color: var(--brand);
+  font-size: var(--fs-mini);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 2. Data Summary — 品牌色数字 ── */
+.data-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.summary-cell {
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-1);
+  text-align: center;
+  border-right: 1rpx solid var(--line-light);
+  position: relative;
+  transition: background 160ms ease;
+}
+
+.summary-cell:last-child {
+  border-right: 0;
+}
+
+.summary-cell:active {
+  background: var(--surface);
+}
+
+.summary-cell:active .summary-value {
+  transform: scale(1.06);
+}
+
+.summary-value {
+  color: var(--brand);
+  font-size: var(--fs-display);
+  font-weight: 700;
+  line-height: 1.1;
+  transition: transform 180ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.summary-value.recent {
+  font-size: 30rpx;
+  color: var(--brand-dark);
+}
+
+.summary-label {
+  margin-top: var(--sp-1);
+  color: var(--muted);
+  font-size: var(--fs-mini);
+  font-weight: 600;
+}
+
+/* ── 3. Settings Sections — iOS 风格列表 ── */
+.settings-section {
+  margin-top: var(--sp-5);
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+  padding: 0 var(--sp-1);
+}
+
+.section-title {
+  color: var(--text);
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.section-note {
+  min-width: 0;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.35;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-list {
+  overflow: hidden;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 96rpx;
+  padding: var(--sp-3) var(--sp-3);
+  border-bottom: 1rpx solid var(--line-light);
+  box-sizing: border-box;
+  position: relative;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-item:active {
+  background: var(--surface);
+}
+
+/* ── Expandable setting items ── */
+.setting-item.expanded {
+  flex-direction: column;
+  align-items: stretch;
+  background: var(--surface);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.setting-chevron {
+  flex-shrink: 0;
+  font-size: 36rpx;
+  color: var(--faint);
+  line-height: 1;
+  transition: transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.setting-chevron.open {
+  transform: rotate(90deg);
+}
+
+.setting-detail {
+  margin-top: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--card);
+  border-radius: var(--r-sm);
+  border-left: 4rpx solid var(--brand-mid);
+  animation: detailFadeIn 220ms ease;
+}
+
+.setting-detail text {
+  display: block;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.7;
+}
+
+@keyframes detailFadeIn {
+  from { opacity: 0; transform: translateY(-8rpx); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Setting text ── */
+.setting-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.setting-title {
+  color: var(--text);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ── Chevron arrow ── */
+.setting-arrow {
+  width: 16rpx;
+  height: 16rpx;
+  border-top: 3rpx solid var(--faint);
+  border-right: 3rpx solid var(--faint);
+  transform: rotate(45deg);
+  flex-shrink: 0;
+  transition: transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              border-color 180ms ease;
+}
+
+.setting-item:active .setting-arrow {
+  border-color: var(--brand);
+  transform: rotate(45deg) translateX(4rpx);
+}
+
+/* ── 4. Danger item ── */
+.setting-item.danger .setting-title {
+  color: var(--sev-urgent);
+}
+
+.setting-item.danger .setting-arrow {
+  border-color: var(--faint);
+}
+
+.setting-item.danger:active .setting-title {
+  color: var(--sev-emergency);
+}
+
+.setting-item.danger:active .setting-arrow {
+  border-color: var(--sev-urgent);
+}
+
+/* ── 5. Space Actions ── */
+.space-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-6);
+  padding-bottom: var(--sp-2);
+}
+
+.space-btn {
+  width: 100%;
+  min-height: 88rpx;
+  border-radius: var(--r-md);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.switch-guest-link {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  padding: var(--sp-2) var(--sp-3);
+  text-align: center;
+  transition: color 160ms ease;
+}
+
+.switch-guest-link:active {
+  color: var(--text);
+}
+
+/* ── Dark Mode ── */
+@media (prefers-color-scheme: dark) {
+  .user-name {
+    color: var(--text);
+  }
+
+  .space-id {
+    background: var(--brand-light);
+  }
+
+  .space-id-value {
+    color: var(--brand);
+  }
+
+  .summary-value {
+    color: var(--brand);
+  }
+
+  .summary-value.recent {
+    color: var(--brand-dark);
+  }
+
+  .setting-item.danger .setting-title {
+    color: var(--sev-urgent);
+  }
+}

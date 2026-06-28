@@ -1,0 +1,612 @@
+/* ============================================================
+ * VetAI Design System v2 — 品质升级
+ * 温暖专业的医疗健康产品风格
+ * ============================================================ */
+
+page {
+  /* ── 1. 品牌色体系 — 柔和蓝 ── */
+  --brand: #5B82E8;
+  --brand-dark: #3D62C8;
+  --brand-light: #EEF2FE;
+  --brand-mid: #A5BAF4;
+
+  /* ── 2. 强调色：温暖珊瑚橙 ── */
+  --accent: #E07A4F;
+  --accent-soft: #FDF3EE;
+
+  /* ── 3. 中性色体系：暖调有温度 ── */
+  --bg: #F7F6F3;
+  --card: #FFFFFF;
+  --surface: #F0EFEB;
+  --text: #1A1A1A;
+  --body: #3D3D3D;
+  --muted: #8A8A8A;
+  --faint: #B5B5B5;
+  --line: #E8E6E1;
+  --line-light: #F0EEEA;
+
+  /* ── 4. 圆角：严格 3 级 ── */
+  --r-sm: 8rpx;
+  --r-md: 16rpx;
+  --r-lg: 24rpx;
+
+  /* ── 5. 阴影：纯黑透明度，禁止彩色阴影 ── */
+  --shadow-sm: 0 2rpx 8rpx rgba(0,0,0,0.04);
+  --shadow-md: 0 4rpx 16rpx rgba(0,0,0,0.06);
+  --shadow-lg: 0 8rpx 32rpx rgba(0,0,0,0.08);
+
+  /* ── 6. 间距：8pt 栅格 ── */
+  --sp-1: 8rpx;
+  --sp-2: 16rpx;
+  --sp-3: 24rpx;
+  --sp-4: 32rpx;
+  --sp-5: 40rpx;
+  --sp-6: 48rpx;
+  --sp-8: 64rpx;
+  --sp-10: 80rpx;
+
+  /* ── 7. 字号层级 ── */
+  --fs-display: 40rpx;
+  --fs-title: 34rpx;
+  --fs-body: 28rpx;
+  --fs-caption: 24rpx;
+  --fs-mini: 20rpx;
+
+  /* ── 7b. 字体族 — 多层次排版 ── */
+  --font-sans: -apple-system, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+  --font-serif: 'STSong', 'Songti SC', 'Source Han Serif SC', Georgia, serif;
+  --font-mono: 'SF Mono', 'Menlo', 'Roboto Mono', 'Courier New', monospace;
+  --font-kai: 'KaiTi', 'STKaiti', 'AR PL UKai', serif;
+
+  /* ── 8. 严重度语义色 ── */
+  --sev-low: #4CAF50;
+  --sev-mid: #FF9800;
+  --sev-urgent: #F44336;
+  --sev-emergency: #B71C1C;
+
+  /* ── 9. 向后兼容：--vet-* 别名 ── */
+  --vet-primary: var(--brand);
+  --vet-primary-dark: var(--brand-dark);
+  --vet-primary-soft: var(--brand-light);
+  --vet-primary-mid: var(--brand-mid);
+  --vet-accent: var(--accent);
+  --vet-accent-soft: var(--accent-soft);
+  --vet-bg: var(--bg);
+  --vet-card: var(--card);
+  --vet-card-soft: var(--surface);
+  --vet-bg-weak: var(--surface);
+  --vet-text: var(--text);
+  --vet-body: var(--body);
+  --vet-muted: var(--muted);
+  --vet-faint: var(--faint);
+  --vet-line: var(--line);
+  --vet-line-weak: var(--line-light);
+  --vet-green: var(--brand);
+  --vet-green-dark: var(--brand-dark);
+  --vet-green-soft: var(--brand-light);
+  --vet-green-mid: var(--brand-mid);
+
+  /* ── 10. 严重度向后兼容 ── */
+  --vet-low: var(--sev-low);
+  --vet-low-bg: #E8F5E9;
+  --vet-mid: var(--sev-mid);
+  --vet-mid-bg: #FFF3E0;
+  --vet-vet: var(--sev-urgent);
+  --vet-vet-bg: #FFEBEE;
+  --vet-emg: var(--sev-emergency);
+  --vet-emg-bg: #FFCDD2;
+
+  /* ── 11. 圆角向后兼容 ── */
+  --vet-r-page: var(--r-lg);
+  --vet-r-card-lg: var(--r-lg);
+  --vet-r-card: var(--r-md);
+  --vet-r-card-sm: var(--r-sm);
+  --vet-r-image: var(--r-md);
+  --vet-r-field: var(--r-md);
+  --vet-r-pill: 999rpx;
+
+  /* ── 12. 阴影向后兼容 ── */
+  --vet-shadow: var(--shadow-sm);
+  --vet-shadow-strong: var(--shadow-md);
+
+  /* ── 13. 间距向后兼容 ── */
+  --vet-page-x: var(--sp-4);
+  --vet-gap-xs: var(--sp-1);
+  --vet-gap: var(--sp-2);
+  --vet-gap-lg: var(--sp-4);
+  --vet-gap-xl: var(--sp-6);
+  --vet-safe-bottom: env(safe-area-inset-bottom);
+
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  transition: all 0.2s ease;
+}
+
+/* ============================================================
+ * 暗色模式
+ * ============================================================ */
+@media (prefers-color-scheme: dark) {
+  page {
+    --bg: #1A1A1A;
+    --card: #262626;
+    --surface: #303030;
+    --text: #F0F0F0;
+    --body: #C0C0C0;
+    --muted: #808080;
+    --faint: #606060;
+    --line: #3A3A3A;
+    --line-light: #2E2E2E;
+
+    --brand: #7B9AF0;
+    --brand-dark: #8DA0F0;
+    --brand-light: #2A2F45;
+    --brand-mid: #4A60C8;
+
+    --accent: #F09A6F;
+    --accent-soft: #3A2A20;
+
+    --shadow-sm: 0 2rpx 8rpx rgba(0,0,0,0.16);
+    --shadow-md: 0 4rpx 16rpx rgba(0,0,0,0.24);
+    --shadow-lg: 0 8rpx 32rpx rgba(0,0,0,0.32);
+
+    --sev-low-bg: #1B3A1F;
+    --sev-mid-bg: #3A2E10;
+    --sev-urgent-bg: #3A1515;
+    --sev-emergency-bg: #2E0A0A;
+
+    /* 暗色 vet-* 别名同步 */
+    --vet-primary: var(--brand);
+    --vet-primary-dark: var(--brand-dark);
+    --vet-primary-soft: var(--brand-light);
+    --vet-primary-mid: var(--brand-mid);
+    --vet-accent: var(--accent);
+    --vet-accent-soft: var(--accent-soft);
+    --vet-bg: var(--bg);
+    --vet-card: var(--card);
+    --vet-card-soft: var(--surface);
+    --vet-bg-weak: var(--surface);
+    --vet-text: var(--text);
+    --vet-body: var(--body);
+    --vet-muted: var(--muted);
+    --vet-faint: var(--faint);
+    --vet-line: var(--line);
+    --vet-line-weak: var(--line-light);
+    --vet-green: var(--brand);
+    --vet-green-dark: var(--brand-dark);
+    --vet-green-soft: var(--brand-light);
+    --vet-green-mid: var(--brand-mid);
+
+    --vet-low-bg: var(--sev-low-bg);
+    --vet-mid-bg: var(--sev-mid-bg);
+    --vet-vet-bg: var(--sev-urgent-bg);
+    --vet-emg-bg: var(--sev-emergency-bg);
+
+    --vet-shadow: var(--shadow-sm);
+    --vet-shadow-strong: var(--shadow-md);
+  }
+}
+
+/* ============================================================
+ * Reset
+ * ============================================================ */
+button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  line-height: normal;
+  font: inherit;
+  color: inherit;
+  border-radius: 0;
+}
+
+button::after {
+  border: none;
+}
+
+input,
+textarea {
+  color: var(--text);
+  font: inherit;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================================
+ * 页面 & 卡片
+ * ============================================================ */
+.vet-page {
+  min-height: 100vh;
+  padding: var(--sp-3) var(--vet-page-x) calc(var(--sp-6) + var(--vet-safe-bottom));
+  box-sizing: border-box;
+  background: var(--bg);
+}
+
+.vet-card {
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--sp-3);
+  box-sizing: border-box;
+}
+
+.vet-card-soft {
+  background: var(--surface);
+  border: 1rpx solid var(--line-light);
+  border-radius: var(--r-sm);
+  padding: var(--sp-3);
+  box-sizing: border-box;
+}
+
+/* ============================================================
+ * 区块
+ * ============================================================ */
+.vet-section {
+  margin-top: var(--sp-4);
+}
+
+.vet-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.vet-section-title {
+  color: var(--text);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.vet-section-desc {
+  margin-top: var(--sp-1);
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+}
+
+/* ============================================================
+ * 排版
+ * ============================================================ */
+.vet-title-xl {
+  color: var(--text);
+  font-size: var(--fs-display);
+  font-weight: 700;
+  line-height: 1.22;
+}
+
+.vet-title-lg {
+  color: var(--text);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.32;
+}
+
+.vet-title-md {
+  color: var(--text);
+  font-size: 30rpx;
+  font-weight: 650;
+  line-height: 1.38;
+}
+
+.vet-body {
+  color: var(--body);
+  font-size: var(--fs-body);
+  line-height: 1.65;
+}
+
+.vet-caption {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+}
+
+.vet-label {
+  color: var(--muted);
+  font-size: 23rpx;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* ============================================================
+ * 按钮
+ * ============================================================ */
+.vet-btn {
+  min-height: 82rpx;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+  font-size: var(--fs-body);
+  font-weight: 650;
+  transition: transform 160ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              opacity 160ms ease;
+}
+
+.vet-btn:active {
+  transform: scale(0.985);
+  opacity: 0.92;
+}
+
+.vet-btn-primary {
+  background: var(--brand);
+  color: #FFFFFF;
+  box-shadow: var(--shadow-md);
+}
+
+.vet-btn-secondary {
+  background: var(--brand-light);
+  color: var(--brand-dark);
+  border: 1rpx solid var(--line);
+}
+
+.vet-btn-ghost {
+  background: transparent;
+  color: var(--brand);
+  border: 1rpx solid var(--brand);
+}
+
+.vet-btn-danger {
+  background: #FFEBEE;
+  color: var(--sev-emergency);
+  border: 1rpx solid rgba(244, 67, 54, 0.2);
+  box-shadow: none;
+}
+
+/* ============================================================
+ * Chips & Tags
+ * ============================================================ */
+.vet-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52rpx;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--brand-light);
+  border: 1rpx solid var(--line);
+  color: var(--brand);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.vet-chip-active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #FFFFFF;
+}
+
+.vet-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40rpx;
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  border: 1rpx solid var(--line-light);
+  color: var(--muted);
+  font-size: var(--fs-mini);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.vet-tag-brand {
+  background: var(--brand-light);
+  color: var(--brand-dark);
+  border-color: var(--line);
+}
+
+/* ============================================================
+ * 分割线
+ * ============================================================ */
+.vet-divider {
+  height: 1rpx;
+  background: var(--line);
+  border: none;
+  margin: var(--sp-3) 0;
+}
+
+/* ============================================================
+ * 表单
+ * ============================================================ */
+.vet-field {
+  margin-top: var(--sp-3);
+}
+
+.vet-field:first-child {
+  margin-top: 0;
+}
+
+.vet-field-label {
+  display: block;
+  margin-bottom: var(--sp-1);
+  color: var(--body);
+  font-size: 25rpx;
+  font-weight: 650;
+}
+
+.vet-input,
+.vet-textarea {
+  width: 100%;
+  border: 1rpx solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 27rpx;
+  box-sizing: border-box;
+}
+
+.vet-input {
+  min-height: 88rpx;
+  padding: 0 var(--sp-3);
+}
+
+.vet-textarea {
+  min-height: 176rpx;
+  padding: var(--sp-2) var(--sp-3);
+  line-height: 1.55;
+}
+
+/* ============================================================
+ * 空状态
+ * ============================================================ */
+.vet-empty {
+  padding: var(--sp-8) var(--sp-4);
+  text-align: center;
+  color: var(--muted);
+}
+
+.vet-empty-icon {
+  width: 128rpx;
+  height: 128rpx;
+  margin: 0 auto var(--sp-2);
+  border-radius: 50%;
+  background: var(--brand-light);
+  color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 46rpx;
+  font-weight: 700;
+}
+
+.vet-empty-state {
+  padding: var(--sp-10) var(--sp-4);
+  text-align: center;
+}
+
+.empty-state-circle {
+  width: 128rpx;
+  height: 128rpx;
+  margin: 0 auto var(--sp-2);
+  border-radius: 50%;
+  background: var(--brand-light);
+  color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42rpx;
+  font-weight: 700;
+}
+
+.empty-state-title {
+  color: var(--text);
+  font-size: 31rpx;
+  font-weight: 700;
+}
+
+.empty-state-desc {
+  margin: var(--sp-1) auto var(--sp-3);
+  max-width: 520rpx;
+  color: var(--muted);
+  font-size: 25rpx;
+  line-height: 1.55;
+}
+
+/* ============================================================
+ * 加载
+ * ============================================================ */
+.vet-loading-card {
+  width: 560rpx;
+  max-width: calc(100vw - 96rpx);
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  box-shadow: var(--shadow-lg);
+  box-sizing: border-box;
+}
+
+.vet-loading-line {
+  position: relative;
+  overflow: hidden;
+  height: 8rpx;
+  border-radius: var(--r-sm);
+  background: var(--line-light);
+}
+
+.vet-loading-line::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  border-radius: var(--r-sm);
+  background: linear-gradient(90deg, transparent, var(--brand-mid), transparent);
+  animation: vetShimmer 1.5s ease-in-out infinite;
+}
+
+/* ============================================================
+ * 图片网格
+ * ============================================================ */
+.vet-image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+}
+
+/* ============================================================
+ * 安全区
+ * ============================================================ */
+.vet-safe-bottom {
+  padding-bottom: calc(var(--sp-3) + var(--vet-safe-bottom));
+}
+
+/* ============================================================
+ * 进度条
+ * ============================================================ */
+.vet-progress {
+  height: 10rpx;
+  border-radius: var(--r-sm);
+  background: var(--line-light);
+  overflow: hidden;
+}
+
+.vet-progress-fill {
+  height: 100%;
+  border-radius: var(--r-sm);
+  background: var(--brand);
+  transition: width 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ============================================================
+ * 动画
+ * ============================================================ */
+.vet-fade-up {
+  animation: vetFadeUp 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.text-numeric {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+/* ── 字体族工具类 ── */
+.font-serif { font-family: var(--font-serif); }
+.font-mono  { font-family: var(--font-mono); }
+.font-kai   { font-family: var(--font-kai); }
+
+@keyframes vetFadeUp {
+  from { opacity: 0; transform: translateY(18rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes vetShimmer {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}
