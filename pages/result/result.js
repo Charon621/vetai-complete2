@@ -112,6 +112,31 @@ function splitAdvice(value, fallback) {
   return parts.slice(0, 4)
 }
 
+function buildSourceList(value) {
+  var sources = Array.isArray(value) ? value : []
+  var seen = {}
+  var out = []
+  for (var i = 0; i < sources.length; i++) {
+    var source = sources[i]
+    var item = {}
+    if (typeof source === 'string') {
+      item.title = sanitizeReportText(source)
+      item.url = ''
+      item.tier = ''
+    } else if (source && typeof source === 'object') {
+      item.title = sanitizeReportText(source.title || source.name || source.url || '')
+      item.url = typeof source.url === 'string' ? source.url : ''
+      item.tier = typeof source.tier === 'string' ? source.tier : ''
+    }
+    if (!item.title) continue
+    var key = item.url || item.title
+    if (seen[key]) continue
+    seen[key] = true
+    out.push(item)
+  }
+  return out.slice(0, 4)
+}
+
 Page({
   data: {
     recordId: '',
@@ -120,7 +145,8 @@ Page({
       diseaseList: [],
       homeCareList: [],
       watchList: [],
-      vetList: []
+      vetList: [],
+      sourceList: []
     },
     severityInfo: URGENCY_MAP.moderate,
     feedbackHelpful: null,
@@ -240,6 +266,7 @@ Page({
       homeCareList: splitAdvice(record.homeCare || record.careSuggestion || record.treatment, '保持患处干燥清洁'),
       watchList: splitAdvice(record.whenToWatch, '记录 2 到 3 天内范围是否扩大'),
       vetList: splitAdvice(record.whenToSeeVet || record.vetWarning, '如出现快速扩散、流脓、破溃、明显疼痛，应尽快就医'),
+      sourceList: buildSourceList(record.ragSources),
       reportDisclaimer: REPORT_DISCLAIMER,
       prevCompare: prevCompare
     })

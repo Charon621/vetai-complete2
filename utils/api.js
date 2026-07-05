@@ -105,15 +105,24 @@ function getProviderConfig(name) {
   }
 }
 
+function getPrecheckProviderConfig(name) {
+  var cfg = getProviderConfig(name)
+  if (config.QWEN_PRECHECK_MODEL) {
+    cfg.model = config.QWEN_PRECHECK_MODEL
+  }
+  return cfg
+}
+
 // ============================================================
 // Prompt 构建
 // ============================================================
 
 function buildSystemPrompt() {
   var parts = [
-    '请根据用户上传的宠物皮肤图片和病例信息做初步分析。',
+    '请根据用户上传的宠物皮肤、体表或可见口腔黏膜图片和病例信息做初步分析。',
     '只输出一个合法 JSON 对象，不要 Markdown，不要代码块，不要解释性前后缀。',
     '不要开处方，不要给药名或剂量；看不清或无法判断时如实写无法判断。',
+    '如果图片显示的是口腔、牙龈、舌头或黏膜溃疡/破损，不要套用普通皮肤病名称（如热点、湿性皮炎、褶皱皮炎）；应按口腔/黏膜病变初筛，并建议线下口腔/牙科或兽医检查。',
     'JSON 字段如下：',
     '{',
     '  "observations": "图片中看到的关键表现",',
@@ -164,18 +173,27 @@ function buildPrompt(petInfo, lesionBoxes) {
     ].filter(Boolean).join('\n')
   }
 
+  var mucosalCase = petInfo.skinKbExcluded === true || isMucosalOrOralCase(petInfo, null)
+  var shouldUseRagPrompt = petInfo.disableKnowledgeBase !== true && petInfo.disableRagPrompt !== true && petInfo.skinKbExcluded !== true
+  var visualRagCandidates = shouldUseRagPrompt && petInfo.visualRagResults
+    ? petInfo.visualRagResults.filter(kb.isPromptWorthyResult)
+    : []
   var ragSearchComplaint = [
     petInfo.complaint || '',
     visualPrecheckText
   ].filter(Boolean).join('\n')
 
   // 知识库检索（RAG）：根据品种/部位/症状匹配相关知识，注入 prompt
-  var ragPrompt = kb.buildRagPrompt({
+  var precheckData = petInfo.visualPrecheck || {}
+  var ragPrompt = shouldUseRagPrompt && !visualRagCandidates.length ? kb.buildRagPrompt({
     species: petInfo.species || '',
     breed: petInfo.breed || '',
     bodyPart: petInfo.bodyPartLabel || petInfo.bodyPart || '',
-    complaint: ragSearchComplaint
-  })
+    complaint: ragSearchComplaint,
+    visualFeatures: precheckData.visualFeatures || [],
+    lesionPattern: precheckData.lesionPattern || '',
+    lesionShape: precheckData.lesionShape || ''
+  }) : ''
 
   var lines = [
     '病例信息：',
@@ -190,16 +208,20 @@ function buildPrompt(petInfo, lesionBoxes) {
     '- 患处部位：' + (petInfo.bodyPartLabel || petInfo.bodyPart || '未知'),
     '- 主人补充描述：' + (petInfo.complaint || '无'),
     visualPrecheckText,
+    mucosalCase ? '注意：当前图片/部位疑似口腔、牙龈、舌头或其他黏膜问题，不要套用普通皮肤病名称；请按口腔/黏膜病变思路描述初筛方向、风险和线下检查建议。' : '',
     regionHint
   ]
 
-  if (petInfo.visualRagResults && petInfo.visualRagResults.length) {
+  if (visualRagCandidates.length) {
     lines.push('')
-    lines.push('视觉预检后的知识库候选（未达到快速输出阈值，仅供复核，不可强行采用）：')
-    petInfo.visualRagResults.slice(0, 3).forEach(function (r, index) {
-      lines.push('[' + (index + 1) + '] ' + r.name + '（匹配度 ' + r.score + '；命中：' + (r.matched || []).join('、') + '）')
-      if (r.ddx) lines.push('  鉴别要点：' + r.ddx)
+    lines.push('临床参考（复核用，可全部否定）：')
+    visualRagCandidates.slice(0, 3).forEach(function (r, index) {
+      var line = '[' + (index + 1) + '] ' + r.name
+      if (r.typicalFeatures) line += '：' + r.typicalFeatures
+      lines.push(line)
+      if (r.ddx) lines.push('  鉴别：' + (typeof r.ddx === 'string' ? r.ddx.split('；')[0] : r.ddx))
     })
+    lines.push('规则：照片+部位+病史同时吻合才采用；不吻合可全部否定。')
   }
 
   if (ragPrompt) {
@@ -208,6 +230,14 @@ function buildPrompt(petInfo, lesionBoxes) {
   }
 
   return lines.filter(Boolean).join('\n')
+}
+
+function buildDebugPrompt(petInfo, lesionBoxes) {
+  petInfo = petInfo || {}
+  return {
+    systemPrompt: buildSystemPrompt(),
+    userPrompt: buildPrompt(petInfo, lesionBoxes || [])
+  }
 }
 
 // ============================================================
@@ -473,6 +503,41 @@ function cleanUserVisibleText(value) {
     .trim()
 }
 
+function normalizeRagSources(sources) {
+  var list = Array.isArray(sources) ? sources : []
+  var seen = {}
+  var out = []
+  for (var i = 0; i < list.length; i++) {
+    var source = list[i]
+    var item = {}
+    if (typeof source === 'string') {
+      item.title = cleanUserVisibleText(source)
+      item.url = ''
+      item.tier = ''
+    } else if (source && typeof source === 'object') {
+      item.title = cleanUserVisibleText(source.title || source.name || source.url || '')
+      item.url = typeof source.url === 'string' ? source.url : ''
+      item.tier = typeof source.tier === 'string' ? source.tier : ''
+    }
+    if (!item.title) continue
+    var key = item.url || item.title
+    if (seen[key]) continue
+    seen[key] = true
+    out.push(item)
+  }
+  return out.slice(0, 6)
+}
+
+function collectSourcesFromResults(results) {
+  var sources = []
+  ;(results || []).forEach(function (result) {
+    ;(result.sources || []).forEach(function (source) {
+      sources.push(source)
+    })
+  })
+  return normalizeRagSources(sources)
+}
+
 /**
  * 标准化输出结构
  */
@@ -552,7 +617,7 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
     ragSummary: cleanUserVisibleText(data.possibleMeaning || ''),
     ragBasis: cleanUserVisibleText(data.explanation || data.observations || ''),
     ragRecommendation: cleanUserVisibleText([careSuggestion, data.vetWarning || whenToSeeVet].filter(Boolean).join(' ')),
-    ragSources: Array.isArray(data.ragSources) ? data.ragSources : [],
+    ragSources: normalizeRagSources(data.ragSources),
 
     // 前端展示映射
     disease: primaryDiagnosis,
@@ -577,6 +642,11 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
 // wx.request 封装
 // ============================================================
 
+function getRequestTimeout(phase) {
+  if (phase === 'vision-precheck') return config.PRECHECK_TIMEOUT || 18000
+  return config.API_TIMEOUT || 45000
+}
+
 function doRequest(url, apiKey, payload, phase) {
   return new Promise(function (resolve, reject) {
     var startedAt = Date.now()
@@ -587,7 +657,7 @@ function doRequest(url, apiKey, payload, phase) {
     wx.request({
       url: url,
       method: 'POST',
-      timeout: config.API_TIMEOUT || 180000,
+      timeout: getRequestTimeout(requestPhase),
       header: {
         'Authorization': 'Bearer ' + apiKey,
         'Content-Type': 'application/json'
@@ -638,9 +708,11 @@ function doCloudRequest(payload, phase) {
 
     wx.cloud.callFunction({
       name: config.DIAGNOSE_CLOUD_FUNCTION || 'diagnose',
+      timeout: getRequestTimeout(requestPhase),
       data: {
         payload: payload,
-        phase: requestPhase
+        phase: requestPhase,
+        timeoutMs: getRequestTimeout(requestPhase)
       },
       success: function (res) {
         if (config.VISION_RAG_TRACE) {
@@ -702,22 +774,85 @@ function requestApi(url, apiKey, payload, phase) {
 // 视觉特征驱动 RAG：先提特征，强命中则直接输出知识库版报告
 // ============================================================
 
+// 按分组生成视觉受控词表文本，帮助模型分类选词
+function buildVisualVocabText(petInfo) {
+  var groups = kb.VISUAL_VOCAB_GROUPS
+  if (!groups) {
+    return (kb.VISUAL_VOCAB || []).join('、')
+  }
+  
+  var bodyPart = (petInfo && petInfo.bodyPart) || ''
+  var complaint = (petInfo && petInfo.complaint) || ''
+  var text = (bodyPart + ' ' + complaint).toLowerCase()
+  
+  // 核心组：总是给
+  var coreGroups = ['颜色', '鳞屑结痂', '丘疹脓疱', '分布形态']
+  
+  // 条件组：根据部位和主诉选择性给
+  var selectedGroups = coreGroups.slice()
+  
+  // 耳部 → 渗出分泌 + 可见寄生虫
+  if (text.indexOf('耳') >= 0) {
+    selectedGroups.push('渗出分泌', '可见寄生虫')
+  }
+  
+  // 爪部/趾间 → 增厚质地 + 特殊结构
+  if (text.indexOf('爪') >= 0 || text.indexOf('趾') >= 0 || text.indexOf('脚') >= 0) {
+    selectedGroups.push('增厚质地', '特殊结构')
+  }
+  
+  // 肿块/包/疙瘩 → 肿物
+  if (text.indexOf('肿') >= 0 || text.indexOf('包') >= 0 || text.indexOf('疙瘩') >= 0 || text.indexOf('结节') >= 0) {
+    selectedGroups.push('肿物')
+  }
+  
+  // 口腔/黏膜 → 精简模式（只核心组）
+  if (text.indexOf('口') >= 0 || text.indexOf('嘴') >= 0 || text.indexOf('牙') >= 0 || text.indexOf('舌') >= 0 || text.indexOf('黏膜') >= 0) {
+    // 已经是核心组了，不加其他
+  } else {
+    // 非黏膜情况：补上常见的毛发、渗出、破损、肿物
+    if (selectedGroups.indexOf('毛发') < 0) selectedGroups.push('毛发')
+    if (selectedGroups.indexOf('渗出分泌') < 0) selectedGroups.push('渗出分泌')
+    if (selectedGroups.indexOf('破损溃疡') < 0) selectedGroups.push('破损溃疡')
+  }
+  
+  var groupLabels = {
+    毛发: '毛发', 颜色: '颜色/红斑', 鳞屑结痂: '鳞屑结痂', 丘疹脓疱: '丘疹脓疱',
+    渗出分泌: '渗出分泌', 破损溃疡: '破损溃疡', 增厚质地: '增厚质地', 肿物: '肿物',
+    特殊结构: '特殊结构', 可见寄生虫: '可见虫体', 分布形态: '分布形态'
+  }
+  var lines = []
+  for (var i = 0; i < selectedGroups.length; i++) {
+    var key = selectedGroups[i]
+    if (groups[key] && groups[key].length > 0) {
+      var label = groupLabels[key] || key
+      lines.push('  【' + label + '】' + groups[key].join('、'))
+    }
+  }
+  return lines.join('\n')
+}
+
 function buildFeaturePrompt(petInfo, lesionBoxes) {
   var regionHint = Array.isArray(lesionBoxes) && lesionBoxes.some(Boolean)
     ? '用户圈出的患处坐标 lesion_boxes：' + JSON.stringify(lesionBoxes || [])
     : ''
 
+  // 视觉标准词表来自知识库受控词表，确保提取端和检索端严格对齐
+  var vocabText = buildVisualVocabText(petInfo)
+
   return [
-    '请只提取宠物皮肤照片中的客观视觉特征，用于本地知识库检索。',
+    '请只提取宠物皮肤、体表或可见口腔黏膜照片中的客观视觉特征，用于判断是否适合皮肤知识库检索。',
     '不要诊断疾病，不要给治疗建议。',
-    'visualFeatures 请优先从以下标准词中选择，必要时可补充少量图片中确实存在的词：',
-    '脱毛、圆形脱毛、红斑、红肿、鳞屑、结痂、断毛、渗出、潮湿、脓疱、丘疹、破溃、溃疡、肿块、结节、色素沉着、油腻、异味、舔舐、舔爪、搔抓、瘙痒、黑色颗粒、耳垢、对称、环形、多发、局灶、全身。',
-    '如果看到圆形或环形脱毛并伴鳞屑/结痂/断毛，visualFeatures 必须包含“圆形脱毛”“鳞屑”或“结痂”等标准词。',
+    'visualFeatures 必须只从下列标准词中选择（图片里确实看到的才选，看不到就不选）。这些是检索用的受控词表，不要用同义词或自创词：',
+    vocabText,
+    '注意：只报告图片能看到的形态特征。不要输出"瘙痒/疼痛/慢性/反复"等图片看不出的主观或病史信息（这些由主人描述提供）。',
+    '如果看到圆形或环形脱毛并伴鳞屑/结痂/断毛，visualFeatures 必须包含"圆形脱毛""鳞屑"或"结痂"等标准词。',
+    '如果图片主体是口腔、牙龈、舌头或黏膜，bodyPartGuess 必须写"口腔/牙龈/舌头/黏膜"之一，visualFeatures 必须包含对应词，不要把它归为普通皮肤潮湿或热点。',
     '只输出一个合法 JSON 对象，不要 Markdown，不要解释前后缀。',
     'JSON 字段：',
     '{',
     '  "visualFeatures": ["脱毛/红斑/结痂/渗出/肿块/鳞屑/脓疱/破溃/色素沉着等"],',
-    '  "bodyPartGuess": "图片中最可能的患处部位，如面部/耳部/背部/腹部/爪部/尾部/全身/未知",',
+    '  "bodyPartGuess": "图片中最可能的患处部位，如面部/耳部/背部/腹部/爪部/尾部/口腔/牙龈/舌头/黏膜/全身/未知",',
     '  "lesionPattern": "局灶性/多发性/弥漫性/环形/对称性/湿润/干燥/未知",',
     '  "lesionShape": "圆形/环形/不规则/边界清楚/边界不清/小丘疹多发/未知",',
     '  "shortObservation": "不超过40字的客观描述",',
@@ -750,7 +885,7 @@ function extractVisualFeatures(images, petInfo, lesionBoxes, providerCfg) {
   var payload = {
     model: providerCfg.model,
     messages: [
-      { role: 'system', content: '你是宠物皮肤照片的视觉特征提取器。只提取客观可见特征，不做疾病诊断。' },
+      { role: 'system', content: '你是宠物皮肤、体表和可见口腔黏膜照片的视觉特征提取器。只提取客观可见特征，不做疾病诊断。' },
       { role: 'user', content: content }
     ],
     temperature: 0,
@@ -811,9 +946,71 @@ function buildVisionRagQuery(petInfo, featureData) {
   return {
     species: petInfo.species || '',
     breed: petInfo.breed || '',
-    bodyPart: petInfo.bodyPartLabel || petInfo.bodyPart || featureData.bodyPartGuess || '',
-    complaint: featureText
+    bodyPart: effectiveBodyPartForRag(petInfo, featureData),
+    complaint: featureText,
+    visualFeatures: featureData.visualFeatures || [],
+    lesionPattern: featureData.lesionPattern || '',
+    lesionShape: featureData.lesionShape || ''
   }
+}
+
+function textHasAny(text, terms) {
+  text = String(text || '').toLowerCase()
+  for (var i = 0; i < terms.length; i++) {
+    if (text.indexOf(terms[i]) >= 0) return true
+  }
+  return false
+}
+
+function isGenericBodyPart(value) {
+  return ['其他', 'other', '未知', 'unknown', ''].indexOf(String(value || '').toLowerCase()) >= 0
+}
+
+function effectiveBodyPartForRag(petInfo, featureData) {
+  var selected = (petInfo && (petInfo.bodyPartLabel || petInfo.bodyPart)) || ''
+  if (!selected || isGenericBodyPart(selected)) return (featureData && featureData.bodyPartGuess) || selected
+  return selected
+}
+
+function isMucosalOrOralCase(petInfo, featureData) {
+  var oralTerms = ['口腔', '口内', '嘴里', '牙龈', '舌', '舌头', '黏膜', '粘膜', '口唇内侧', 'oral', 'mouth', 'gum', 'tongue', 'mucosa']
+  var text = [
+    petInfo && petInfo.bodyPart,
+    petInfo && petInfo.bodyPartLabel,
+    petInfo && petInfo.complaint,
+    featureData && featureData.bodyPartGuess,
+    featureData && featureData.shortObservation,
+    featureData && featureData.lesionPattern,
+    featureData && featureData.lesionShape,
+    featureData && featureData.visualFeatures ? featureData.visualFeatures.join(' ') : ''
+  ].filter(Boolean).join(' ')
+  return textHasAny(text, oralTerms)
+}
+
+function buildKbAttributionResults(petInfo) {
+  petInfo = petInfo || {}
+  if (petInfo.visualRagResults && petInfo.visualRagResults.length) {
+    var visualResults = petInfo.visualRagResults.filter(kb.isPromptWorthyResult)
+    if (visualResults.length) return visualResults
+  }
+
+  var pre = petInfo.visualPrecheck || {}
+  var visualText = [
+    pre.shortObservation || '',
+    pre.lesionPattern || '',
+    pre.lesionShape || '',
+    pre.visualFeatures && pre.visualFeatures.length ? pre.visualFeatures.join(' ') : ''
+  ].filter(Boolean).join(' ')
+
+  return kb.search({
+    species: petInfo.species || '',
+    breed: petInfo.breed || '',
+    bodyPart: effectiveBodyPartForRag(petInfo, pre),
+    complaint: [petInfo.complaint || '', visualText].filter(Boolean).join('\n'),
+    visualFeatures: pre.visualFeatures || [],
+    lesionPattern: pre.lesionPattern || '',
+    lesionShape: pre.lesionShape || ''
+  }).filter(kb.isPromptWorthyResult)
 }
 
 function countMatchedType(hit, typePrefix) {
@@ -848,11 +1045,7 @@ function isStrongVisionRagHit(results) {
   if (top.score < minScore) return false
   if (evidenceMatches < minSymptoms) return false
 
-  // 症状/别名命中足够多时，说明视觉特征和知识库已经对齐，可以快速输出。
-  if (top.score >= 12 || evidenceMatches >= 3) return true
-
-  // Top1 没有明显优势且证据不够密时，仍交给完整 AI 诊断，避免相似病被规则检索误带偏。
-  if (results[1] && top.score - results[1].score < 2 && top.score < 12) return false
+  // 达到配置阈值即允许知识库快路径输出；相近候选会作为鉴别项保留在报告中。
   return true
 }
 
@@ -894,7 +1087,7 @@ function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, 
     : '保持患处清洁干燥，避免反复舔咬和抓挠；暂不自行使用人用药或不明药膏。'
   var vetAdvice = top.vetAdvice || '如皮损扩大、破溃流脓、明显疼痛、持续瘙痒或精神食欲异常，应线下就医。'
   var uncertainty = (top.report && top.report.uncertainty) || '单靠照片不能确诊，需要结合病史、体检和必要的实验室检查。'
-  var sourceTitles = (top.sources || []).map(function (source) { return source.title || source.url || '' }).filter(Boolean)
+  var sourceList = collectSourcesFromResults([top])
 
   return normalizeDiagnosis({
     observations: observation,
@@ -916,7 +1109,7 @@ function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, 
       : '如症状加重、扩散、破溃、流脓、明显疼痛或精神食欲异常，请尽快线下就医。',
     urgency: top.urgency || 'moderate',
     diagnosisProbabilityNote: DIAGNOSIS_SCORE_NOTE,
-    ragSources: sourceTitles
+    ragSources: sourceList
   }, providerName, providerCfg, petInfo)
 }
 
@@ -925,8 +1118,27 @@ function diagnoseWithVisionRag(images, petInfo, providerName, providerCfg) {
   if (config.VISION_RAG_TRACE) {
     console.log('[VetAI] visionRag start: extracting visual features')
   }
-  return extractVisualFeatures(images, petInfo, lesionBoxes, providerCfg)
+  var precheckCfg = getPrecheckProviderConfig(providerName)
+  return extractVisualFeatures(images, petInfo, lesionBoxes, precheckCfg)
     .then(function (featureData) {
+      if (isMucosalOrOralCase(petInfo, featureData)) {
+        if (config.VISION_RAG_TRACE) {
+          console.log('[VetAI] visionRag fallback: oral/mucosal case, skip skin KB fast path')
+        }
+        analytics.track('visionRag', {
+          hit: false,
+          reason: 'oral_mucosal',
+          featureCount: featureData.visualFeatures.length
+        })
+        return {
+          success: false,
+          fallback: true,
+          skinKbExcluded: true,
+          visualPrecheck: featureData,
+          visualRagResults: []
+        }
+      }
+
       var ragQuery = buildVisionRagQuery(petInfo, featureData)
       var results = kb.search(ragQuery)
       if (config.DEBUG_LOGS) {
@@ -962,17 +1174,11 @@ function diagnoseWithVisionRag(images, petInfo, providerName, providerCfg) {
       }
 
       var data = buildFastRagDiagnosis(results, featureData, providerName, providerCfg, petInfo)
-      data.ragTitle = '知识库快速匹配'
+      data.ragTitle = '临床特征匹配'
       data.ragSummary = featureData.shortObservation || data.ragSummary
       data.ragBasis = results[0].typicalFeatures || data.ragBasis
       data.ragRecommendation = results[0].ddx || data.ragRecommendation
-      data.ragSources = results.reduce(function (list, r) {
-        (r.sources || []).forEach(function (source) {
-          var title = source.title || source.url || ''
-          if (title && list.indexOf(title) < 0) list.push(title)
-        })
-        return list
-      }, [])
+      data.ragSources = collectSourcesFromResults(results)
       data._fastRag = true
       data._visualFeatures = featureData.visualFeatures
       data._ragMatchName = results[0].name
@@ -1023,12 +1229,16 @@ function runFullDiagnosis(images, petInfo, providerName, providerCfg, options) {
   var systemPrompt = buildSystemPrompt()
 
   // RAG 调试日志：查看知识库检索结果
-  if (config.DEBUG_LOGS) {
+  if (config.DEBUG_LOGS && petInfo.disableKnowledgeBase !== true) {
+    var precheck = petInfo.visualPrecheck || {}
     var ragResults = kb.search({
       species: petInfo.species || '',
       breed: petInfo.breed || '',
       bodyPart: petInfo.bodyPartLabel || petInfo.bodyPart || '',
-      complaint: petInfo.complaint || ''
+      complaint: petInfo.complaint || '',
+      visualFeatures: precheck.visualFeatures || [],
+      lesionPattern: precheck.lesionPattern || '',
+      lesionShape: precheck.lesionShape || ''
     })
     console.log('[VetAI] RAG 检索结果：', ragResults.length ? ragResults.map(function(r) { return r.name + '(' + r.score + ')' }).join(', ') : '无匹配')
     console.log('[VetAI] 完整用户 Prompt：\n', prompt)
@@ -1062,12 +1272,12 @@ function runFullDiagnosis(images, petInfo, providerName, providerCfg, options) {
       { role: 'user', content: content }
     ],
     temperature: (options && options.temperature) || 0.1,
-    max_tokens: 4096
+    max_tokens: (options && options.max_tokens) || config.MODEL_MAX_TOKENS || 1600
   }
 
   payload.enable_thinking = config.QWEN_ENABLE_THINKING === true
 
-  // 启用 JSON 模式，减少 Markdown/说明文字导致的解析兜底
+  // 启用 JSON 模式，确保稳定快速的结构化输出
   payload.response_format = { type: 'json_object' }
 
   return requestApi(providerCfg.apiBase, providerCfg.apiKey, payload, 'full-diagnosis')
@@ -1093,12 +1303,7 @@ function runFullDiagnosis(images, petInfo, providerName, providerCfg, options) {
       })
 
       // 记录本次诊断对应的 KB 检索结果（供反馈闭环使用）
-      var kbResults = kb.search({
-        species: petInfo.species || '',
-        breed: petInfo.breed || '',
-        bodyPart: petInfo.bodyPartLabel || petInfo.bodyPart || '',
-        complaint: petInfo.complaint || ''
-      })
+      var kbResults = buildKbAttributionResults(petInfo)
       data._ragMatchName = kbResults[0] ? kbResults[0].name : ''
       data._ragMatchScore = kbResults[0] ? kbResults[0].score : 0
       data._ragMatched = kbResults[0] ? (kbResults[0].matched || []) : []
@@ -1120,7 +1325,37 @@ function runFullDiagnosis(images, petInfo, providerName, providerCfg, options) {
 // 主入口：diagnose
 // ============================================================
 
+var _diagnosing = false
+
+function friendlyError(raw) {
+  var msg = (typeof raw === 'string' ? raw : '') || (raw && raw.message) || ''
+  if (!msg) return '未知错误，请稍后重试'
+  if (msg.indexOf('正在分析中') >= 0) return msg
+  if (msg.indexOf('full-diagnosis DashScope request timeout') >= 0) return 'AI 完整诊断响应超时，请减少图片数量或稍后重试'
+  if (msg.indexOf('vision-precheck DashScope request timeout') >= 0) return '视觉预检响应超时，已建议关闭知识库后重试'
+  if (msg.indexOf('DashScope request timeout') >= 0) return 'AI 模型响应超时，请减少图片数量或稍后重试'
+  if (msg.indexOf('云端返回为空') >= 0 || msg.indexOf('格式不匹配') >= 0) return '服务响应异常，请稍后重试'
+  if (msg.indexOf('云函数调用失败') >= 0) {
+    if (msg.indexOf('timeout') >= 0 || msg.indexOf('超时') >= 0 || msg.indexOf('FUNCTIONS_TIME_LIMIT') >= 0) {
+      return '请求超时，图像分析需要较长时间，请重试'
+    }
+    return '服务连接异常，请检查网络后重试'
+  }
+  if (msg.indexOf('网络请求失败') >= 0 || msg.indexOf('网络异常') >= 0) return '网络连接异常，请检查网络后重试'
+  if (msg.indexOf('模型接口错误') >= 0 || msg.indexOf('5') === 0) return 'AI 服务暂时不可用，请稍后重试'
+  if (msg.indexOf('timeout') >= 0 || msg.indexOf('超时') >= 0) return '请求超时，您的网络可能较慢，请重试'
+  if (msg.indexOf('当前环境不支持') >= 0) return '当前微信版本暂不支持此功能，请更新到最新版'
+  if (msg.indexOf('API Key') >= 0 || msg.indexOf('请填写') >= 0) return '服务未配置完成，请联系开发者'
+  if (msg.indexOf('请至少上传') >= 0) return msg
+  return '操作失败，请稍后重试'
+}
+
 function diagnose(imageBase64List, petInfo, options) {
+  if (_diagnosing) {
+    return Promise.resolve({ success: false, error: '正在分析中，请稍候' })
+  }
+  _diagnosing = true
+
   // 与首页 UI 的 5 张上限一致（config.MAX_IMAGES）
   var maxModelImages = config.MAX_MODEL_IMAGES || config.MAX_IMAGES || 5
   var images = (Array.isArray(imageBase64List) ? imageBase64List : [])
@@ -1128,8 +1363,10 @@ function diagnose(imageBase64List, petInfo, options) {
     .filter(Boolean)
     .slice(0, maxModelImages)
 
+  var _finish = function (result) { _diagnosing = false; return result }
+
   if (images.length === 0) {
-    return Promise.resolve({ success: false, error: '请至少上传一张图片' })
+    return Promise.resolve({ success: false, error: '请至少上传一张图片' }).then(_finish)
   }
 
   var requested = (petInfo && petInfo.modelProvider) || 'qwen'
@@ -1140,7 +1377,7 @@ function diagnose(imageBase64List, petInfo, options) {
     return Promise.resolve({
       success: false,
       error: '请在 utils/config.js 中填写 ' + providerCfg.label + ' 的 API Key，或启用微信云函数代理。'
-    })
+    }).then(_finish)
   }
 
   var petInfoForPrompt = {
@@ -1156,46 +1393,56 @@ function diagnose(imageBase64List, petInfo, options) {
     bodyPartLabel: (petInfo && petInfo.bodyPartLabel) || '',
     complaint: (petInfo && petInfo.complaint) || ''
   }
+  var useKnowledgeBase = petInfo && typeof petInfo.useKnowledgeBase === 'boolean'
+    ? petInfo.useKnowledgeBase
+    : config.USE_KNOWLEDGE_BASE !== false
+
   var requestPetInfoForPrompt = Object.assign({}, petInfoForPrompt, {
     imageRoles: (petInfo && petInfo.imageRoles) || [],
-    lesionBoxes: (petInfo && petInfo.lesionBoxes) || []
+    lesionBoxes: (petInfo && petInfo.lesionBoxes) || [],
+    disableKnowledgeBase: useKnowledgeBase !== true,
+    disableRagPrompt: useKnowledgeBase !== true
   })
 
-  if (config.VISION_RAG_FAST_PATH !== false) {
+  if (requestPetInfoForPrompt.disableKnowledgeBase !== true && config.VISION_RAG_FAST_PATH !== false) {
     return diagnoseWithVisionRag(images, requestPetInfoForPrompt, providerName, providerCfg)
       .then(function (fastResult) {
         if (fastResult && fastResult.success) return fastResult
         if (fastResult && fastResult.fallback) {
           return runFullDiagnosis(images, Object.assign({}, requestPetInfoForPrompt, {
             visualPrecheck: fastResult.visualPrecheck,
-            visualRagResults: fastResult.visualRagResults
+            visualRagResults: fastResult.visualRagResults,
+            skinKbExcluded: fastResult.skinKbExcluded === true
           }), providerName, providerCfg, options)
         }
         return runFullDiagnosis(images, requestPetInfoForPrompt, providerName, providerCfg, options)
       })
       .catch(function (err) {
+        var msg = err && err.message ? err.message : String(err)
         if (config.VISION_RAG_TRACE) {
-          console.log('[VetAI] visionRag fallback: precheck failed', err && err.message ? err.message : err)
+          console.log('[VetAI] visionRag fallback: precheck failed', msg)
         } else if (config.DEBUG_LOGS) {
-          console.log('[VetAI] 视觉 RAG 预检失败，回退完整诊断：', err && err.message ? err.message : err)
+          console.log('[VetAI] 视觉 RAG 预检失败，回退完整诊断：', msg)
         }
         return runFullDiagnosis(images, requestPetInfoForPrompt, providerName, providerCfg, options)
       })
       .catch(function (err) {
         return {
           success: false,
-          error: err && err.message ? err.message : '调用大模型 API 失败，请检查 API Key 和网络'
+          error: friendlyError(err)
         }
       })
+      .then(_finish)
   }
 
   return runFullDiagnosis(images, requestPetInfoForPrompt, providerName, providerCfg, options)
     .catch(function (err) {
       return {
         success: false,
-        error: err && err.message ? err.message : '调用大模型 API 失败，请检查 API Key 和网络'
+        error: friendlyError(err)
       }
     })
+    .then(_finish)
 }
 
 // ============================================================
@@ -1309,6 +1556,8 @@ function diagnoseMulti(imageBase64List, petInfo, options) {
 module.exports = {
   diagnose: diagnose,
   diagnoseMulti: diagnoseMulti,
+  buildDebugPrompt: buildDebugPrompt,
   calibrateConfidence: calibrateConfidence,
-  confidenceToLabel: confidenceToLabel
+  confidenceToLabel: confidenceToLabel,
+  friendlyError: friendlyError
 }

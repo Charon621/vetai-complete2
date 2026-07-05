@@ -5,8 +5,9 @@ cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
 })
 
-function postJson(url, apiKey, payload) {
+function postJson(url, apiKey, payload, timeoutMs, phase) {
   return new Promise((resolve, reject) => {
+    const startedAt = Date.now()
     const body = JSON.stringify(payload || {})
     const target = new URL(url)
 
@@ -16,7 +17,7 @@ function postJson(url, apiKey, payload) {
       port: target.port || 443,
       path: target.pathname + target.search,
       method: 'POST',
-      timeout: 180000,
+      timeout: timeoutMs || 55000,
       headers: {
         Authorization: 'Bearer ' + apiKey,
         'Content-Type': 'application/json',
@@ -44,7 +45,7 @@ function postJson(url, apiKey, payload) {
     })
 
     req.on('timeout', () => {
-      req.destroy(new Error('DashScope request timeout'))
+      req.destroy(new Error((phase || 'model-request') + ' DashScope request timeout after ' + (Date.now() - startedAt) + 'ms'))
     })
 
     req.on('error', reject)
@@ -57,6 +58,11 @@ exports.main = async (event) => {
   const apiKey = process.env.QWEN_API_KEY
   const apiBase = process.env.QWEN_API_BASE || 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
   const payload = event && event.payload
+  const phase = event && event.phase
+  const requestedTimeout = event && Number(event.timeoutMs)
+  const timeoutMs = requestedTimeout > 0
+    ? Math.min(requestedTimeout, 55000)
+    : (phase === 'vision-precheck' ? 18000 : 55000)
 
   if (!apiKey) {
     return {
@@ -73,7 +79,7 @@ exports.main = async (event) => {
   }
 
   try {
-    const response = await postJson(apiBase, apiKey, payload)
+    const response = await postJson(apiBase, apiKey, payload, timeoutMs, phase)
     if (!response.ok) {
       const detail = response.data && response.data.error
         ? (response.data.error.message || response.data.error.code || '')

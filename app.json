@@ -52,8 +52,8 @@
     ]
   },
   "networkTimeout": {
-    "request": 180000,
-    "uploadFile": 180000
+    "request": 60000,
+    "uploadFile": 60000
   },
   "permission": {
     "scope.userLocation": {

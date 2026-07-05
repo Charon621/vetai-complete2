@@ -13,7 +13,7 @@ var analytics = require('./analytics')
 function processImage(path, pageContext) {
   return new Promise(function (resolve, reject) {
     var MAX_DIM = 1280
-    var COMPRESS_QUALITY = 0.6
+    var COMPRESS_QUALITY = 0.7
 
     wx.getImageInfo({
       src: path,
@@ -270,7 +270,7 @@ function cropLesionRegion(imagePath, lesionBox, pageContext) {
         var sw = Math.min(info.width - sx, Math.round(pw + expandX * 2))
         var sh = Math.min(info.height - sy, Math.round(ph + expandY * 2))
 
-        var maxOut = 800
+        var maxOut = 640
         var outScale = Math.min(1, maxOut / Math.max(sw, sh))
         var outW = Math.max(1, Math.round(sw * outScale))
         var outH = Math.max(1, Math.round(sh * outScale))
@@ -291,7 +291,7 @@ function cropLesionRegion(imagePath, lesionBox, pageContext) {
             img.onload = function () {
               ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH)
               wx.canvasToTempFilePath({
-                canvas: canvas, fileType: 'jpg', quality: 0.85,
+                canvas: canvas, fileType: 'jpg', quality: 0.62,
                 success: function (tmpRes) {
                   wx.getFileSystemManager().readFile({
                     filePath: tmpRes.tempFilePath, encoding: 'base64',

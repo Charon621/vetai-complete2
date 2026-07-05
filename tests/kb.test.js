@@ -11,7 +11,7 @@ function expectTop(label, query, expected) {
   assert.strictEqual(topName(query), expected, label)
 }
 
-assert.ok(kb.DISEASE_KB.length >= 40 && kb.DISEASE_KB.length <= 60, 'v1 KB should contain 40-60 cards')
+assert.ok(kb.DISEASE_KB.length >= 60 && kb.DISEASE_KB.length <= 80, 'v3 KB should contain 60-80 cards')
 
 kb.DISEASE_KB.forEach((card) => {
   ;[
@@ -152,7 +152,7 @@ expectTop('dog demodicosis pattern', {
   species: '犬',
   bodyPart: '面部',
   complaint: '眼周前肢对称脱毛 皮屑 不痒 慢性 蠕形螨'
-}, '蠕形螨病')
+}, '蠕形螨病（局灶型）')
 
 expectTop('dog sarcoptic mange pattern', {
   species: '犬',
@@ -180,15 +180,46 @@ const genericResults = kb.search({
 assert.ok(genericResults.length > 0, 'generic signs may still return common candidates')
 assert.notStrictEqual(genericResults[0].name, '犬癣', 'generic signs alone should not force ringworm to top')
 assert.notStrictEqual(genericResults[0].category, 'mass', 'generic signs alone should not force a mass/tumor warning to top')
+assert.strictEqual(kb.isPromptWorthyResult(genericResults[0]), false, 'generic top hit should not be prompt-worthy')
+assert.strictEqual(kb.buildRagPrompt({
+  species: '犬',
+  bodyPart: '背部',
+  complaint: '红肿 脱毛 瘙痒 结痂'
+}), '', 'generic signs alone should not be injected into the RAG prompt')
+
+const dogOralResults = kb.search({
+  species: '犬',
+  bodyPart: '口腔',
+  complaint: '口腔 溃疡 红肿 潮湿 渗出 糜烂 疼痛'
+})
+assert.notStrictEqual(dogOralResults[0] && dogOralResults[0].name, '急性湿性皮炎（热点）', 'oral ulcers should not force hot spot to top')
+assert.strictEqual(kb.buildRagPrompt({
+  species: '犬',
+  bodyPart: '口腔',
+  complaint: '口腔 溃疡 红肿 潮湿 渗出 糜烂 疼痛'
+}), '', 'dog oral mucosal ulcers should not be injected into the skin RAG prompt')
+
+expectTop('cat oral eosinophilic granuloma pattern', {
+  species: '猫',
+  bodyPart: '口腔',
+  complaint: '口腔 溃疡 红肿 糜烂 唇部'
+}, '嗜酸性肉芽肿复合体')
 
 const ragPrompt = kb.buildRagPrompt({
   species: '猫',
   bodyPart: '面部',
   complaint: '圆形脱毛 鳞屑 断毛 结痂 多宠'
 })
+assert.strictEqual(kb.isPromptWorthyResult(kb.search({
+  species: '猫',
+  bodyPart: '面部',
+  complaint: '圆形脱毛 鳞屑 断毛 结痂 多宠'
+})[0]), true, 'specific ringworm-like evidence should be prompt-worthy')
+assert.ok(ragPrompt.indexOf('临床参考核对清单') >= 0, 'RAG prompt should frame hits as review references')
 assert.ok(ragPrompt.indexOf('观察依据') >= 0, 'RAG prompt should include evidence')
 assert.ok(ragPrompt.indexOf('不确定性') >= 0, 'RAG prompt should include uncertainty')
 assert.ok(ragPrompt.indexOf('下一步') >= 0, 'RAG prompt should include next steps')
+assert.ok(ragPrompt.indexOf('可以完全不采用') >= 0, 'RAG prompt should allow rejecting weak candidates')
 assert.ok(ragPrompt.indexOf('不要写“确诊”') >= 0, 'RAG prompt should preserve safe wording guardrail')
 
 console.log('kb tests passed')

@@ -407,54 +407,70 @@
 }
 
 /* ═══════════════════════════════════════
-   6. Evidence List — 圆点标记列表
+   6. Evidence Summary
    ═══════════════════════════════════════ */
 .evidence-list {
   display: flex;
   flex-direction: column;
+  gap: var(--sp-2);
 }
 
 .evidence-item {
-  display: flex;
-  gap: var(--sp-2);
-  padding: var(--sp-2) 0;
+  padding-bottom: var(--sp-2);
+  border-bottom: 1rpx solid var(--line-light);
 }
 
-.evidence-item + .evidence-item {
-  border-top: 1rpx solid var(--line-light);
-}
-
-.evidence-dot-wrap {
-  padding-top: var(--sp-1);
-  flex-shrink: 0;
-}
-
-.evidence-dot {
-  width: 12rpx;
-  height: 12rpx;
-  border-radius: 50%;
-}
-
-.dot-brand { background: var(--brand); }
-.dot-accent { background: var(--accent); }
-.dot-muted { background: var(--muted); }
-
-.evidence-content {
-  flex: 1;
-  min-width: 0;
+.evidence-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
 }
 
 .evidence-key {
   color: var(--muted);
   font-size: var(--fs-caption);
-  font-weight: 600;
-  margin-bottom: 4rpx;
+  font-weight: 700;
+  line-height: 1.4;
+  margin-bottom: 6rpx;
 }
 
 .evidence-value {
   color: var(--body);
   font-size: var(--fs-body);
   line-height: 1.65;
+}
+
+.source-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.source-item {
+  padding-bottom: var(--sp-2);
+  border-bottom: 1rpx solid var(--line-light);
+}
+
+.source-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.source-title {
+  color: var(--text);
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.source-meta {
+  margin-top: 4rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 2rpx;
+  color: var(--muted);
+  font-size: var(--fs-mini);
+  line-height: 1.4;
+  word-break: break-all;
 }
 
 /* ═══════════════════════════════════════
@@ -514,47 +530,6 @@
   color: var(--body);
   font-size: var(--fs-caption);
   line-height: 1.55;
-}
-
-.ddx-tags {
-  margin-top: var(--sp-1);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-}
-
-.ddx-tag {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-1);
-  padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--r-sm);
-  font-size: var(--fs-caption);
-  line-height: 1.5;
-}
-
-.tag-support {
-  background: var(--brand-light);
-  border: 1rpx solid var(--line);
-}
-
-.tag-against {
-  background: var(--surface);
-  border: 1rpx solid var(--line);
-}
-
-.ddx-tag-label {
-  font-weight: 700;
-  flex-shrink: 0;
-  font-size: var(--fs-caption);
-}
-
-.tag-support .ddx-tag-label { color: var(--brand); }
-.tag-against .ddx-tag-label { color: var(--muted); }
-
-.ddx-tag-text {
-  color: var(--body);
-  font-size: var(--fs-caption);
 }
 
 /* ═══════════════════════════════════════
@@ -622,40 +597,23 @@
 }
 
 /* ═══════════════════════════════════════
-   9. Report Info
+   9. Disclaimer
    ═══════════════════════════════════════ */
-.info-list {
-  border-top: 1rpx solid var(--line);
-}
-
-.info-list view {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  padding: var(--sp-2) 0;
-  border-bottom: 1rpx solid var(--line);
-  color: var(--body);
-  font-size: var(--fs-body);
-}
-
-.info-list text:first-child {
-  color: var(--muted);
-  flex-shrink: 0;
-}
-
-.info-list text:last-child {
-  text-align: right;
-  word-break: break-all;
-}
-
 .disclaimer-box {
-  margin-top: var(--sp-3);
+  margin: var(--sp-3) var(--sp-4);
   padding: var(--sp-2);
   border-radius: var(--r-sm);
   background: var(--surface);
   color: var(--muted);
   font-size: var(--fs-caption);
   line-height: 1.6;
+}
+
+.disclaimer-link {
+  margin-top: var(--sp-2);
+  color: var(--brand);
+  font-size: var(--fs-caption);
+  font-weight: 600;
 }
 
 /* ═══════════════════════════════════════
@@ -818,163 +776,7 @@
   opacity: 0.9;
 }
 
-/* ═══════════════════════════════════════
-   12. Vet Visit Card
-   ═══════════════════════════════════════ */
-.vet-visit-card {
-  margin-top: var(--sp-3);
-  padding: var(--sp-4);
-  border-radius: var(--r-lg);
-  background: var(--card);
-  border: 1rpx solid var(--line-light);
-  border-left: 8rpx solid var(--sev-mid);
-  box-shadow: var(--shadow-sm);
-}
 
-.vet-visit-card.urgency-low {
-  border-left-color: var(--sev-low);
-}
-
-.vet-visit-card.urgency-moderate {
-  border-left-color: var(--sev-mid);
-}
-
-.vet-visit-card.urgency-urgent {
-  border-left-color: var(--sev-urgent);
-  background: rgba(244, 67, 54, 0.04);
-}
-
-.vet-visit-card.urgency-emergency {
-  border-left-color: var(--sev-emergency);
-  background: rgba(183, 28, 28, 0.06);
-}
-
-.vet-visit-head {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-3);
-}
-
-.vet-visit-icon-wrap {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  background: var(--surface);
-}
-
-.urgency-low .vet-visit-icon-wrap { background: rgba(76, 175, 80, 0.12); }
-.urgency-moderate .vet-visit-icon-wrap { background: rgba(255, 152, 0, 0.12); }
-.urgency-urgent .vet-visit-icon-wrap { background: rgba(244, 67, 54, 0.12); }
-.urgency-emergency .vet-visit-icon-wrap { background: rgba(183, 28, 28, 0.15); }
-
-.vet-visit-icon {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: var(--sev-mid);
-}
-
-.urgency-low .vet-visit-icon { color: var(--sev-low); }
-.urgency-urgent .vet-visit-icon { color: var(--sev-urgent); }
-.urgency-emergency .vet-visit-icon { color: var(--sev-emergency); }
-
-.vet-visit-head-copy {
-  flex: 1;
-  min-width: 0;
-}
-
-.vet-visit-title {
-  color: var(--text);
-  font-family: var(--font-serif);
-  font-size: var(--fs-title);
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.vet-visit-desc {
-  margin-top: 4rpx;
-  color: var(--body);
-  font-size: var(--fs-caption);
-  line-height: 1.55;
-}
-
-.vet-visit-body {
-  margin-top: var(--sp-3);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
-  background: var(--surface);
-}
-
-.vet-visit-tip {
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
-}
-
-.vet-visit-tip-label {
-  color: var(--muted);
-  font-size: var(--fs-mini);
-  font-weight: 600;
-}
-
-.vet-visit-tip-text {
-  color: var(--body);
-  font-size: var(--fs-caption);
-  line-height: 1.5;
-}
-
-.vet-visit-actions {
-  display: flex;
-  gap: var(--sp-2);
-  margin-top: var(--sp-3);
-}
-
-.vet-visit-btn {
-  flex: 1;
-  min-height: 76rpx;
-  border-radius: var(--r-md);
-  background: var(--brand);
-  color: #ffffff;
-  font-size: var(--fs-body);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-}
-
-.urgency-urgent .vet-visit-btn {
-  background: var(--sev-urgent);
-}
-
-.urgency-emergency .vet-visit-btn {
-  background: var(--sev-emergency);
-}
-
-.vet-visit-btn:active {
-  opacity: 0.85;
-}
-
-.vet-visit-btn-secondary {
-  flex: 1;
-  min-height: 76rpx;
-  border-radius: var(--r-md);
-  background: var(--brand-light);
-  color: var(--brand-dark);
-  font-size: var(--fs-body);
-  font-weight: 600;
-  border: 1rpx solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.vet-visit-btn-secondary:active {
-  opacity: 0.85;
-}
 
 /* ═══════════════════════════════════════
    Dark Mode
@@ -1044,21 +846,4 @@
     color: var(--brand-mid);
   }
 
-  .vet-visit-card {
-    background: var(--card);
-    border-color: var(--line);
-  }
-
-  .urgency-urgent .vet-visit-card {
-    background: rgba(244, 67, 54, 0.08);
-  }
-
-  .urgency-emergency .vet-visit-card {
-    background: rgba(183, 28, 28, 0.1);
-  }
-
-  .vet-visit-btn-secondary {
-    background: var(--brand-light);
-    border-color: var(--line);
-  }
 }

@@ -86,41 +86,25 @@
     </scroll-view>
   </view>
 
-  <!-- ═══ Evidence Table ═══ -->
-  <view class="report-block">
+  <!-- ═══ Evidence ═══ -->
+  <view class="report-block" wx:if="{{record.observationText || record.supportText || record.uncertaintyText}}">
     <view class="block-head">
       <view class="block-title-wrap">
         <view class="block-title">判断依据</view>
       </view>
-      <view class="block-desc">来自图片表现和你填写的信息</view>
     </view>
     <view class="evidence-list">
-      <view class="evidence-item">
-        <view class="evidence-dot-wrap">
-          <view class="evidence-dot dot-brand"></view>
-        </view>
-        <view class="evidence-content">
-          <view class="evidence-key">客观观察</view>
-          <view class="evidence-value">{{record.observationText || '暂无观察描述'}}</view>
-        </view>
+      <view class="evidence-item" wx:if="{{record.observationText}}">
+        <view class="evidence-key">客观观察</view>
+        <view class="evidence-value">{{record.observationText}}</view>
       </view>
-      <view class="evidence-item">
-        <view class="evidence-dot-wrap">
-          <view class="evidence-dot dot-accent"></view>
-        </view>
-        <view class="evidence-content">
-          <view class="evidence-key">支持理由</view>
-          <view class="evidence-value">{{record.supportText || '暂无理由分析'}}</view>
-        </view>
+      <view class="evidence-item" wx:if="{{record.supportText}}">
+        <view class="evidence-key">支持理由</view>
+        <view class="evidence-value">{{record.supportText}}</view>
       </view>
-      <view class="evidence-item">
-        <view class="evidence-dot-wrap">
-          <view class="evidence-dot dot-muted"></view>
-        </view>
-        <view class="evidence-content">
-          <view class="evidence-key">不确定因素</view>
-          <view class="evidence-value">{{record.uncertaintyText || '建议结合病程变化继续观察'}}</view>
-        </view>
+      <view class="evidence-item" wx:if="{{record.uncertaintyText}}">
+        <view class="evidence-key">不确定因素</view>
+        <view class="evidence-value">{{record.uncertaintyText}}</view>
       </view>
     </view>
   </view>
@@ -131,7 +115,6 @@
       <view class="block-title-wrap">
         <view class="block-title">鉴别诊断</view>
       </view>
-      <view class="block-desc">{{record.diagnosisProbabilityNote}}</view>
     </view>
     <view class="ddx-list">
       <view class="ddx-item" wx:for="{{record.diseaseList}}" wx:key="index">
@@ -144,16 +127,6 @@
           <view style="width: {{item.percent}}%;"></view>
         </view>
         <view class="ddx-reason" wx:if="{{item.reason}}">{{item.reason}}</view>
-        <view class="ddx-tags" wx:if="{{item.supporting || item.against}}">
-          <view class="ddx-tag tag-support" wx:if="{{item.supporting}}">
-            <text class="ddx-tag-label">支持</text>
-            <text class="ddx-tag-text">{{item.supporting}}</text>
-          </view>
-          <view class="ddx-tag tag-against" wx:if="{{item.against}}">
-            <text class="ddx-tag-label">不确定</text>
-            <text class="ddx-tag-text">{{item.against}}</text>
-          </view>
-        </view>
       </view>
     </view>
   </view>
@@ -191,26 +164,22 @@
     </view>
   </view>
 
-  <!-- ═══ Vet Visit Card ═══ -->
-  <view class="vet-visit-card urgency-{{record.urgency || 'moderate'}}">
-    <view class="vet-visit-head">
-      <view class="vet-visit-icon-wrap">
-        <text class="vet-visit-icon">{{severityInfo.icon}}</text>
+  <!-- ═══ Sources ═══ -->
+  <view class="report-block" wx:if="{{record.sourceList.length > 0}}">
+    <view class="block-head">
+      <view class="block-title-wrap">
+        <view class="block-title">临床参考来源</view>
       </view>
-      <view class="vet-visit-head-copy">
-        <view class="vet-visit-title">{{severityInfo.title}}</view>
-        <view class="vet-visit-desc">{{severityInfo.desc}}</view>
-      </view>
+      <view class="block-desc">用于解释候选方向，不代表确诊依据</view>
     </view>
-    <view class="vet-visit-body" wx:if="{{record.urgency === 'urgent' || record.urgency === 'emergency'}}">
-      <view class="vet-visit-tip">
-        <text class="vet-visit-tip-label">就诊可告知兽医：</text>
-        <text class="vet-visit-tip-text">{{record.disease || '初筛结果'}} · {{record.confidenceText || '概率暂无'}} · {{record.bodyPartLabel || '部位未标注'}}</text>
+    <view class="source-list">
+      <view class="source-item" wx:for="{{record.sourceList}}" wx:key="title">
+        <view class="source-title">{{item.title}}</view>
+        <view class="source-meta" wx:if="{{item.tier || item.url}}">
+          <text wx:if="{{item.tier}}">{{item.tier}}</text>
+          <text wx:if="{{item.url}}">{{item.url}}</text>
+        </view>
       </view>
-    </view>
-    <view class="vet-visit-actions">
-      <button class="vet-visit-btn" bindtap="findHospital">查找附近宠物医院</button>
-      <button class="vet-visit-btn-secondary" open-type="share">分享报告给兽医</button>
     </view>
   </view>
 
@@ -249,20 +218,10 @@
     </view>
   </view>
 
-  <!-- ═══ Report Info ═══ -->
-  <view class="report-block">
-    <view class="block-head">
-      <view class="block-title-wrap">
-        <view class="block-title">报告信息</view>
-      </view>
-    </view>
-    <view class="info-list">
-      <view><text>生成时间</text><text>{{record.generatedAtText || record.timestamp || '--'}}</text></view>
-      <view><text>图片数量</text><text>{{record.imageItems.length}} 张</text></view>
-      <view><text>患处圈选</text><text>{{record.hasLesion ? '已圈选' : '未圈选'}}</text></view>
-      <view><text>模型名称</text><text>{{record.modelProviderText || '--'}}</text></view>
-    </view>
-    <view class="disclaimer-box">{{record.reportDisclaimer}}</view>
+  <!-- ═══ Disclaimer ═══ -->
+  <view class="disclaimer-box">
+    <view class="disclaimer-text">{{record.reportDisclaimer}}</view>
+    <view class="disclaimer-link" bindtap="findHospital">查找附近宠物医院</view>
   </view>
 
   <!-- ═══ Bottom Actions ═══ -->

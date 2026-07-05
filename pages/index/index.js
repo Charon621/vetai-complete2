@@ -1,4 +1,5 @@
 var api = require('../../utils/api')
+var config = require('../../utils/config')
 var storage = require('../../utils/storage')
 var imageUtil = require('../../utils/image')
 var lesionUtil = require('../../utils/lesion')
@@ -34,6 +35,7 @@ Page({
     quickAgeLabel: '',
     modelProvider: 'qwen',
     modelProviderLabel: 'Qwen3.7-Plus',
+    useKnowledgeBase: config.USE_KNOWLEDGE_BASE !== false,
     isAnalyzing: false,
     analyzingStep: 0,
     analyzingStepText: '正在识别皮损特征...',
@@ -500,6 +502,7 @@ Page({
         complaint: this.data.complaint,
         modelProvider: this.data.modelProvider,
         modelProviderLabel: this.data.modelProviderLabel,
+        useKnowledgeBase: this.data.useKnowledgeBase,
         lesionBoxes: this.data.lesionBoxes,
         imageRoles: this.data.imageRoles
       }
@@ -527,6 +530,7 @@ Page({
       complaint: this.data.complaint,
       modelProvider: this.data.modelProvider,
       modelProviderLabel: this.data.modelProviderLabel,
+      useKnowledgeBase: this.data.useKnowledgeBase,
       lesionBoxes: this.data.lesionBoxes,
       imageRoles: this.data.imageRoles
     }
@@ -579,17 +583,21 @@ Page({
   },
 
   _startAnalyzingTimer: function () {
-    var steps = [
-      '正在识别皮损特征...',
-      '正在匹配品种易感病...',
-      '正在评估严重程度...',
-      '正在生成护理建议...'
+    var phases = [
+      { text: '正在识别皮损特征...', duration: 6000 },
+      { text: '正在检索临床特征库...', duration: 6000 },
+      { text: '正在综合分析中...', duration: 12000 },
+      { text: '报告即将完成，请耐心等待...', duration: 0 }
     ]
     var self = this
     var i = 0
+    var elapsed = 0
     this._analyzingTimer = setInterval(function () {
-      i = (i + 1) % steps.length
-      self.setData({ analyzingStep: i, analyzingStepText: steps[i] })
+      elapsed += 4000
+      if (i < phases.length - 1 && elapsed >= phases[i].duration) {
+        i++
+        self.setData({ analyzingStep: i, analyzingStepText: phases[i].text })
+      }
     }, 4000)
   },
 
@@ -708,7 +716,7 @@ Page({
       .catch(function (err) {
         if (err && err.message === '__handled__') return
         self.setData({ isAnalyzing: false }); self._stopAnalyzingTimer()
-        wx.showModal({ title: '请求失败', content: (err && err.message) || '网络异常', showCancel: false })
+        wx.showModal({ title: '请求失败', content: api.friendlyError(err && err.message) || '网络异常', showCancel: false })
       })
   }
 })
