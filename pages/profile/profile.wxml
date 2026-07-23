@@ -14,12 +14,19 @@
   <view wx:if="{{profiles.length === 0 && !showForm}}" class="empty-panel">
     <view class="empty-icon-wrap">
       <view class="empty-pet-icon">
-        <text class="empty-pet-face">宠</text>
+        <view class="illus-cat">
+          <view class="illus-cat-ear left"></view>
+          <view class="illus-cat-ear right"></view>
+          <view class="illus-cat-face">
+            <view class="illus-cat-eyes"></view>
+            <view class="illus-cat-muzzle"></view>
+          </view>
+        </view>
       </view>
     </view>
     <view class="empty-title">还没有宠物档案</view>
-    <view class="empty-desc">添加宠物档案后，首页可直接带入基础信息，后续记录也更容易对比。</view>
-    <button class="vet-btn vet-btn-primary empty-add-btn" bindtap="showCreateForm">添加宠物档案</button>
+    <view class="empty-desc">通过对话式建档，AI 兽医助手会像真实医生一样逐步询问信息，建立更完整的宠物档案。</view>
+    <button class="vet-btn vet-btn-primary empty-add-btn" bindtap="showCreateForm">开始对话建档</button>
   </view>
 
   <!-- 档案列表 -->
@@ -66,8 +73,8 @@
         <text class="add-mark-icon">+</text>
       </view>
       <view class="add-copy">
-        <view class="add-title">添加宠物档案</view>
-        <view class="add-desc">完善年龄、品种和过往情况，有助于生成更有参考价值的初筛报告。</view>
+        <view class="add-title">对话式建档</view>
+        <view class="add-desc">AI 兽医助手会逐步询问信息，帮你建立完整档案</view>
       </view>
     </view>
   </view>

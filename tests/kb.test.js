@@ -40,7 +40,9 @@ kb.DISEASE_KB.forEach((card) => {
   assert.ok(Array.isArray(card.recommendedTests) && card.recommendedTests.length > 0, card.name + ' missing tests')
   assert.ok(Array.isArray(card.homeCareSafe) && card.homeCareSafe.length > 0, card.name + ' missing safe home care')
   assert.ok(Array.isArray(card.redFlags) && card.redFlags.length > 0, card.name + ' missing red flags')
-  assert.ok(Array.isArray(card.sources) && card.sources.length > 0, card.name + ' missing sources')
+  // sources 允许为空数组：rare_warning 类罕见病 / 弱命中时有意不挂通用来源，
+  // 前端 sourceList 为空会自动隐藏“临床参考来源”区块，避免不同图片都指向同一组通用链接。
+  assert.ok(Array.isArray(card.sources), card.name + ' sources should be an array')
   assert.ok(card.report.possibleDirection && card.report.uncertainty, card.name + ' missing report template')
 })
 

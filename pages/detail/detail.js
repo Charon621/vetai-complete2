@@ -251,8 +251,14 @@ Page({
 
   onRecordTap: function (e) {
     var id = e.currentTarget.dataset.id
+    var record = storage.getRecordById(id)
     analytics.track('page_view', { page: 'result_from_history', recordId: id })
-    wx.navigateTo({ url: '/pages/result/result?id=' + id })
+    // 对话式问诊的记录跳简要报告页，其他跳完整报告页
+    if (record && record.source === 'chat') {
+      wx.navigateTo({ url: '/pages/chat/report/report?id=' + id })
+    } else {
+      wx.navigateTo({ url: '/pages/result/result?id=' + id })
+    }
   },
 
   clearRecords: function () {

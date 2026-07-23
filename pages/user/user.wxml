@@ -33,10 +33,10 @@
     </view>
   </view>
 
-  <!-- 产品设置 -->
+  <!-- 产品说明 -->
   <view class="settings-section vet-fade-up" style="animation-delay:120ms">
     <view class="section-heading">
-      <view class="section-title">产品设置</view>
+      <view class="section-title">产品说明</view>
       <view class="section-note">{{storageModeText}}</view>
     </view>
     <view class="settings-list">
@@ -205,7 +205,7 @@
         <view class="setting-item" wx:for="{{upgradeSignals.weakSegments}}" wx:key="name">
           <view class="setting-copy">
             <view class="setting-title">{{item.name}}</view>
-            <view class="kb-detail-text">{{item.bodyPart}} · 无帮助 {{item.notHelpful}} · 兽医不一致 {{item.vetDifferent}} · {{item.mainIssueLabel}}</view>
+            <view class="kb-detail-text">{{item.bodyPart}}，无帮助 {{item.notHelpful}}，兽医不一致 {{item.vetDifferent}}，{{item.mainIssueLabel}}</view>
           </view>
         </view>
       </view>
@@ -216,7 +216,7 @@
         <view class="setting-item" wx:for="{{kbAccuracyList}}" wx:key="name">
           <view class="setting-copy">
             <view class="setting-title">{{item.name}}</view>
-            <view class="kb-detail-text">有帮助率 {{item.helpfulRate}}% · 无帮助 {{item.notHelpful}} · 兽医不一致 {{item.vetDifferent}} · {{item.mainIssueLabel}}</view>
+            <view class="kb-detail-text">有帮助率 {{item.helpfulRate}}%，无帮助 {{item.notHelpful}}，兽医不一致 {{item.vetDifferent}}，{{item.mainIssueLabel}}</view>
           </view>
         </view>
       </view>

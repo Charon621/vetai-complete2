@@ -1,0 +1,50 @@
+<view class="report-page">
+  <block wx:if="{{displayRecord}}">
+    <!-- 报告头 -->
+    <view class="report-header">
+      <view class="report-pet-row">
+        <view class="report-pet-name">{{displayRecord.petName}}</view>
+        <view class="report-pet-meta">{{displayRecord.petTypeLabel}}{{displayRecord.breed ? '，' + displayRecord.breed : ''}}</view>
+      </view>
+      <view class="report-date">{{displayRecord.dateStr}}</view>
+    </view>
+
+    <!-- 紧急程度 -->
+    <view class="urgency-banner urgency-{{displayRecord.urgency}}">
+      <text class="urgency-label">{{displayRecord.urgencyText}}</text>
+    </view>
+
+    <!-- 照片 -->
+    <view class="report-photos" wx:if="{{displayRecord.photos.length > 0}}">
+      <scroll-view scroll-x show-scrollbar="{{false}}">
+        <view class="report-photos-row">
+          <image wx:for="{{displayRecord.photos}}" wx:key="*this" src="{{item}}" mode="aspectFill" class="report-photo" />
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 诊断信息 -->
+    <view class="report-sections">
+      <view class="report-section" wx:for="{{displayRecord.lines}}" wx:key="label">
+        <view class="report-section-label">{{item.label}}</view>
+        <view class="report-section-value">{{item.value}}</view>
+      </view>
+    </view>
+
+    <!-- 免责声明 -->
+    <view class="report-disclaimer">
+      以上内容由 AI 生成，仅作为初步参考，不能替代兽医面诊。如症状持续或加重，请及时就诊。
+    </view>
+
+    <!-- 底部操作 -->
+    <view class="report-actions">
+      <view class="report-btn-secondary" bindtap="goHistory">查看记录</view>
+      <view class="report-btn-primary" bindtap="onBack">返回对话</view>
+    </view>
+  </block>
+
+  <view class="report-empty" wx:elif="{{notFound}}">
+    <view class="report-empty-text">报告不存在或已被删除</view>
+    <view class="report-btn-primary" bindtap="onBack">返回</view>
+  </view>
+</view>

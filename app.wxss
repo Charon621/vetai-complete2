@@ -58,11 +58,15 @@ page {
   --font-mono: 'SF Mono', 'Menlo', 'Roboto Mono', 'Courier New', monospace;
   --font-kai: 'KaiTi', 'STKaiti', 'AR PL UKai', serif;
 
-  /* ── 8. 严重度语义色 ── */
-  --sev-low: #4CAF50;
-  --sev-mid: #FF9800;
-  --sev-urgent: #F44336;
-  --sev-emergency: #B71C1C;
+  /* ── 8. 严重度语义色 — 降饱和，贴合暖调品牌体系 ── */
+  --sev-low: #63A67C;
+  --sev-mid: #E0964A;
+  --sev-urgent: #D96B5E;
+  --sev-emergency: #A94438;
+  --sev-low-bg: #E9F4EC;
+  --sev-mid-bg: #FBF1E3;
+  --sev-urgent-bg: #F9ECEA;
+  --sev-emergency-bg: #F5E0DE;
 
   /* ── 9. 向后兼容：--vet-* 别名 ── */
   --vet-primary: var(--brand);
@@ -88,13 +92,13 @@ page {
 
   /* ── 10. 严重度向后兼容 ── */
   --vet-low: var(--sev-low);
-  --vet-low-bg: #E8F5E9;
+  --vet-low-bg: var(--sev-low-bg);
   --vet-mid: var(--sev-mid);
-  --vet-mid-bg: #FFF3E0;
+  --vet-mid-bg: var(--sev-mid-bg);
   --vet-vet: var(--sev-urgent);
-  --vet-vet-bg: #FFEBEE;
+  --vet-vet-bg: var(--sev-urgent-bg);
   --vet-emg: var(--sev-emergency);
-  --vet-emg-bg: #FFCDD2;
+  --vet-emg-bg: var(--sev-emergency-bg);
 
   /* ── 11. 圆角向后兼容 ── */
   --vet-r-page: var(--r-lg);
@@ -120,7 +124,7 @@ page {
   min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: var(--fs-body);
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
@@ -132,15 +136,15 @@ page {
  * ============================================================ */
 @media (prefers-color-scheme: dark) {
   page {
-    --bg: #1A1A1A;
+    --bg: #161616;
     --card: #262626;
-    --surface: #303030;
+    --surface: #333333;
     --text: #F0F0F0;
     --body: #C0C0C0;
     --muted: #808080;
     --faint: #606060;
-    --line: #3A3A3A;
-    --line-light: #2E2E2E;
+    --line: #454545;
+    --line-light: #383838;
 
     --brand: #7B9AF0;
     --brand-dark: #8DA0F0;
@@ -154,10 +158,14 @@ page {
     --shadow-md: 0 4rpx 16rpx rgba(0,0,0,0.24);
     --shadow-lg: 0 8rpx 32rpx rgba(0,0,0,0.32);
 
-    --sev-low-bg: #1B3A1F;
-    --sev-mid-bg: #3A2E10;
-    --sev-urgent-bg: #3A1515;
-    --sev-emergency-bg: #2E0A0A;
+    --sev-low: #7CB894;
+    --sev-mid: #E5A866;
+    --sev-urgent: #DE8377;
+    --sev-emergency: #C05C4E;
+    --sev-low-bg: #21362A;
+    --sev-mid-bg: #3A3120;
+    --sev-urgent-bg: #3A2724;
+    --sev-emergency-bg: #351F1C;
 
     /* 暗色 vet-* 别名同步 */
     --vet-primary: var(--brand);
@@ -263,6 +271,7 @@ textarea {
 
 .vet-section-title {
   color: var(--text);
+  font-family: var(--font-serif);
   font-size: var(--fs-title);
   font-weight: 700;
   line-height: 1.35;
@@ -280,6 +289,7 @@ textarea {
  * ============================================================ */
 .vet-title-xl {
   color: var(--text);
+  font-family: var(--font-serif);
   font-size: var(--fs-display);
   font-weight: 700;
   line-height: 1.22;
@@ -287,6 +297,7 @@ textarea {
 
 .vet-title-lg {
   color: var(--text);
+  font-family: var(--font-serif);
   font-size: var(--fs-title);
   font-weight: 700;
   line-height: 1.32;
@@ -294,6 +305,7 @@ textarea {
 
 .vet-title-md {
   color: var(--text);
+  font-family: var(--font-serif);
   font-size: 30rpx;
   font-weight: 650;
   line-height: 1.38;
@@ -360,9 +372,9 @@ textarea {
 }
 
 .vet-btn-danger {
-  background: #FFEBEE;
+  background: var(--sev-urgent-bg);
   color: var(--sev-emergency);
-  border: 1rpx solid rgba(244, 67, 54, 0.2);
+  border: 1rpx solid rgba(169, 68, 56, 0.2);
   box-shadow: none;
 }
 
@@ -462,62 +474,6 @@ textarea {
 }
 
 /* ============================================================
- * 空状态
- * ============================================================ */
-.vet-empty {
-  padding: var(--sp-8) var(--sp-4);
-  text-align: center;
-  color: var(--muted);
-}
-
-.vet-empty-icon {
-  width: 128rpx;
-  height: 128rpx;
-  margin: 0 auto var(--sp-2);
-  border-radius: 50%;
-  background: var(--brand-light);
-  color: var(--brand);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 46rpx;
-  font-weight: 700;
-}
-
-.vet-empty-state {
-  padding: var(--sp-10) var(--sp-4);
-  text-align: center;
-}
-
-.empty-state-circle {
-  width: 128rpx;
-  height: 128rpx;
-  margin: 0 auto var(--sp-2);
-  border-radius: 50%;
-  background: var(--brand-light);
-  color: var(--brand);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 42rpx;
-  font-weight: 700;
-}
-
-.empty-state-title {
-  color: var(--text);
-  font-size: 31rpx;
-  font-weight: 700;
-}
-
-.empty-state-desc {
-  margin: var(--sp-1) auto var(--sp-3);
-  max-width: 520rpx;
-  color: var(--muted);
-  font-size: 25rpx;
-  line-height: 1.55;
-}
-
-/* ============================================================
  * 加载
  * ============================================================ */
 .vet-loading-card {
@@ -600,6 +556,114 @@ textarea {
 .font-serif { font-family: var(--font-serif); }
 .font-mono  { font-family: var(--font-mono); }
 .font-kai   { font-family: var(--font-kai); }
+
+/* ============================================================
+ * 线性图标系统 — 纯 CSS，替代 emoji
+ * 圆角端点、currentColor 继承上下文颜色
+ * ============================================================ */
+.vic {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+}
+
+/* 医疗十字：AI 医生标识 */
+.vic-cross {
+  width: 30rpx;
+  height: 30rpx;
+}
+
+.vic-cross::before,
+.vic-cross::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+  border-radius: 5rpx;
+}
+
+.vic-cross::before {
+  left: 50%;
+  top: 0;
+  width: 11rpx;
+  height: 30rpx;
+  transform: translateX(-50%);
+}
+
+.vic-cross::after {
+  top: 50%;
+  left: 0;
+  width: 30rpx;
+  height: 11rpx;
+  transform: translateY(-50%);
+}
+
+/* 人物：用户头像 */
+.vic-user {
+  width: 30rpx;
+  height: 30rpx;
+}
+
+.vic-user::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 13rpx;
+  height: 13rpx;
+  transform: translateX(-50%);
+  border: 2.5rpx solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.vic-user::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 26rpx;
+  height: 13rpx;
+  transform: translateX(-50%);
+  border: 2.5rpx solid currentColor;
+  border-bottom: none;
+  border-radius: 14rpx 14rpx 0 0;
+  box-sizing: border-box;
+}
+
+/* 对话气泡：对话式问诊入口 */
+.vic-chat {
+  width: 34rpx;
+  height: 28rpx;
+  border: 2.5rpx solid currentColor;
+  border-radius: 10rpx;
+  box-sizing: border-box;
+}
+
+.vic-chat::before {
+  content: "";
+  position: absolute;
+  left: 7rpx;
+  bottom: -8rpx;
+  width: 9rpx;
+  height: 9rpx;
+  border-left: 2.5rpx solid currentColor;
+  border-bottom: 2.5rpx solid currentColor;
+  transform: rotate(45deg);
+  box-sizing: border-box;
+}
+
+.vic-chat::after {
+  content: "";
+  position: absolute;
+  left: 5rpx;
+  top: 50%;
+  width: 4rpx;
+  height: 4rpx;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateY(-50%);
+  box-shadow: 8rpx 0 0 currentColor, 16rpx 0 0 currentColor;
+}
 
 @keyframes vetFadeUp {
   from { opacity: 0; transform: translateY(18rpx); }

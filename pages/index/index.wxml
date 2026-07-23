@@ -1,45 +1,21 @@
 <view class="vet-page triage-page">
 
-  <!-- 无档案状态：融入页面的引导横幅 -->
-  <view class="profile-guide" wx:if="{{!selectedProfile}}" bindtap="goProfile">
+  <!-- 快捷入口：对话式问诊 -->
+  <view class="profile-guide" bindtap="goChat">
     <view class="profile-guide-icon">
-      <view class="profile-guide-paw">🐾</view>
+      <view class="vic vic-chat"></view>
     </view>
     <view class="profile-guide-body">
-      <text class="profile-guide-title">创建宠物健康档案</text>
-      <text class="profile-guide-desc">填写品种、年龄等信息，诊断时可自动带入</text>
+      <text class="profile-guide-title">对话式问诊</text>
+      <text class="profile-guide-desc">像和医生聊天一样，循序渐进描述问题</text>
     </view>
-    <view class="profile-guide-action">去添加</view>
-  </view>
-
-  <!-- 有档案状态：轻量状态条 -->
-  <view class="profile-bar" wx:else bindtap="goProfile">
-    <view class="profile-bar-left">
-      <view class="profile-bar-avatar">
-        <image wx:if="{{selectedProfile.avatar}}" src="{{selectedProfile.avatar}}" mode="aspectFill" />
-        <text wx:else>{{selectedProfileAvatarText}}</text>
-      </view>
-      <view class="profile-bar-text">
-        <text class="profile-bar-name">{{selectedProfile.petName}}</text>
-        <text class="profile-bar-sub">
-          {{selectedProfile.petTypeLabel}}{{selectedProfile.breed ? ' · ' + selectedProfile.breed : ''}}{{selectedProfile.ageLabel ? ' · ' + selectedProfile.ageLabel : ''}}
-        </text>
-      </view>
-    </view>
-    <view class="profile-bar-right">
-      <view class="mode-pill" wx:if="{{selectedProfile}}" catchtap="noop">
-        <view class="mode-pill-item {{mode === 'profile' ? 'mode-pill-on' : ''}}" bindtap="useProfileMode">档案</view>
-        <view class="mode-pill-item {{mode === 'quick' ? 'mode-pill-on' : ''}}" bindtap="useQuickMode">临时</view>
-      </view>
-      <view class="profile-bar-arrow">›</view>
-    </view>
+    <view class="profile-guide-action">去对话</view>
   </view>
 
   <!-- 影像采集区 -->
   <view class="evidence-board">
     <view class="board-head">
       <view class="board-head-left">
-        <view class="section-title-bar"></view>
         <view>
           <view class="board-title">影像采集</view>
           <view class="board-desc">建议上传整体、近景和参照照片，最多 5 张</view>
@@ -106,14 +82,13 @@
   <!-- 宠物信息区 -->
   <view class="case-section">
     <view class="section-title-row">
-      <view class="section-title-bar"></view>
       <view>
         <view class="section-title">宠物信息</view>
         <view class="section-desc">可临时填写，也可以带入宠物档案</view>
       </view>
     </view>
 
-    <view class="input-panel" wx:if="{{mode === 'quick' || !selectedProfile}}">
+    <view class="input-panel">
       <view class="field-block">
         <view class="field-title">物种</view>
         <view class="choice-row">
@@ -138,7 +113,6 @@
   <!-- 患处与症状区 -->
   <view class="case-section">
     <view class="section-title-row">
-      <view class="section-title-bar"></view>
       <view>
         <view class="section-title">患处与症状</view>
         <view class="section-desc">补充病程、瘙痒、掉毛、抓挠、结痂或渗出</view>
@@ -179,10 +153,7 @@
   <!-- 分析中遮罩 -->
   <view class="analyzing-mask" wx:if="{{isAnalyzing}}">
     <view class="vet-loading-card analyzing-card">
-      <view class="analyzing-pulse-row">
-        <view class="analyzing-pulse"></view>
-        <view class="vet-title-md">正在生成初筛报告</view>
-      </view>
+      <view class="vet-title-md">正在生成初筛报告</view>
       <view class="analyzing-desc-text">{{analyzingStepText}}</view>
       <view class="vet-loading-line"></view>
     </view>
@@ -190,45 +161,14 @@
 
   <canvas type="2d" id="resizeCanvas" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;"></canvas>
   <canvas type="2d" id="qualityCanvas" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;"></canvas>
+  <canvas type="2d" id="fallbackCanvas" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;"></canvas>
 
   <!-- 患处圈选浮层 -->
-  <view class="lesion-overlay" wx:if="{{selectorVisible}}" catchtouchmove="noop">
-    <view class="lesion-sheet">
-      <view class="lesion-top">
-        <view>
-          <view class="vet-label">患处圈选</view>
-          <view class="vet-title-lg">圈出最明显的位置</view>
-          <view class="vet-caption">可选步骤。标注后系统会额外关注这块区域。</view>
-        </view>
-        <view class="lesion-close" bindtap="closeLesionSelector">×</view>
-      </view>
-
-      <view class="lesion-toolbar">
-        <view class="tool-chip {{selectorMode === 'freehand' ? 'tool-chip-on' : ''}}" bindtap="setLesionMode" data-mode="freehand">自由圈选</view>
-        <view class="tool-chip {{selectorMode === 'rectangle' ? 'tool-chip-on' : ''}}" bindtap="setLesionMode" data-mode="rectangle">矩形框选</view>
-        <view class="tool-stat">{{selectorPointCount}} 点</view>
-      </view>
-
-      <view class="lesion-stage"
-        catchtouchstart="startDrawLesion"
-        catchtouchmove="moveDrawLesion"
-        catchtouchend="endDrawLesion"
-        catchtouchcancel="endDrawLesion">
-        <image src="{{selectorImagePath}}" mode="aspectFit" class="lesion-image" />
-        <view class="lesion-grid"></view>
-        <canvas type="2d" id="lesionCanvas" class="lesion-canvas"></canvas>
-      </view>
-
-      <view class="lesion-tip">
-        <text>{{selectorModeLabel}}</text>
-        <text>{{selectorCanSave ? '标注有效，可以保存' : '沿患处边缘拖动，形成一个区域'}}</text>
-      </view>
-
-      <view class="lesion-actions">
-        <button class="vet-btn vet-btn-primary lesion-save-main" bindtap="saveLesion">完成并保存圈选</button>
-        <button class="vet-btn vet-btn-ghost" bindtap="clearLesion">清除</button>
-        <button class="vet-btn vet-btn-secondary" bindtap="resetLesion">重画</button>
-      </view>
-    </view>
-  </view>
+  <lesion-selector
+    visible="{{selectorVisible}}"
+    image-path="{{selectorImagePath}}"
+    initial-box="{{selectorInitialBox}}"
+    bind:save="onLesionSave"
+    bind:clear="onLesionClear"
+    bind:close="onLesionClose" />
 </view>

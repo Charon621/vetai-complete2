@@ -1,6 +1,8 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/chat/chat",
+    "pages/chat/report/report",
     "pages/detail/detail",
     "pages/profile/profile",
     "pages/user/user"
@@ -27,9 +29,15 @@
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "问诊",
+        "text": "快速初筛",
         "iconPath": "images/tab-home.png",
         "selectedIconPath": "images/tab-home-active.png"
+      },
+      {
+        "pagePath": "pages/chat/chat",
+        "text": "医生对话",
+        "iconPath": "images/tab-chat.png",
+        "selectedIconPath": "images/tab-chat-active.png"
       },
       {
         "pagePath": "pages/detail/detail",

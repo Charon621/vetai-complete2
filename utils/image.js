@@ -6,27 +6,61 @@
 var config = require('./config')
 var analytics = require('./analytics')
 
+var USER_DATA_PATH = (wx.env && wx.env.USER_DATA_PATH) || ''
+
+/**
+ * 把 http://tmp/ 等临时路径复制到本地用户目录，避免临时文件被回收或 DevTools 返回假路径
+ */
+function stabilizeTempFile(path) {
+  return new Promise(function (resolve) {
+    if (!path || path.indexOf('data:') === 0) return resolve(path)
+    if (USER_DATA_PATH && path.indexOf(USER_DATA_PATH) === 0) return resolve(path)
+
+    var fs = wx.getFileSystemManager()
+    var dir = USER_DATA_PATH + '/vetai_tmp'
+    var dest = dir + '/img_' + Date.now() + '_' + Math.floor(Math.random() * 1000000) + '.jpg'
+
+    function doCopy() {
+      fs.copyFile({
+        srcPath: path,
+        destPath: dest,
+        success: function () { resolve(dest) },
+        fail: function () { resolve(path) }
+      })
+    }
+
+    fs.access({
+      path: dir,
+      success: doCopy,
+      fail: function () {
+        fs.mkdir({
+          dirPath: dir,
+          recursive: true,
+          success: doCopy,
+          fail: function () { resolve(path) }
+        })
+      }
+    })
+  })
+}
+
 // ============================================================
 // 核心图片处理（保留原有逻辑）
 // ============================================================
 
 function processImage(path, pageContext) {
   return new Promise(function (resolve, reject) {
-    var MAX_DIM = 1280
-    var COMPRESS_QUALITY = 0.7
-
-    wx.getImageInfo({
-      src: path,
-      success: function (info) {
-        var needResize = info.width > MAX_DIM || info.height > MAX_DIM
-        if (needResize && pageContext) {
-          resizeWithCanvas(path, info, MAX_DIM, COMPRESS_QUALITY, pageContext, resolve, reject)
-        } else {
-          compressAndRead(path, info, COMPRESS_QUALITY, pageContext, resolve, reject)
-        }
+    // 只有两步：readFile（真机快路径）→ canvas.toDataURL（DevTools 兜底）
+    // 不再走 getImageInfo → compressImage → canvasToTempFilePath 等中间步骤，
+    // 消除 DevTools 下大量无意义的 fail 日志
+    wx.getFileSystemManager().readFile({
+      filePath: path,
+      encoding: 'base64',
+      success: function (res) {
+        resolve('data:image/jpeg;base64,' + res.data)
       },
       fail: function () {
-        compressAndRead(path, null, COMPRESS_QUALITY, pageContext, resolve, reject)
+        canvasToDataURLFallback(path, pageContext, resolve, reject)
       }
     })
   })
@@ -38,6 +72,7 @@ function resizeWithCanvas(path, info, maxDim, quality, pageContext, resolve, rej
     .fields({ node: true, size: true })
     .exec(function (res) {
       if (!res || !res[0] || !res[0].node) {
+        console.warn('[VetAI] resizeCanvas node not found, falling back to compress')
         compressAndRead(path, info, quality, pageContext, resolve, reject, true)
         return
       }
@@ -63,13 +98,19 @@ function resizeWithCanvas(path, info, maxDim, quality, pageContext, resolve, rej
             wx.getFileSystemManager().readFile({
               filePath: tempRes.tempFilePath, encoding: 'base64',
               success: function (fileRes) { resolve('data:image/jpeg;base64,' + fileRes.data) },
-              fail: reject
+              fail: function (err) {
+                console.warn('[VetAI] readFile (canvas temp) failed:', err)
+                readAsBase64Fallback(path, pageContext, resolve, reject)
+              }
             })
           },
           fail: function () { compressAndRead(path, info, quality, pageContext, resolve, reject, true) }
         })
       }
-      img.onerror = function () { compressAndRead(path, info, quality, pageContext, resolve, reject, true) }
+      img.onerror = function () {
+        console.warn('[VetAI] canvas image load failed, falling back to compress')
+        compressAndRead(path, info, quality, pageContext, resolve, reject, true)
+      }
       img.src = info.path || path
     })
 }
@@ -81,21 +122,159 @@ function compressAndRead(path, info, quality, pageContext, resolve, reject, noCa
       wx.getFileSystemManager().readFile({
         filePath: cres.tempFilePath, encoding: 'base64',
         success: function (fileRes) { resolve('data:image/jpeg;base64,' + fileRes.data) },
-        fail: reject
+        fail: function (err) {
+          console.warn('[VetAI] readFile (compressed) failed:', err)
+          // 压缩后文件读取失败，尝试读原始文件
+          readAsBase64Fallback(path, pageContext, resolve, reject)
+        }
       })
     },
-    fail: function () {
+    fail: function (err) {
+      console.warn('[VetAI] compressImage failed:', err, 'path:', path)
       if (!noCanvasFallback && pageContext && info) {
         resizeWithCanvas(path, info, 1280, quality, pageContext, resolve, reject)
       } else {
-        wx.getFileSystemManager().readFile({
-          filePath: path, encoding: 'base64',
-          success: function (fileRes) { resolve('data:image/jpeg;base64,' + fileRes.data) },
-          fail: reject
-        })
+        // compressImage 失败，直接读原始文件
+        readAsBase64Fallback(path, pageContext, resolve, reject)
       }
     }
   })
+}
+
+/**
+ * 最终兜底：尝试多种方式读取文件为 base64
+ * 1. 直接 readFile base64
+ * 2. 如果 base64 失败，用 ArrayBuffer 读取再手动转 base64
+ * 3. 如果都失败，用 canvas.toDataURL 直接从渲染层获取 base64（DevTools 临时文件系统异常时有效）
+ */
+function readAsBase64Fallback(path, pageContext, resolve, reject) {
+  wx.getFileSystemManager().readFile({
+    filePath: path, encoding: 'base64',
+    success: function (fileRes) {
+      resolve('data:image/jpeg;base64,' + fileRes.data)
+    },
+    fail: function (err) {
+      console.warn('[VetAI] readFile (base64) failed, trying ArrayBuffer:', err)
+      // 最后兜底：用 ArrayBuffer 读取再手动转 base64
+      wx.getFileSystemManager().readFile({
+        filePath: path,
+        success: function (bufRes) {
+          try {
+            var base64 = arrayBufferToBase64(bufRes.data)
+            resolve('data:image/jpeg;base64,' + base64)
+          } catch (e) {
+            console.error('[VetAI] all file read methods failed, trying canvas.toDataURL:', e)
+            canvasToDataURLFallback(path, pageContext, resolve, reject)
+          }
+        },
+        fail: function (err2) {
+          console.error('[VetAI] readFile (ArrayBuffer) also failed, trying canvas.toDataURL:', err2)
+          canvasToDataURLFallback(path, pageContext, resolve, reject)
+        }
+      })
+    }
+  })
+}
+
+/**
+ * 通过 canvas 2d 的 toDataURL 把图片转成 base64
+ * 用于 DevTools 等环境下临时文件系统返回虚假路径、readFile/compressImage 均失败的情况
+ */
+function canvasToDataURLFallback(path, pageContext, resolve, reject) {
+  if (!pageContext) {
+    reject({ errMsg: 'processImage: no pageContext for canvas fallback' })
+    return
+  }
+  // 静默：DevTools 下这是正常路径，不需要打日志
+  wx.getImageInfo({
+    src: path,
+    success: function (info) { doCanvasToDataURL(path, info, pageContext, resolve, reject) },
+    fail: function () {
+      doCanvasToDataURL(path, { width: 1280, height: 1280 }, pageContext, resolve, reject)
+    }
+  })
+}
+
+function doCanvasToDataURL(path, info, pageContext, resolve, reject) {
+  var query = pageContext.createSelectorQuery ? pageContext.createSelectorQuery() : wx.createSelectorQuery().in(pageContext)
+  query.select('#fallbackCanvas')
+    .fields({ node: true, size: true })
+    .exec(function (res) {
+      if (!res || !res[0] || !res[0].node) {
+        reject({ errMsg: 'canvasToDataURLFallback: canvas node not found' })
+        return
+      }
+
+      var canvas = res[0].node
+      var ctx = canvas.getContext('2d')
+      var maxDim = 1280
+      var w = info.width || 1280
+      var h = info.height || 1280
+      if (w > h) {
+        if (w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim }
+      } else {
+        if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim }
+      }
+      canvas.width = w
+      canvas.height = h
+      ctx.clearRect(0, 0, w, h)
+
+      var img = canvas.createImage()
+      img.onload = function () {
+        ctx.drawImage(img, 0, 0, w, h)
+        try {
+          var dataUrl = canvas.toDataURL('image/jpeg', 0.85)
+          if (dataUrl && dataUrl.indexOf('data:image') === 0) {
+            resolve(dataUrl)
+          } else {
+            throw new Error('invalid data url')
+          }
+        } catch (e) {
+          try {
+            var pngUrl = canvas.toDataURL('image/png')
+            if (pngUrl && pngUrl.indexOf('data:image') === 0) {
+              resolve(pngUrl)
+            } else {
+              reject({ errMsg: 'processImage: canvas toDataURL returned invalid data' })
+            }
+          } catch (e2) {
+            reject({ errMsg: 'processImage: canvas toDataURL failed' })
+          }
+        }
+      }
+      img.onerror = function () { reject({ errMsg: 'processImage: canvas image load failed' }) }
+      img.src = path
+    })
+}
+
+/**
+ * ArrayBuffer 转 base64
+ * 优先使用内置 API（部分基础库支持），否则手动分块编码
+ */
+function arrayBufferToBase64(buffer) {
+  // 优先使用内置 API（旧版基础库可用）
+  if (typeof wx !== 'undefined' && typeof wx.arrayBufferToBase64 === 'function') {
+    return wx.arrayBufferToBase64(buffer)
+  }
+  // 手动分块编码（避免栈溢出）
+  var bytes = new Uint8Array(buffer)
+  var len = bytes.byteLength
+  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+  var result = ''
+  var chunkSize = 8192
+  for (var i = 0; i < len; i += chunkSize) {
+    var end = Math.min(i + chunkSize, len)
+    for (var j = i; j < end; j += 3) {
+      var byte1 = bytes[j] || 0
+      var byte2 = bytes[j + 1]
+      var byte3 = bytes[j + 2]
+      result += chars.charAt(byte1 >> 2)
+      result += chars.charAt(((byte1 & 3) << 4) | ((byte2 || 0) >> 4))
+      result += (byte2 === undefined) ? '=' : chars.charAt(((byte2 & 15) << 2) | ((byte3 || 0) >> 6))
+      result += (byte3 === undefined) ? '=' : chars.charAt(byte3 & 63)
+    }
+  }
+  return result
 }
 
 // ============================================================
@@ -325,6 +504,47 @@ function cropAllLesionRegions(imagePaths, lesionBoxes, pageContext) {
   return Promise.all(promises).then(function (results) { return results.filter(Boolean) })
 }
 
+/**
+ * 将 base64 图片数据写入本地用户目录，返回本地文件路径
+ * 用于 DevTools 等环境下临时路径为假路径时，用已有的 base64 重建真实文件
+ */
+function base64ToLocalFile(base64, originalPath) {
+  return new Promise(function (resolve) {
+    if (!base64 || base64.indexOf('data:image') !== 0) return resolve(originalPath)
+    var userDataPath = wx.env && wx.env.USER_DATA_PATH ? wx.env.USER_DATA_PATH : ''
+    if (!userDataPath) return resolve(originalPath)
+
+    var fs = wx.getFileSystemManager()
+    var dir = userDataPath + '/vetai_tmp'
+    var ext = base64.indexOf('data:image/png') === 0 ? 'png' : 'jpg'
+    var dest = dir + '/img_' + Date.now() + '_' + Math.floor(Math.random() * 1000000) + '.' + ext
+    var data = base64.replace(/^data:image\/[a-zA-Z0-9]+;base64,/, '')
+
+    function doWrite() {
+      fs.writeFile({
+        filePath: dest,
+        data: data,
+        encoding: 'base64',
+        success: function () { resolve(dest) },
+        fail: function () { resolve(originalPath) }
+      })
+    }
+
+    fs.access({
+      path: dir,
+      success: doWrite,
+      fail: function () {
+        fs.mkdir({
+          dirPath: dir,
+          recursive: true,
+          success: doWrite,
+          fail: function () { resolve(originalPath) }
+        })
+      }
+    })
+  })
+}
+
 // ============================================================
 // 持久化存储
 // ============================================================
@@ -332,16 +552,50 @@ function cropAllLesionRegions(imagePaths, lesionBoxes, pageContext) {
 function saveImagePermanent(tempFilePath) {
   return new Promise(function (resolve) {
     if (!tempFilePath) return resolve({ path: '', newlySaved: false })
+
+    // 如果是 base64 data URL，直接写入本地用户目录
+    if (tempFilePath.indexOf('data:image') === 0) {
+      base64ToLocalFile(tempFilePath, '').then(function (localPath) {
+        if (localPath && localPath.indexOf('data:') !== 0) {
+          resolve({ path: localPath, newlySaved: true })
+        } else {
+          resolve({ path: '', originalPath: tempFilePath.slice(0, 80), newlySaved: false, saveFailed: true })
+        }
+      })
+      return
+    }
+
     var userDataPath = wx.env && wx.env.USER_DATA_PATH ? wx.env.USER_DATA_PATH : ''
     var isPermanent = userDataPath && tempFilePath.indexOf(userDataPath) === 0
     if (isPermanent) return resolve({ path: tempFilePath, newlySaved: false })
 
-    wx.saveFile({
-      tempFilePath: tempFilePath,
-      success: function (res) { resolve({ path: res.savedFilePath, newlySaved: true }) },
-      fail: function (err) {
-        console.warn('[VetAI] 图片持久化失败', err)
-        resolve({ path: '', originalPath: tempFilePath, newlySaved: false, saveFailed: true })
+    var fs = wx.getFileSystemManager()
+    var dir = userDataPath + '/vetai_saved'
+    var dest = dir + '/img_' + Date.now() + '_' + Math.floor(Math.random() * 1000000) + '.jpg'
+
+    function doCopy() {
+      fs.copyFile({
+        srcPath: tempFilePath,
+        destPath: dest,
+        success: function () { resolve({ path: dest, newlySaved: true }) },
+        fail: function () {
+          resolve({ path: '', originalPath: tempFilePath, newlySaved: false, saveFailed: true })
+        }
+      })
+    }
+
+    fs.access({
+      path: dir,
+      success: doCopy,
+      fail: function () {
+        fs.mkdir({
+          dirPath: dir,
+          recursive: true,
+          success: doCopy,
+          fail: function () {
+            resolve({ path: '', originalPath: tempFilePath, newlySaved: false, saveFailed: true })
+          }
+        })
       }
     })
   })
@@ -361,6 +615,26 @@ function cleanupSavedFiles(savedInfos) {
   })
 }
 
+/**
+ * 将本地文件 / data URL 路径列表读回 base64（用于「恢复会话」场景：
+ * 持久化时只存了本地路径，真正的 base64 未落盘，诊断前需要读回）
+ */
+function localPathsToBase64(paths) {
+  if (!Array.isArray(paths) || paths.length === 0) return Promise.resolve([])
+  return Promise.all(paths.map(function (path) {
+    return new Promise(function (resolve) {
+      if (!path) return resolve('')
+      if (path.indexOf('data:image') === 0) return resolve(path)
+      wx.getFileSystemManager().readFile({
+        filePath: path,
+        encoding: 'base64',
+        success: function (res) { resolve('data:image/jpeg;base64,' + res.data) },
+        fail: function () { resolve('') }
+      })
+    })
+  })).then(function (list) { return list.filter(Boolean) })
+}
+
 module.exports = {
   processImage: processImage,
   checkImageQuality: checkImageQuality,
@@ -370,5 +644,8 @@ module.exports = {
   cropAllLesionRegions: cropAllLesionRegions,
   saveImagePermanent: saveImagePermanent,
   saveImagesPermanent: saveImagesPermanent,
-  cleanupSavedFiles: cleanupSavedFiles
+  cleanupSavedFiles: cleanupSavedFiles,
+  localPathsToBase64: localPathsToBase64,
+  stabilizeTempFile: stabilizeTempFile,
+  base64ToLocalFile: base64ToLocalFile
 }

@@ -1,0 +1,157 @@
+/* ═══════════════════════════════════════════
+   Lesion Selector Component — VetAI Design System v2
+   患处圈选浮层（index / chat 共用）
+   ═══════════════════════════════════════════ */
+
+:host {
+  display: contents;
+}
+
+.lesion-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.lesion-sheet {
+  width: 100%;
+  height: 92vh;
+  padding: var(--sp-3) var(--sp-3) calc(var(--sp-3) + env(safe-area-inset-bottom));
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  background: var(--bg);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.lesion-top {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+  flex-shrink: 0;
+}
+
+.lesion-close {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  color: var(--body);
+  font-size: var(--fs-title);
+  flex-shrink: 0;
+}
+
+.lesion-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+  flex-shrink: 0;
+}
+
+.tool-chip {
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--card);
+  border: 1rpx solid var(--line);
+  color: var(--body);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.tool-chip-on {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #FFFFFF;
+}
+
+.tool-stat {
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--card);
+  border: 1rpx solid var(--line);
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.lesion-stage {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  flex: 1;
+  min-height: 320rpx;
+  border-radius: var(--r-md);
+  background: #1A1A1A;
+}
+
+.lesion-image,
+.lesion-canvas,
+.lesion-grid {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.lesion-grid {
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.06) 1rpx, transparent 1rpx),
+    linear-gradient(0deg, rgba(255,255,255,0.06) 1rpx, transparent 1rpx);
+  background-size: 20% 20%;
+}
+
+.lesion-canvas {
+  z-index: 3;
+}
+
+.lesion-tip {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin: var(--sp-2) var(--sp-1) var(--sp-2);
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  flex-shrink: 0;
+}
+
+.lesion-tip text:first-child {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.lesion-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-1);
+  flex-shrink: 0;
+}
+
+.lesion-save-main {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-height: 88rpx;
+}
+
+/* ── Dark Mode 适配 ── */
+@media (prefers-color-scheme: dark) {
+  .lesion-stage {
+    background: #0D0D0D;
+  }
+}

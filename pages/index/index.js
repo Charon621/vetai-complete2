@@ -2,7 +2,6 @@ var api = require('../../utils/api')
 var config = require('../../utils/config')
 var storage = require('../../utils/storage')
 var imageUtil = require('../../utils/image')
-var lesionUtil = require('../../utils/lesion')
 var analytics = require('../../utils/analytics')
 
 var IMAGE_ROLES = [
@@ -14,9 +13,6 @@ var IMAGE_ROLES = [
 
 Page({
   data: {
-    profilesCount: 0,
-    selectedProfile: null,
-    mode: 'quick',
     imagePaths: [],
     imageBase64List: [],
     imageRoles: [],
@@ -41,18 +37,10 @@ Page({
     analyzingStepText: '正在识别皮损特征...',
     progressText: '',
     canSubmitActive: false,
-    selectedProfileAvatarText: '?',
     selectorVisible: false,
     selectorImageIndex: -1,
     selectorImagePath: '',
-    selectorPathPoints: [],
-    selectorPointCount: 0,
-    selectorCanSave: false,
-    selectorModeLabel: '自由圈选',
-    selectorStageRect: null,
-    selectorImageRect: null,
-    selectorImageInfo: null,
-    selectorMode: 'freehand',
+    selectorInitialBox: null,
     lesionCount: 0,
     formProgress: 0,
     formProgressText: '0/3',
@@ -92,12 +80,9 @@ Page({
 
   onLoad: function () {
     this.checkNetwork()
-    this.loadProfileSummary()
   },
 
-  onShow: function () {
-    this.loadProfileSummary()
-  },
+  onShow: function () {},
 
   checkNetwork: function () {
     wx.getNetworkType({
@@ -109,35 +94,8 @@ Page({
     })
   },
 
-  loadProfileSummary: function () {
-    var profiles = storage.getPetProfiles()
-    var selectedProfile = storage.getActivePetProfile()
-    var shouldUseProfile = selectedProfile && storage.consumeUseActiveProfileNext()
-    if (selectedProfile) {
-      selectedProfile.avatarText = selectedProfile.petName ? selectedProfile.petName.slice(0, 1) : '宠'
-    }
-    this.setData({
-      profilesCount: profiles.length,
-      selectedProfile: selectedProfile,
-      selectedProfileAvatarText: selectedProfile ? selectedProfile.avatarText : '?',
-      mode: shouldUseProfile ? 'profile' : (selectedProfile ? (this.data.mode || 'quick') : 'quick')
-    }, this.refreshUiState.bind(this))
-  },
-
-  goProfile: function () {
-    wx.switchTab({ url: '/pages/profile/profile' })
-  },
-
-  useQuickMode: function () {
-    this.setData({ mode: 'quick' }, this.refreshUiState.bind(this))
-  },
-
-  useProfileMode: function () {
-    if (!this.data.selectedProfile) {
-      this.goProfile()
-      return
-    }
-    this.setData({ mode: 'profile' }, this.refreshUiState.bind(this))
+  goChat: function () {
+    wx.switchTab({ url: '/pages/chat/chat' })
   },
 
   chooseImage: function () {
@@ -146,43 +104,76 @@ Page({
       wx.showToast({ title: '最多 5 张', icon: 'none' })
       return
     }
-    wx.chooseMedia({
-      count: Math.max(1, 5 - self.data.imagePaths.length),
-      mediaType: ['image'],
-      sourceType: ['album', 'camera'],
-      sizeType: ['compressed'],
-      success: function (res) {
-        var newPaths = (res.tempFiles || []).map(function (f) { return f.tempFilePath }).filter(Boolean)
-        if (newPaths.length === 0) return
-        wx.showLoading({ title: '处理图片中', mask: true })
-        newPaths.reduce(function (chain, p) {
-          return chain.then(function (acc) {
-            return imageUtil.processImage(p, self).then(function (b64) {
-              acc.push(b64)
-              return acc
-            })
+    var count = Math.max(1, 5 - self.data.imagePaths.length)
+
+    function processTempFiles(tempFiles) {
+      var tempPaths = (tempFiles || []).map(function (f) { return f.tempFilePath }).filter(Boolean)
+      if (tempPaths.length === 0) return
+      wx.showLoading({ title: '处理图片中', mask: true })
+      // 直接用临时路径处理，不再 stabilizeTempFile（它会在 DevTools 制造 vetai_tmp 假路径）
+      tempPaths.reduce(function (chain, p) {
+        return chain.then(function (acc) {
+          return imageUtil.processImage(p, self).then(function (b64) {
+            acc.push(b64)
+            return acc
           })
-        }, Promise.resolve([]))
-          .then(function (newB64s) {
-            return Promise.all(newPaths.map(function (path) {
-              return imageUtil.checkImageQuality(path, self)
-            })).then(function (qualityFlags) {
-              wx.hideLoading()
-              self.setData({
-                imagePaths: self.data.imagePaths.concat(newPaths).slice(0, 5),
-                imageBase64List: self.data.imageBase64List.concat(newB64s).slice(0, 5),
-                imageRoles: self.data.imageRoles.concat(newPaths.map(function () { return '' })).slice(0, 5),
-                imageQualityFlags: self.data.imageQualityFlags.concat(qualityFlags).slice(0, 5),
-                lesionBoxes: self.data.lesionBoxes.concat(newPaths.map(function () { return null })).slice(0, 5)
-              }, self.refreshUiState.bind(self))
-            })
-          })
-          .catch(function () {
+        })
+      }, Promise.resolve([]))
+        .then(function (newB64s) {
+          // processImage 始终返回 base64 data URL，直接用作显示路径
+          var displayPaths = newB64s.filter(Boolean)
+          return Promise.all(displayPaths.map(function (path) {
+            return imageUtil.checkImageQuality(path, self)
+          })).then(function (qualityFlags) {
             wx.hideLoading()
-            wx.showToast({ title: '图片处理失败', icon: 'none' })
+            self.setData({
+              imagePaths: self.data.imagePaths.concat(displayPaths).slice(0, 5),
+              imageBase64List: self.data.imageBase64List.concat(newB64s).slice(0, 5),
+              imageRoles: self.data.imageRoles.concat(displayPaths.map(function () { return '' })).slice(0, 5),
+              imageQualityFlags: self.data.imageQualityFlags.concat(qualityFlags).slice(0, 5),
+              lesionBoxes: self.data.lesionBoxes.concat(displayPaths.map(function () { return null })).slice(0, 5)
+            }, self.refreshUiState.bind(self))
           })
-      }
-    })
+        })
+        .catch(function (err) {
+          wx.hideLoading()
+          console.error('[VetAI] 图片处理失败:', err)
+          var errMsg = '图片处理失败'
+          var errText = (err && err.errMsg) || (err && err.message) || String(err)
+          if (errText.indexOf('timeout') >= 0) {
+            errMsg = '图片处理超时，请减少一次上传数量或换一张小图'
+          } else if (errText.indexOf('compressImage') >= 0) {
+            errMsg = '图片压缩失败，可能是特殊格式，请尝试截图后上传'
+          } else if (errText.indexOf('readFile') >= 0 && errText.indexOf('not found') >= 0) {
+            errMsg = '图片文件未找到，请从相册重新选择或在真机上测试'
+          } else if (errText.indexOf('readFile') >= 0) {
+            errMsg = '图片读取失败，请重新选择'
+          } else if (errText.indexOf('getImageInfo') >= 0) {
+            errMsg = '无法识别图片信息，请换一张试试'
+          }
+          wx.showToast({ title: errMsg, icon: 'none' })
+        })
+    }
+
+    function doChooseImage() {
+      // 微信开发者工具部分版本 chooseMedia 返回的临时路径不是真实文件，
+      // 且 getDeviceInfo/getSystemInfo 在不同版本里表现不稳定，统一使用 chooseImage 保证能弹出选择器
+      wx.chooseImage({
+        count: count,
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera'],
+        success: function (res) {
+          var tempFiles = (res.tempFilePaths || []).map(function (p) { return { tempFilePath: p } })
+          processTempFiles(tempFiles)
+        },
+        fail: function (err) {
+          console.error('[VetAI] chooseImage failed:', err)
+          wx.showToast({ title: '无法打开相册或相机', icon: 'none' })
+        }
+      })
+    }
+
+    doChooseImage()
   },
 
   removeImage: function (e) {
@@ -211,198 +202,31 @@ Page({
     this.setData({ imageRoles: roles }, this.refreshUiState.bind(this))
   },
 
-  noop: function () {},
-
   openLesionSelector: function (e) {
-    var self = this
     var idx = parseInt(e.currentTarget.dataset.index)
-    var imagePath = self.data.imagePaths[idx]
+    var imagePath = this.data.imagePaths[idx]
     if (!imagePath) return
-    analytics.track('lesionOpen', { imageIndex: idx, hasExisting: !!self.data.lesionBoxes[idx] })
-
-    var existing = self.data.lesionBoxes[idx]
-    var existingMode = existing && existing.type === 'rectangle' ? 'rectangle' : 'freehand'
-    var points = existing && Array.isArray(existing.points)
-      ? existing.points.map(function (p) {
-        return {
-          x: Math.max(0, Math.min(100, Math.round((p.x || 0) * 100))),
-          y: Math.max(0, Math.min(100, Math.round((p.y || 0) * 100)))
-        }
-      })
-      : []
-
-    wx.getImageInfo({
-      src: imagePath,
-      success: function (info) {
-        self.setData({
-          selectorVisible: true,
-          selectorImageIndex: idx,
-          selectorImagePath: imagePath,
-          selectorImageInfo: { width: info.width, height: info.height },
-          selectorPathPoints: points,
-          selectorPointCount: points.length,
-          selectorCanSave: self.canSaveLesion(points, existingMode),
-          selectorModeLabel: existingMode === 'rectangle' ? '矩形框选' : '自由圈选',
-          selectorStageRect: null,
-          selectorMode: existingMode
-        }, function () {
-          self._canvasData = null
-          self.measureSelectorStage(function () {
-            self.drawSelectorPath(points)
-          })
-        })
-      },
-      fail: function () {
-        self.setData({
-          selectorVisible: true,
-          selectorImageIndex: idx,
-          selectorImagePath: imagePath,
-          selectorImageInfo: null,
-          selectorPathPoints: points,
-          selectorPointCount: points.length,
-          selectorCanSave: self.canSaveLesion(points, existingMode),
-          selectorModeLabel: existingMode === 'rectangle' ? '矩形框选' : '自由圈选',
-          selectorStageRect: null,
-          selectorMode: existingMode
-        }, function () {
-          self._canvasData = null
-          self.measureSelectorStage(function () {
-            self.drawSelectorPath(points)
-          })
-        })
-      }
+    analytics.track('lesionOpen', { imageIndex: idx, hasExisting: !!this.data.lesionBoxes[idx] })
+    this.setData({
+      selectorVisible: true,
+      selectorImageIndex: idx,
+      selectorImagePath: imagePath,
+      selectorInitialBox: this.data.lesionBoxes[idx] || null
     })
   },
 
-  measureSelectorStage: function (callback) {
-    var self = this
-    wx.createSelectorQuery().in(self)
-      .select('.lesion-stage')
-      .boundingClientRect(function (rect) {
-        if (!rect) return
-        var info = self.data.selectorImageInfo || {}
-        var imageRect = lesionUtil.getAspectFitRect(rect.width, rect.height, info.width, info.height)
-        self.setData({ selectorStageRect: rect, selectorImageRect: imageRect })
-        lesionUtil.initCanvas(self, 'lesionCanvas').then(function (canvasData) {
-          self._canvasData = canvasData
-          if (callback) callback(rect)
-        })
-      })
-      .exec()
-  },
-
-  drawSelectorPath: function (points) {
-    var rect = this.data.selectorStageRect
-    if (rect && this._canvasData) {
-      lesionUtil.drawPath(this._canvasData, points || this.data.selectorPathPoints, rect.width, rect.height, this.data.selectorMode, this.data.selectorImageRect)
-    }
-  },
-
-  startDrawLesion: function (e) {
-    var self = this
-    var touch = e.touches && e.touches[0]
-    var begin = function (rect) {
-      rect = rect || self.data.selectorStageRect
-      var point = lesionUtil.getPoint(touch, rect, self.data.selectorImageRect)
-      if (!point) return
-      self._isDrawingLesion = true
-      lesionUtil.vibrate('light')
-      self.setData({
-        selectorPathPoints: [point],
-        selectorPointCount: 1,
-        selectorCanSave: false
-      }, function () {
-        self.drawSelectorPath([point])
-      })
-    }
-    if (self.data.selectorStageRect) begin(self.data.selectorStageRect)
-    else self.measureSelectorStage(begin)
-  },
-
-  moveDrawLesion: function (e) {
-    var self = this
-    if (!self._isDrawingLesion) return
-    var rect = self.data.selectorStageRect
-    var touch = e.touches && e.touches[0]
-    var point = lesionUtil.getPoint(touch, rect, self.data.selectorImageRect)
-    if (!point) return
-
-    var points = self.data.selectorPathPoints
-    var last = points[points.length - 1]
-    if (last && Math.abs(last.x - point.x) < 0.8 && Math.abs(last.y - point.y) < 0.8) return
-    var nextPoints = points.concat(point).slice(-260)
-    self.setData({
-      selectorPathPoints: nextPoints,
-      selectorPointCount: nextPoints.length,
-      selectorCanSave: self.canSaveLesion(nextPoints, self.data.selectorMode)
-    }, function () {
-      self.drawSelectorPath(nextPoints)
-    })
-  },
-
-  endDrawLesion: function () {
-    this._isDrawingLesion = false
-    this.drawSelectorPath()
-  },
-
-  resetLesion: function () {
-    var self = this
-    self._isDrawingLesion = false
-    self.setData({
-      selectorPathPoints: [],
-      selectorPointCount: 0,
-      selectorCanSave: false
-    }, function () {
-      self.drawSelectorPath([])
-    })
-  },
-
-  canSaveLesion: function (points, mode) {
-    return mode === 'rectangle' ? points.length >= 2 : points.length >= 3
-  },
-
-  setLesionMode: function (e) {
-    var mode = e.currentTarget.dataset.mode || 'freehand'
-    var self = this
-    self._isDrawingLesion = false
-    self.setData({
-      selectorMode: mode,
-      selectorModeLabel: mode === 'rectangle' ? '矩形框选' : '自由圈选',
-      selectorPathPoints: [],
-      selectorPointCount: 0,
-      selectorCanSave: false
-    }, function () {
-      self.drawSelectorPath([])
-    })
-  },
-
-  saveLesion: function () {
+  onLesionSave: function (e) {
     var idx = this.data.selectorImageIndex
-    var points = this.data.selectorPathPoints || []
-    if (idx < 0) return
-    if (!this.canSaveLesion(points, this.data.selectorMode)) {
-      wx.showToast({ title: '请用手指圈出患处', icon: 'none' })
+    if (idx < 0) {
+      this._closeLesionSelector()
       return
     }
     var boxes = this.data.lesionBoxes.slice()
-    var savedBox = lesionUtil.buildLesionBox(points, this.data.selectorMode)
-    boxes[idx] = savedBox
-    this._canvasData = null
-    this._isDrawingLesion = false
-    analytics.track('lesionSave', { imageIndex: idx, mode: this.data.selectorMode, pointCount: (points || []).length })
+    boxes[idx] = e.detail.box
+    analytics.track('lesionSave', { imageIndex: idx, mode: e.detail.mode, pointCount: e.detail.pointCount })
     var self = this
-    this.setData({
-      lesionBoxes: boxes,
-      selectorVisible: false,
-      selectorImageIndex: -1,
-      selectorImagePath: '',
-      selectorPathPoints: [],
-      selectorPointCount: 0,
-      selectorCanSave: false,
-      selectorStageRect: null,
-      selectorImageRect: null,
-      selectorImageInfo: null
-    }, function () {
+    this.setData({ lesionBoxes: boxes }, function () {
+      self._closeLesionSelector()
       self.refreshUiState()
       if (self.data.lesionBoxes[idx]) {
         wx.showToast({ title: '已保存圈选', icon: 'success' })
@@ -412,45 +236,28 @@ Page({
     })
   },
 
-  clearLesion: function () {
+  onLesionClear: function () {
     var idx = this.data.selectorImageIndex
-    if (idx < 0) return
-    analytics.track('lesionClear', { imageIndex: idx })
-    var boxes = this.data.lesionBoxes.slice()
-    boxes[idx] = null
-    this._canvasData = null
-    this._isDrawingLesion = false
-    var self = this
-    this.setData({
-      lesionBoxes: boxes,
-      selectorVisible: false,
-      selectorImageIndex: -1,
-      selectorImagePath: '',
-      selectorPathPoints: [],
-      selectorPointCount: 0,
-      selectorCanSave: false,
-      selectorStageRect: null,
-      selectorImageRect: null,
-      selectorImageInfo: null
-    }, function () {
-      self.refreshUiState()
-      wx.showToast({ title: '已清除圈选', icon: 'none' })
-    })
+    if (idx >= 0) {
+      analytics.track('lesionClear', { imageIndex: idx })
+      var boxes = this.data.lesionBoxes.slice()
+      boxes[idx] = null
+      this.setData({ lesionBoxes: boxes }, this.refreshUiState.bind(this))
+    }
+    this._closeLesionSelector()
+    wx.showToast({ title: '已清除圈选', icon: 'none' })
   },
 
-  closeLesionSelector: function () {
-    this._canvasData = null
-    this._isDrawingLesion = false
+  onLesionClose: function () {
+    this._closeLesionSelector()
+  },
+
+  _closeLesionSelector: function () {
     this.setData({
       selectorVisible: false,
       selectorImageIndex: -1,
       selectorImagePath: '',
-      selectorPathPoints: [],
-      selectorPointCount: 0,
-      selectorCanSave: false,
-      selectorStageRect: null,
-      selectorImageRect: null,
-      selectorImageInfo: null
+      selectorInitialBox: null
     })
   },
 
@@ -487,44 +294,15 @@ Page({
   },
 
   buildPetInfo: function () {
-    if (this.data.mode === 'quick') {
-      return {
-        isTemporary: true,
-        petName: '临时问诊',
-        petType: this.data.quickPetType,
-        petTypeLabel: this.data.quickPetTypeLabel,
-        gender: this.data.quickGender,
-        genderLabel: this.data.quickGenderLabel,
-        age: this.data.quickAge,
-        ageLabel: this.data.quickAgeLabel,
-        bodyPart: this.data.bodyPart,
-        bodyPartLabel: this.data.bodyPartLabel,
-        complaint: this.data.complaint,
-        modelProvider: this.data.modelProvider,
-        modelProviderLabel: this.data.modelProviderLabel,
-        useKnowledgeBase: this.data.useKnowledgeBase,
-        lesionBoxes: this.data.lesionBoxes,
-        imageRoles: this.data.imageRoles
-      }
-    }
-    var p = this.data.selectedProfile || {}
     return {
-      petName: p.petName || '',
-      petType: p.petType || '',
-      petTypeLabel: p.petTypeLabel || '',
-      breed: p.breed || '',
-      gender: p.gender || '',
-      genderLabel: p.genderLabel || '',
-      age: p.age || '',
-      ageLabel: p.ageLabel || '',
-      sterilized: p.sterilized || '',
-      sterilizedLabel: p.sterilizedLabel || '',
-      allergy: p.allergy || '',
-      medicalHistory: p.medicalHistory || '',
-      weight: p.weight || '',
-      avatar: p.avatar || '',
-      profileId: p.id,
-      isTemporary: false,
+      isTemporary: true,
+      petName: '临时问诊',
+      petType: this.data.quickPetType,
+      petTypeLabel: this.data.quickPetTypeLabel,
+      gender: this.data.quickGender,
+      genderLabel: this.data.quickGenderLabel,
+      age: this.data.quickAge,
+      ageLabel: this.data.quickAgeLabel,
       bodyPart: this.data.bodyPart,
       bodyPartLabel: this.data.bodyPartLabel,
       complaint: this.data.complaint,
@@ -538,17 +316,12 @@ Page({
 
   canSubmit: function () {
     if (this.data.imagePaths.length === 0 || !this.data.bodyPart) return false
-    if (this.data.mode === 'quick') {
-      return !!(this.data.quickPetType && this.data.quickGender && this.data.quickAge)
-    }
-    return !!this.data.selectedProfile
+    return !!(this.data.quickPetType && this.data.quickGender && this.data.quickAge)
   },
 
   refreshUiState: function () {
     var self = this
-    var hasPatient = this.data.mode === 'quick'
-      ? !!(this.data.quickPetType && this.data.quickGender && this.data.quickAge)
-      : !!this.data.selectedProfile
+    var hasPatient = !!(this.data.quickPetType && this.data.quickGender && this.data.quickAge)
     var hasImages = this.data.imagePaths.length > 0
     var hasBodyPart = !!this.data.bodyPart
     var completed = (hasPatient ? 1 : 0) + (hasImages ? 1 : 0) + (hasBodyPart ? 1 : 0)

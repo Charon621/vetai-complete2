@@ -2,6 +2,7 @@ var config = require('./config')
 var knowledge = require('./knowledge')
 var kb = require('./kb')
 var analytics = require('./analytics')
+var textUtil = require('./text')
 
 var DIAGNOSIS_SCORE_NOTE = '候选项数值是系统独立可能性评分，不是相加为 100% 的真实概率，也不代表医学确诊概率。'
 
@@ -33,13 +34,7 @@ function cleanDataUrl(image) {
   return 'data:image/jpeg;base64,' + trimmed
 }
 
-function cleanModelText(value) {
-  if (typeof value !== 'string') return ''
-  return value
-    .replace(/[*＊]/g, '')
-    .replace(/^\s*[-•]\s+/gm, '')
-    .trim()
-}
+var cleanModelText = textUtil.cleanModelText
 
 // ============================================================
 // 置信度校准（Platt scaling 简化版，基于经验映射）
@@ -51,12 +46,13 @@ function cleanModelText(value) {
  */
 function calibrateConfidence(raw) {
   if (typeof raw !== 'number' || raw <= 0) return 0
-  // 分段线性校准（模拟 Platt scaling）
-  if (raw <= 20) return Math.round(raw * 0.6)
-  if (raw <= 40) return Math.round(12 + (raw - 20) * 0.7)
-  if (raw <= 60) return Math.round(26 + (raw - 40) * 0.8)
-  if (raw <= 80) return Math.round(42 + (raw - 60) * 0.85)
-  return Math.round(59 + (raw - 80) * 0.9)
+  // 过渡方案（评估集就绪前的保守做法）：
+  // 只对明显过高的自报概率做封顶，压制“100% 满屏”的伪精确；
+  // 其余原样返回——没有评估数据支撑更激进的收缩，避免把所有概率压得太狠。
+  // 待 golden set 建立后替换为 Platt scaling / isotonic regression（UPGRADE_PLAN §4.5 / §8.1）。
+  if (raw > 95) return 88
+  if (raw > 85) return 85
+  return raw
 }
 
 /**
@@ -117,42 +113,71 @@ function getPrecheckProviderConfig(name) {
 // Prompt 构建
 // ============================================================
 
-function buildSystemPrompt() {
-  var parts = [
-    '请根据用户上传的宠物皮肤、体表或可见口腔黏膜图片和病例信息做初步分析。',
-    '只输出一个合法 JSON 对象，不要 Markdown，不要代码块，不要解释性前后缀。',
-    '不要开处方，不要给药名或剂量；看不清或无法判断时如实写无法判断。',
-    '如果图片显示的是口腔、牙龈、舌头或黏膜溃疡/破损，不要套用普通皮肤病名称（如热点、湿性皮炎、褶皱皮炎）；应按口腔/黏膜病变初筛，并建议线下口腔/牙科或兽医检查。',
-    'JSON 字段如下：',
-    '{',
-    '  "observations": "图片中看到的关键表现",',
-    '  "primaryDiagnosis": "最可能的初筛方向",',
-    '  "primaryDiagnosisProbability": 0,',
-    '  "diagnosisCandidates": [',
-    '    { "name": "候选方向", "probability": 0, "reason": "简短理由", "supporting": "支持点", "against": "不确定点" }',
-    '  ],',
-    '  "lesionNameCn": "皮损表现",',
-    '  "confidence": 0,',
-    '  "explanation": "简短说明",',
-    '  "possibleMeaning": "这些表现可能提示什么",',
-    '  "homeCare": "安全的居家观察或护理建议；不含药名剂量",',
-    '  "whenToWatch": "什么情况可以继续观察",',
-    '  "whenToSeeVet": "什么情况需要线下就医",',
-    '  "careSuggestion": "综合建议",',
-    '  "vetWarning": "就医警告",',
-    '  "urgency": "low|moderate|urgent|emergency",',
-    '  "diagnosisProbabilityNote": "候选项数值是独立可能性评分，不是相加为100%的真实概率；仅作初筛参考"',
-    '}',
-    '',
-    '要求：数值字段为 0 到 100；urgency 只能是 low、moderate、urgent、emergency；字符串用中文；不要输出 null；不要使用星号或 Markdown。'
-  ]
+function buildSystemPrompt(petInfo) {
+  petInfo = petInfo || {}
+  var species = mapSpecies(petInfo)
+  var isMucosal = petInfo.skinKbExcluded === true || isMucosalOrOralCase(petInfo, null)
 
-  // 注入常见病优先规则（防止模型过度诊断罕见病）
+  var parts = []
+
+  // === 角色块 ===
+  parts.push('=== 角色 ===')
+  parts.push('你是资深兽医皮肤科初筛助手，服务对象为非专业宠物主人。')
+  parts.push('职责：根据照片和病史给出供参考的病名方向，不做确诊，不开处方。')
+  parts.push('用词通俗，避免专业术语直接抛给用户；不确定时如实说明。')
   parts.push('')
-  parts.push('--- 诊断思路指引 ---')
-  parts.push(knowledge.buildCommonFirstPrompt(''))
+
+  // === 任务块 ===
+  parts.push('=== 任务 ===')
+  parts.push('请根据用户上传的宠物皮肤、体表或可见口腔黏膜图片和病例信息做初步分析。')
+  parts.push('多图时先逐图描述所见，再综合判断，不要只看一张就下结论。')
+  if (isMucosal) {
+    parts.push('注意：当前图片/部位疑似口腔、牙龈、舌头或其他黏膜问题，不要套用普通皮肤病名称（如热点、湿性皮炎、褶皱皮炎）；应按口腔/黏膜病变初筛，并建议线下口腔/牙科或兽医检查。')
+  }
   parts.push('')
-  parts.push('用户可见字段里不要提到“知识库”“RAG”“本地库”“检索结果”等内部机制；可以直接写照片表现、病史线索、候选方向、鉴别点和建议检查。')
+
+  // === 格式块 ===
+  parts.push('=== 输出格式 ===')
+  parts.push('只输出一个合法 JSON 对象，不要 Markdown，不要代码块，不要解释性前后缀。')
+  parts.push('JSON 字段如下：')
+  parts.push('{')
+  parts.push('  "observations": "按 部位→形态→颜色→边界→分布 的顺序客观描述图片所见",')
+  parts.push('  "primaryDiagnosis": "最可能的初筛方向",')
+  parts.push('  "primaryDiagnosisProbability": 0,')
+  parts.push('  "diagnosisCandidates": [')
+  parts.push('    { "name": "候选方向", "probability": 0, "reason": "简短理由", "supporting": "支持点", "against": "不确定点" }')
+  parts.push('  ],')
+  parts.push('  "lesionNameCn": "皮损表现",')
+  parts.push('  "confidence": 0,')
+  parts.push('  "explanation": "简短说明",')
+  parts.push('  "possibleMeaning": "这些表现可能提示什么",')
+  parts.push('  "homeCare": "安全的居家观察或护理建议；不含药名剂量",')
+  parts.push('  "whenToWatch": "什么情况可以继续观察",')
+  parts.push('  "whenToSeeVet": "什么情况需要线下就医",')
+  parts.push('  "careSuggestion": "综合建议",')
+  parts.push('  "vetWarning": "就医警告",')
+  parts.push('  "urgency": "low|moderate|urgent|emergency",')
+  parts.push('  "diagnosisProbabilityNote": "候选项数值是独立可能性评分，不是相加为100%的真实概率；仅作初筛参考",')
+  parts.push('  "ragSources": [{ "title": "权威教科书或指南名称", "url": "可选的链接" }]')
+  parts.push('}')
+  parts.push('')
+  parts.push('要求：数值字段为 0 到 100；urgency 只能是 low、moderate、urgent、emergency；字符串用中文；不要输出 null；不要使用星号或 Markdown。')
+  parts.push('observations 顺序规则：先写患处部位（如左耳廓/腹部/趾间），再写皮损形态（如丘疹/脓疱/圆形脱毛/结痂/鳞屑），然后颜色（如红/灰白/黑褐）、边界是否清晰、分布范围（如局灶/对称/弥漫）；用自然语言连成一两句，不超过 80 字。示例："左耳廓见圆形脱毛区，表面灰白鳞屑，边界较清，局部断毛。"')
+  parts.push('ragSources 规则：（1）只填入与本次诊断直接相关的权威兽医皮肤科参考来源，精确到具体章节或专题（例如“Merck 兽医手册 - 犬猫皮肤癣菌病”而非泛泛的“Merck 兽医手册”）；（2）不要对每种诊断都列同一组通用手册首页或诊断总论页，不同诊断应指向不同专题；（3）不确定真实链接就只给标题、url 留空，绝不要编造 URL；（4）没有把握就留空数组。')
+  parts.push('')
+
+  // === 约束块 ===
+  parts.push('=== 约束 ===')
+  parts.push('1. 不要开处方，不要给药名或剂量。')
+  parts.push('2. 不要使用“确诊”“明确是”“一定是”等措辞，用“初步考虑”“可能”“倾向于”。')
+  parts.push('3. 不要编造图中未见的症状；observations 只写图片确实看到的。')
+  parts.push('4. 看不清或无法判断时如实写无法判断，不要硬猜。')
+  parts.push('5. 用户可见字段里不要提到“知识库”“RAG”“本地库”“检索结果”等内部机制；可以直接写照片表现、病史线索、候选方向、鉴别点和建议检查。')
+  parts.push('')
+
+  // === 先验块（场景化必查清单）===
+  parts.push('=== 诊断思路指引（必查清单）===')
+  parts.push(knowledge.buildCommonFirstPrompt(species))
 
   return parts.join('\n')
 }
@@ -235,7 +260,7 @@ function buildPrompt(petInfo, lesionBoxes) {
 function buildDebugPrompt(petInfo, lesionBoxes) {
   petInfo = petInfo || {}
   return {
-    systemPrompt: buildSystemPrompt(),
+    systemPrompt: buildSystemPrompt(petInfo),
     userPrompt: buildPrompt(petInfo, lesionBoxes || [])
   }
 }
@@ -550,7 +575,7 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
       var itemName = displayDiagnosisForSpecies(cleanDiagName(item.name || '未明确'), petInfo && petInfo.species)
       return {
         name: itemName,
-        probability: normalizePercent(item.probability, 0),
+        probability: calibrateConfidence(normalizePercent(item.probability, 0)),
         reason: cleanUserVisibleText(item.reason || ''),
         supporting: cleanUserVisibleText(item.supporting || ''),
         against: cleanUserVisibleText(item.against || '')
@@ -856,7 +881,9 @@ function buildFeaturePrompt(petInfo, lesionBoxes) {
     '  "lesionPattern": "局灶性/多发性/弥漫性/环形/对称性/湿润/干燥/未知",',
     '  "lesionShape": "圆形/环形/不规则/边界清楚/边界不清/小丘疹多发/未知",',
     '  "shortObservation": "不超过40字的客观描述",',
-    '  "quality": "clear|unclear"',
+    '  "quality": "clear|unclear",',
+    '  "diagnosabilityScore": 0-100,',
+    '  "diagnosabilityReason": "简短说明，如光线充足、病灶清晰则给高分；模糊、过远、过暗、主体不明确则给低分"',
     '}',
     '',
     '病例上下文：',
@@ -896,17 +923,35 @@ function extractVisualFeatures(images, petInfo, lesionBoxes, providerCfg) {
 
   return requestApi(providerCfg.apiBase, providerCfg.apiKey, payload, 'vision-precheck')
     .then(function (response) {
-      var parsed = parseModelJson(getMessageContent(response))
+      var text = getMessageContent(response)
+      var parsed = parseModelJson(text)
       var data = parsed.data || {}
       var features = Array.isArray(data.visualFeatures) ? data.visualFeatures : []
       features = features.map(cleanModelText).filter(Boolean).slice(0, 12)
+      var quality = cleanModelText(data.quality || '')
+      var diagnosabilityScore = null
+      if (typeof data.diagnosabilityScore === 'number' && !Number.isNaN(data.diagnosabilityScore)) {
+        diagnosabilityScore = data.diagnosabilityScore
+      } else if (typeof data.diagnosabilityScore === 'string') {
+        var parsedScore = parseFloat(data.diagnosabilityScore)
+        if (!Number.isNaN(parsedScore)) diagnosabilityScore = parsedScore
+      }
+      // 兼容尚未返回新增字段的旧模型/缓存响应：不能把“缺字段”当成 0 分，
+      // 否则所有原本可正常分析的图片都会被误拒绝。明确 unclear 时仍按低分处理。
+      if (diagnosabilityScore === null) {
+        diagnosabilityScore = quality === 'unclear' ? 0 : 60
+      }
+      // 如果模型明确返回 unclear，兜底 diagnosabilityScore 不超过 50
+      if (quality === 'unclear' && diagnosabilityScore > 50) diagnosabilityScore = 50
       return {
         visualFeatures: features,
         bodyPartGuess: cleanModelText(data.bodyPartGuess || ''),
         lesionPattern: cleanModelText(data.lesionPattern || ''),
         lesionShape: cleanModelText(data.lesionShape || ''),
         shortObservation: cleanModelText(data.shortObservation || data.observations || ''),
-        quality: cleanModelText(data.quality || ''),
+        quality: quality,
+        diagnosabilityScore: Math.max(0, Math.min(100, Math.round(diagnosabilityScore))),
+        diagnosabilityReason: cleanModelText(data.diagnosabilityReason || ''),
         parseLevel: parsed.level,
         usage: response.usage || null
       }
@@ -1039,13 +1084,28 @@ function displayDiagnosisForSpecies(name, species) {
 function isStrongVisionRagHit(results) {
   if (!results || !results.length) return false
   var top = results[0]
+  var second = results[1]
   var minScore = config.VISION_RAG_MIN_SCORE || 8
   var minSymptoms = config.VISION_RAG_MIN_SYMPTOM_MATCHES || 2
   var evidenceMatches = countEvidenceMatches(top)
   if (top.score < minScore) return false
   if (evidenceMatches < minSymptoms) return false
 
-  // 达到配置阈值即允许知识库快路径输出；相近候选会作为鉴别项保留在报告中。
+  // top2 间隔检查：如果 top2 分数接近，说明存在显著混淆，
+  // 应 fallback 到完整模型，让大模型做区分，而不是快路径直接定一个模棱两可的答案。
+  if (second && second.score >= 5 && (top.score - second.score) < 3) return false
+
+  // 强证据要求：至少有一项组合规则命中（该病特有的多条件组合），
+  // 或者至少有一项别名命中（用户/模型直接提到该病名）。
+  // 单纯泛视觉词（如"红肿"）命中不够硬，不能单独触发快路径。
+  var hasCombo = top.matched && top.matched.some(function (m) {
+    return String(m).indexOf('组合:') === 0
+  })
+  var hasAlias = top.matched && top.matched.some(function (m) {
+    return String(m).indexOf('别名:') === 0
+  })
+  if (!hasCombo && !hasAlias) return false
+
   return true
 }
 
@@ -1139,6 +1199,60 @@ function diagnoseWithVisionRag(images, petInfo, providerName, providerCfg) {
         }
       }
 
+      // 图片可诊断性检查：如果预检模型认为图片质量不足以提取可靠视觉特征，
+      // 直接拒绝，不消耗完整诊断调用，也不输出胡猜结果。
+      var score = featureData.diagnosabilityScore || 0
+      var reason = featureData.diagnosabilityReason || ''
+      if (featureData.quality === 'unclear' || score < 40) {
+        if (config.VISION_RAG_TRACE) {
+          console.log('[VetAI] visionRag reject: image not diagnosable', {
+            quality: featureData.quality,
+            diagnosabilityScore: score,
+            diagnosabilityReason: reason
+          })
+        }
+        analytics.track('visionRag', {
+          hit: false,
+          reason: 'image_not_diagnosable',
+          quality: featureData.quality,
+          diagnosabilityScore: score
+        })
+        var rejectData = normalizeDiagnosis({
+          observations: '图片质量不足，无法提取可靠视觉特征',
+          primaryDiagnosis: '无法判断',
+          primaryDiagnosisProbability: 0,
+          diagnosisCandidates: [],
+          lesionNameCn: '图片质量不足',
+          confidence: 0,
+          explanation: '照片过暗、过远、模糊或主体不明确，AI 无法可靠识别皮肤特征。',
+          possibleMeaning: '',
+          homeCare: '请重新拍摄更清晰的照片：确保光线充足、对焦准确、病灶占据画面主要位置。',
+          whenToWatch: '重新拍摄后，若病灶表现清楚可再次分析。',
+          whenToSeeVet: '如宠物状态明显异常，请直接联系线下兽医。',
+          careSuggestion: '请重新拍摄照片后再试。',
+          vetWarning: '如症状加重、扩散、破溃、流脓、明显疼痛或精神食欲异常，请尽快线下就医。',
+          urgency: 'low',
+          diagnosisProbabilityNote: '图片质量不足，无法进行分析。',
+          ragSources: [],
+          _isReject: true
+        }, providerName, providerCfg, petInfo)
+        return {
+          success: true,
+          data: rejectData,
+          raw: JSON.stringify({
+            provider: providerName,
+            model: providerCfg.model,
+            images: images.length,
+            reject: true,
+            reason: 'image_not_diagnosable',
+            quality: featureData.quality,
+            diagnosabilityScore: score,
+            diagnosabilityReason: reason,
+            usage: featureData.usage || null
+          })
+        }
+      }
+
       var ragQuery = buildVisionRagQuery(petInfo, featureData)
       var results = kb.search(ragQuery)
       if (config.DEBUG_LOGS) {
@@ -1226,7 +1340,7 @@ function diagnoseWithVisionRag(images, petInfo, providerName, providerCfg) {
 function runFullDiagnosis(images, petInfo, providerName, providerCfg, options) {
   var lesionBoxes = (petInfo && petInfo.lesionBoxes) || []
   var prompt = buildPrompt(petInfo, lesionBoxes)
-  var systemPrompt = buildSystemPrompt()
+  var systemPrompt = buildSystemPrompt(petInfo)
 
   // RAG 调试日志：查看知识库检索结果
   if (config.DEBUG_LOGS && petInfo.disableKnowledgeBase !== true) {
@@ -1446,6 +1560,55 @@ function diagnose(imageBase64List, petInfo, options) {
 }
 
 // ============================================================
+// AI 对话生成（智能建档）
+// ============================================================
+
+function chatAI(messages, options) {
+  if (!messages || messages.length === 0) {
+    return Promise.reject(new Error('消息历史为空'))
+  }
+
+  options = options || {}
+  var providerName = pickProvider('qwen')
+  var providerCfg = getProviderConfig(providerName)
+
+  if (!config.USE_CLOUD_FUNCTION && !providerCfg.apiKey) {
+    return Promise.reject(new Error('未配置 API Key'))
+  }
+
+  var model = options.model || config.QWEN_PRECHECK_MODEL || providerCfg.model
+
+  var payload = {
+    model: model,
+    messages: messages,
+    temperature: options.temperature !== undefined ? options.temperature : 0.7,
+    max_tokens: options.max_tokens || 300
+  }
+
+  payload.enable_thinking = false
+
+  if (options.response_format) {
+    payload.response_format = options.response_format
+  }
+
+  return requestApi(providerCfg.apiBase, providerCfg.apiKey, payload, 'chat-ai')
+    .then(function (response) {
+      var text = getMessageContent(response)
+      return {
+        success: true,
+        text: text,
+        usage: response.usage || null
+      }
+    })
+    .catch(function (err) {
+      return {
+        success: false,
+        error: friendlyError(err)
+      }
+    })
+}
+
+// ============================================================
 // 多模型集成（自一致性投票）
 // 同一输入采样 N 次，对主诊断做多数投票，对候选概率取均值
 // ============================================================
@@ -1556,8 +1719,12 @@ function diagnoseMulti(imageBase64List, petInfo, options) {
 module.exports = {
   diagnose: diagnose,
   diagnoseMulti: diagnoseMulti,
+  chatAI: chatAI,
   buildDebugPrompt: buildDebugPrompt,
   calibrateConfidence: calibrateConfidence,
   confidenceToLabel: confidenceToLabel,
+  applyGuardrails: applyGuardrails,
+  normalizePercent: normalizePercent,
+  isStrongVisionRagHit: isStrongVisionRagHit,
   friendlyError: friendlyError
 }

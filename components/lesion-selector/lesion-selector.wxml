@@ -1,0 +1,39 @@
+<view class="lesion-overlay" wx:if="{{visible}}" catchtouchmove="noop">
+  <view class="lesion-sheet">
+    <view class="lesion-top">
+      <view>
+        <view class="vet-label">患处圈选</view>
+        <view class="vet-title-lg">圈出最明显的位置</view>
+        <view class="vet-caption">可选步骤。标注后系统会额外关注这块区域。</view>
+      </view>
+      <view class="lesion-close" bindtap="onCloseTap">×</view>
+    </view>
+
+    <view class="lesion-toolbar">
+      <view class="tool-chip {{mode === 'freehand' ? 'tool-chip-on' : ''}}" bindtap="onModeTap" data-mode="freehand">自由圈选</view>
+      <view class="tool-chip {{mode === 'rectangle' ? 'tool-chip-on' : ''}}" bindtap="onModeTap" data-mode="rectangle">矩形框选</view>
+      <view class="tool-stat">{{pointCount}} 点</view>
+    </view>
+
+    <view class="lesion-stage"
+      catchtouchstart="onTouchStart"
+      catchtouchmove="onTouchMove"
+      catchtouchend="onTouchEnd"
+      catchtouchcancel="onTouchEnd">
+      <image src="{{imagePath}}" mode="aspectFit" class="lesion-image" />
+      <view class="lesion-grid"></view>
+      <canvas type="2d" id="lesionCanvas" class="lesion-canvas"></canvas>
+    </view>
+
+    <view class="lesion-tip">
+      <text>{{modeLabel}}</text>
+      <text>{{canSave ? '标注有效，可以保存' : '沿患处边缘拖动，形成一个区域'}}</text>
+    </view>
+
+    <view class="lesion-actions">
+      <button class="vet-btn vet-btn-primary lesion-save-main" bindtap="onSaveTap">完成并保存圈选</button>
+      <button class="vet-btn vet-btn-ghost" bindtap="onClearTap">清除</button>
+      <button class="vet-btn vet-btn-secondary" bindtap="onResetTap">重画</button>
+    </view>
+  </view>
+</view>

@@ -22,7 +22,7 @@ module.exports = {
   USE_KNOWLEDGE_BASE: true,
   // 开启两步视觉 RAG 快路径：强命中时直接输出知识库版报告，跳过完整模型调用
   VISION_RAG_FAST_PATH: true,
-  VISION_RAG_TRACE: true,
+  VISION_RAG_TRACE: false,
   VISION_RAG_MAX_IMAGES: 2,
   VISION_RAG_MIN_SCORE: 8,
   VISION_RAG_MIN_SYMPTOM_MATCHES: 2,

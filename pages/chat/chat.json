@@ -1,0 +1,7 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "lesion-selector": "/components/lesion-selector/lesion-selector"
+  },
+  "enablePullDownRefresh": false
+}

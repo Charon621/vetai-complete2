@@ -63,7 +63,7 @@ Page({
       }
       return Object.assign({}, item, {
         avatarText: item.petName ? item.petName.slice(0, 1) : '宠',
-        lastRecordText: lastRecord ? ((lastRecord.disease || lastRecord.primaryDiagnosis || '初筛报告') + ' · ' + (lastRecord.timestamp || '')) : ''
+        lastRecordText: lastRecord ? ((lastRecord.disease || lastRecord.primaryDiagnosis || '初筛报告') + '，' + (lastRecord.timestamp || '')) : ''
       })
     })
     this.setData({
@@ -74,7 +74,9 @@ Page({
   },
 
   showCreateForm: function () {
-    this.setData({ showForm: true, editingId: '', form: Object.assign({}, emptyForm) })
+    // 设置标记，chat 页 onShow 检测到后开始新对话
+    wx.setStorageSync('chat_start_new', true)
+    wx.switchTab({ url: '/pages/chat/chat' })
   },
 
   showEditForm: function (e) {
@@ -192,7 +194,6 @@ Page({
         return
       }
       this.setData({ activeProfileId: profile.id })
-      storage.markUseActiveProfileNext()
       wx.showToast({ title: '已创建', icon: 'success' })
     }
 
@@ -203,7 +204,6 @@ Page({
   selectProfile: function (e) {
     var id = e.currentTarget.dataset.id
     storage.setActiveProfileId(id)
-    storage.markUseActiveProfileNext()
     this.setData({ activeProfileId: id })
     wx.showToast({ title: '已选择档案', icon: 'success' })
     setTimeout(function () {

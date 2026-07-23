@@ -81,21 +81,82 @@
   height: 128rpx;
   margin: 0 auto;
   border-radius: 50%;
-  background: var(--surface);
+  background: var(--brand-light);
+  color: var(--brand);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.empty-pet-face {
-  font-size: var(--fs-title);
-  font-weight: 700;
-  color: var(--muted);
-  line-height: 1;
+/* ── 空状态插画：猫侧影 ── */
+.illus-cat {
+  position: relative;
+  width: 76rpx;
+  height: 70rpx;
+}
+
+.illus-cat-ear {
+  position: absolute;
+  top: 0;
+  width: 22rpx;
+  height: 22rpx;
+  background: var(--brand-light);
+  border: 3rpx solid currentColor;
+  box-sizing: border-box;
+}
+
+.illus-cat-ear.left {
+  left: 11rpx;
+  border-radius: 8rpx 4rpx 0 4rpx;
+  transform: rotate(14deg);
+}
+
+.illus-cat-ear.right {
+  right: 11rpx;
+  border-radius: 4rpx 8rpx 4rpx 0;
+  transform: rotate(-14deg);
+}
+
+.illus-cat-face {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 68rpx;
+  height: 52rpx;
+  transform: translateX(-50%);
+  background: var(--brand-light);
+  border: 3rpx solid currentColor;
+  border-radius: 34rpx 34rpx 30rpx 30rpx;
+  box-sizing: border-box;
+}
+
+.illus-cat-eyes {
+  position: absolute;
+  left: 16rpx;
+  top: 20rpx;
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 28rpx 0 0 currentColor;
+}
+
+.illus-cat-muzzle {
+  position: absolute;
+  left: 50%;
+  top: 31rpx;
+  width: 10rpx;
+  height: 6rpx;
+  transform: translateX(-50%);
+  border: 3rpx solid currentColor;
+  border-top: none;
+  border-radius: 0 0 10rpx 10rpx;
+  box-sizing: border-box;
 }
 
 .empty-title {
   color: var(--text);
+  font-family: var(--font-serif);
   font-size: 31rpx;
   font-weight: 700;
 }
@@ -131,9 +192,9 @@
 }
 
 .pet-card-active {
-  border-left: 6rpx solid var(--brand);
+  border-color: rgba(91, 130, 232, 0.45);
   background: var(--card);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 8rpx 24rpx rgba(91, 130, 232, 0.12);
 }
 
 .pet-body {
@@ -202,6 +263,7 @@
 .pet-name {
   min-width: 0;
   color: var(--text);
+  font-family: var(--font-serif);
   font-size: var(--fs-title);
   font-weight: 700;
   line-height: 1.34;
@@ -358,6 +420,7 @@
 
 .add-title {
   color: var(--text);
+  font-family: var(--font-serif);
   font-size: 29rpx;
   font-weight: 700;
 }
@@ -526,6 +589,7 @@
 .form-section-title {
   margin-bottom: var(--sp-3);
   color: var(--text);
+  font-family: var(--font-serif);
   font-size: 30rpx;
   font-weight: 700;
   padding-bottom: var(--sp-2);

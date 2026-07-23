@@ -1,7 +1,6 @@
 var RECORDS_KEY = 'pet_diagnosis_history'
 var PROFILES_KEY = 'pet_profiles'
 var ACTIVE_PROFILE_KEY = 'active_pet_profile_id'
-var USE_ACTIVE_PROFILE_NEXT_KEY = 'use_active_pet_profile_next'
 var USER_KEY = 'vetai_current_user'
 var KNOWN_USERS_KEY = 'vetai_known_users'
 
@@ -239,27 +238,6 @@ function setActiveProfileId(id) {
   safeSet(scopedKey(ACTIVE_PROFILE_KEY), id || '')
 }
 
-function markUseActiveProfileNext() {
-  safeSet(scopedKey(USE_ACTIVE_PROFILE_NEXT_KEY), true)
-}
-
-function consumeUseActiveProfileNext() {
-  var key = scopedKey(USE_ACTIVE_PROFILE_NEXT_KEY)
-  var shouldUse = !!safeGet(key, false)
-  if (shouldUse) {
-    try {
-      wx.removeStorageSync(key)
-    } catch (e) {}
-  }
-  return shouldUse
-}
-
-function getActivePetProfile() {
-  var profiles = getPetProfiles()
-  var activeId = getActiveProfileId()
-  return profiles.find(function (item) { return item.id === activeId }) || profiles[0] || null
-}
-
 function addPetProfile(data) {
   var profiles = getPetProfiles()
   if (profiles.length >= MAX_PROFILES) {
@@ -353,9 +331,6 @@ module.exports = {
   getPetProfileById: getPetProfileById,
   getActiveProfileId: getActiveProfileId,
   setActiveProfileId: setActiveProfileId,
-  markUseActiveProfileNext: markUseActiveProfileNext,
-  consumeUseActiveProfileNext: consumeUseActiveProfileNext,
-  getActivePetProfile: getActivePetProfile,
   addPetProfile: addPetProfile,
   updatePetProfile: updatePetProfile,
   touchPetProfile: touchPetProfile,

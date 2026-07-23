@@ -1,5 +1,6 @@
 var storage = require('../../utils/storage')
 var analytics = require('../../utils/analytics')
+var textUtil = require('../../utils/text')
 
 var REPORT_DISCLAIMER = '本报告由 AI 根据图片和你填写的信息生成，仅用于初步观察和就医沟通参考，不构成确诊、处方或治疗方案。若症状加重、扩散、破溃、流脓或宠物精神食欲异常，请及时就医。'
 
@@ -28,10 +29,7 @@ var FEEDBACK_VET_OUTCOME_OPTIONS = [
   { value: 'unknown', label: '还不确定' }
 ]
 
-function cleanText(value) {
-  if (typeof value !== 'string') return value || ''
-  return value.replace(/[*#`]/g, '').replace(/^\s*[-•]\s+/gm, '').trim()
-}
+var cleanText = textUtil.cleanModelText
 
 function inferRecordSpecies(record) {
   var text = [
@@ -179,6 +177,52 @@ Page({
       feedbackVetOutcome: record.feedback ? (record.feedback.vetOutcome || '') : '',
       feedbackSubmitted: !!record.feedback
     }))
+    this._loadLesionOverlays(Array.isArray(record.lesionBoxes) ? record.lesionBoxes : [])
+  },
+
+  // 圈选坐标（0-1 归一化，相对完整原图）映射到 aspectFill 方形裁切容器
+  _loadLesionOverlays: function (lesionBoxes) {
+    var self = this
+    var items = (this.data.record.imageItems || []).slice()
+    var pending = 0
+    var changed = false
+    items.forEach(function (item, i) {
+      var box = lesionBoxes[i]
+      if (!item || !box || typeof box.x !== 'number') return
+      pending++
+      wx.getImageInfo({
+        src: item.path,
+        success: function (info) {
+          var iw = info.width
+          var ih = info.height
+          if (!iw || !ih) return
+          // aspectFill：缩放后短边贴满容器，长边居中裁切
+          var dwF = Math.max(1, iw / ih)
+          var dhF = Math.max(1, ih / iw)
+          var oxF = (1 - dwF) / 2
+          var oyF = (1 - dhF) / 2
+          var left = (oxF + box.x * dwF) * 100
+          var top = (oyF + box.y * dhF) * 100
+          var width = box.width * dwF * 100
+          var height = box.height * dhF * 100
+          left = Math.max(0, Math.min(100, left))
+          top = Math.max(0, Math.min(100, top))
+          width = Math.max(0, Math.min(100 - left, width))
+          height = Math.max(0, Math.min(100 - top, height))
+          if (width >= 2 && height >= 2) {
+            items[i].lesionStyle = 'left:' + left.toFixed(2) + '%;top:' + top.toFixed(2) +
+              '%;width:' + width.toFixed(2) + '%;height:' + height.toFixed(2) + '%;'
+            changed = true
+          }
+        },
+        complete: function () {
+          pending--
+          if (pending === 0 && changed) {
+            self.setData({ 'record.imageItems': items })
+          }
+        }
+      })
+    })
   },
 
   buildDisplayRecord: function (record) {
@@ -227,6 +271,9 @@ Page({
 
     var urgency = record.urgency || 'moderate'
 
+    // 报告编号：取记录 ID 尾部 8 位字母数字，单据化呈现
+    var reportNo = String(record.id || '').replace(/[^a-zA-Z0-9]/g, '').slice(-8).toUpperCase() || '--'
+
     // 只有通过宠物档案发起的问诊，才展示同档案历史趋势；临时问诊不做“好转/加重”判断。
     var prevRecord = record.profileId && !record.isTemporary ? self.findPreviousRecord(record) : null
     var prevCompare = null
@@ -263,6 +310,7 @@ Page({
       uncertaintyText: shortText(sanitizeReportText(uncertainty), 160),
       modelProviderText: modelProviderText,
       generatedAtText: formatTimestamp(record.generatedAt),
+      reportNo: reportNo,
       homeCareList: splitAdvice(record.homeCare || record.careSuggestion || record.treatment, '保持患处干燥清洁'),
       watchList: splitAdvice(record.whenToWatch, '记录 2 到 3 天内范围是否扩大'),
       vetList: splitAdvice(record.whenToSeeVet || record.vetWarning, '如出现快速扩散、流脓、破溃、明显疼痛，应尽快就医'),
@@ -438,7 +486,7 @@ Page({
   onShareAppMessage: function () {
     var record = this.data.record
     return {
-      title: 'VetAI 宠物皮肤初筛报告 · ' + (record.disease || '初筛结果'),
+      title: 'VetAI 宠物皮肤初筛报告：' + (record.disease || '初筛结果'),
       path: '/pages/index/index',
       imageUrl: record.imageItems && record.imageItems[0] ? record.imageItems[0].path : ''
     }

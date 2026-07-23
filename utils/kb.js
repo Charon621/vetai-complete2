@@ -36,6 +36,7 @@ var DISEASE_KB = [
 
   {
     name: '特应性皮炎（环境过敏）',
+    category: 'allergy',
     aliases: ['特应性皮炎', '过敏性皮炎', '异位性皮炎', 'atopic dermatitis'],
     species: ['犬', '猫'],
     keywords: {
@@ -55,6 +56,7 @@ var DISEASE_KB = [
 
   {
     name: '跳蚤过敏性皮炎',
+    category: 'parasite',
     aliases: ['跳蚤过敏', '跳蚤', 'flea allergy'],
     species: ['犬', '猫'],
     keywords: {
@@ -69,6 +71,7 @@ var DISEASE_KB = [
 
   {
     name: '食物过敏性皮炎',
+    category: 'allergy',
     aliases: ['食物过敏', '饮食过敏', 'food allergy'],
     species: ['犬', '猫'],
     keywords: {
@@ -83,6 +86,7 @@ var DISEASE_KB = [
 
   {
     name: '浅表脓皮病',
+    category: 'bacterial',
     aliases: ['脓皮病', '细菌性毛囊炎', '浅表细菌感染', 'superficial pyoderma'],
     species: ['犬'],
     keywords: {
@@ -102,6 +106,7 @@ var DISEASE_KB = [
 
   {
     name: '深部脓皮病',
+    category: 'bacterial',
     aliases: ['深部细菌感染', 'deep pyoderma'],
     species: ['犬'],
     keywords: {
@@ -120,6 +125,7 @@ var DISEASE_KB = [
 
   {
     name: '蠕形螨病（局灶型）',
+    category: 'parasite',
     aliases: ['蠕形螨', '局灶性蠕形螨', 'demodectic mange', 'demodicosis'],
     species: ['犬'],
     keywords: {
@@ -134,6 +140,7 @@ var DISEASE_KB = [
 
   {
     name: '全身型蠕形螨病',
+    category: 'parasite',
     aliases: ['全身性蠕形螨', '泛发性蠕形螨', 'generalized demodicosis'],
     species: ['犬'],
     keywords: {
@@ -152,6 +159,7 @@ var DISEASE_KB = [
 
   {
     name: '疥螨病',
+    category: 'parasite',
     aliases: ['疥螨', '疥疮', 'sarcoptic mange', 'scabies'],
     species: ['犬'],
     keywords: {
@@ -166,6 +174,7 @@ var DISEASE_KB = [
 
   {
     name: '马拉色菌皮炎',
+    category: 'yeast',
     aliases: ['马拉色菌', '酵母菌感染', 'malassezia'],
     species: ['犬', '猫'],
     keywords: {
@@ -184,6 +193,7 @@ var DISEASE_KB = [
 
   {
     name: '皮肤癣菌病（犬猫）',
+    category: 'fungal',
     aliases: ['猫癣', '犬癣', '钱癣', '皮肤癣菌', '真菌', 'ringworm', 'dermatophytosis'],
     species: ['犬', '猫'],
     keywords: {
@@ -198,6 +208,7 @@ var DISEASE_KB = [
 
   {
     name: '趾间脓皮病（趾间炎）',
+    category: 'paw',
     aliases: ['趾间炎', '趾间红肿', 'interdigital pyoderma'],
     species: ['犬'],
     keywords: {
@@ -207,11 +218,15 @@ var DISEASE_KB = [
     },
     typicalFeatures: '趾间皮肤红肿、潮湿，可能有脓疱或结节，犬频繁舔爪，慢性反复发作，双侧多见',
     ddx: '与蠕形螨爪型区分：趾间炎以红肿和舔舐为主，蠕形螨有更广泛脱毛；与接触性皮炎区分：接触性通常四爪对称',
-    urgency: 'low'
+    urgency: 'low',
+    sources: [
+      { title: 'Merck Veterinary Manual - Pyoderma in Dogs and Cats', url: 'https://www.merckvetmanual.com/integumentary-system/pyoderma/pyoderma-in-dogs-and-cats', tier: 'manual' }
+    ]
   },
 
   {
     name: '肢端舔舐性肉芽肿',
+    category: 'behavioral',
     aliases: ['舔舐肉芽肿', '肢端舔舐', 'acral lick granuloma'],
     species: ['犬'],
     keywords: {
@@ -226,6 +241,7 @@ var DISEASE_KB = [
 
   {
     name: '皮脂溢性皮炎',
+    category: 'yeast',
     aliases: ['脂溢性皮炎', '皮脂溢', 'seborrhea'],
     species: ['犬'],
     keywords: {
@@ -240,6 +256,7 @@ var DISEASE_KB = [
 
   {
     name: '皮肤褶皱皮炎',
+    category: 'bacterial',
     aliases: ['褶皱皮炎', '褶皱炎', 'skin fold dermatitis'],
     species: ['犬'],
     keywords: {
@@ -254,6 +271,7 @@ var DISEASE_KB = [
 
   {
     name: '锌反应性皮病',
+    category: 'metabolic',
     aliases: ['锌缺乏', '锌反应性', 'zinc-responsive dermatosis'],
     species: ['犬'],
     keywords: {
@@ -268,6 +286,7 @@ var DISEASE_KB = [
 
   {
     name: '日光性皮炎',
+    category: 'solar',
     aliases: ['日光性角化', '晒伤', 'solar dermatitis'],
     species: ['犬'],
     keywords: {
@@ -282,6 +301,7 @@ var DISEASE_KB = [
 
   {
     name: '接触性皮炎',
+    category: 'allergy',
     aliases: ['接触过敏', '刺激', 'contact dermatitis'],
     species: ['犬', '猫'],
     keywords: {
@@ -296,6 +316,7 @@ var DISEASE_KB = [
 
   {
     name: '毛囊炎',
+    category: 'bacterial',
     aliases: ['细菌性毛囊炎', 'folliculitis'],
     species: ['犬'],
     keywords: {
@@ -310,6 +331,7 @@ var DISEASE_KB = [
 
   {
     name: '肛周瘘管',
+    category: 'bacterial',
     aliases: ['肛周瘘', '肛周脓皮病', 'perianal fistula'],
     species: ['犬'],
     keywords: {
@@ -324,6 +346,7 @@ var DISEASE_KB = [
 
   {
     name: '落叶型天疱疮',
+    category: 'autoimmune',
     aliases: ['天疱疮', 'pemphigus foliaceus'],
     species: ['犬', '猫'],
     keywords: {
@@ -340,6 +363,7 @@ var DISEASE_KB = [
 
   {
     name: '猫粟粒性皮炎（跳蚤过敏）',
+    category: 'parasite',
     aliases: ['粟粒性皮炎', '猫跳蚤过敏', 'miliary dermatitis'],
     species: ['猫'],
     keywords: {
@@ -358,6 +382,7 @@ var DISEASE_KB = [
 
   {
     name: '嗜酸性肉芽肿复合体',
+    category: 'allergy',
     aliases: ['嗜酸性肉芽肿', 'EGC', 'eosinophilic granuloma'],
     species: ['猫'],
     keywords: {
@@ -372,6 +397,7 @@ var DISEASE_KB = [
 
   {
     name: '猫痤疮',
+    category: 'feline',
     aliases: ['猫下巴痤疮', '下巴黑点', 'feline acne'],
     species: ['猫'],
     keywords: {
@@ -386,6 +412,7 @@ var DISEASE_KB = [
 
   {
     name: '猫心理性脱毛',
+    category: 'behavioral',
     aliases: ['心理性脱毛', '过度舔毛', 'psychogenic alopecia'],
     species: ['猫'],
     keywords: {
@@ -400,6 +427,7 @@ var DISEASE_KB = [
 
   {
     name: '猫浆细胞性足炎',
+    category: 'feline',
     aliases: ['肉垫炎', '足皮炎', 'plasma cell pododermatitis'],
     species: ['猫'],
     keywords: {
@@ -414,6 +442,7 @@ var DISEASE_KB = [
 
   {
     name: '猫日光性皮炎',
+    category: 'solar',
     aliases: ['晒伤', 'solar dermatitis'],
     species: ['猫'],
     keywords: {
@@ -428,6 +457,7 @@ var DISEASE_KB = [
 
   {
     name: '猫鳞状细胞癌',
+    category: 'mass',
     aliases: ['鳞癌', 'SCC', 'squamous cell carcinoma'],
     species: ['猫'],
     keywords: {
@@ -442,6 +472,7 @@ var DISEASE_KB = [
 
   {
     name: '猫面部褶皱皮炎',
+    category: 'feline',
     aliases: ['面部褶皱', '鼻部褶皱', 'facial fold dermatitis'],
     species: ['猫'],
     keywords: {
@@ -456,6 +487,7 @@ var DISEASE_KB = [
 
   {
     name: '猫尾根腺炎（尾部皮脂腺炎）',
+    category: 'feline',
     aliases: ['尾根', '尾部皮脂腺', 'stud tail'],
     species: ['猫'],
     keywords: {
@@ -470,6 +502,7 @@ var DISEASE_KB = [
 
   {
     name: '猫疥螨病',
+    category: 'parasite',
     aliases: ['猫疥螨', '猫疥疮', 'notoedric mange'],
     species: ['猫'],
     keywords: {
@@ -499,6 +532,7 @@ var DISEASE_KB = [
 
   {
     name: '猫皮肤脆弱症',
+    category: 'endocrine',
     aliases: ['皮肤脆弱', 'skin fragility'],
     species: ['猫'],
     keywords: {
@@ -513,6 +547,7 @@ var DISEASE_KB = [
 
   {
     name: '猫蠕形螨病',
+    category: 'parasite',
     aliases: ['猫蠕形螨', 'feline demodicosis'],
     species: ['猫'],
     keywords: {
@@ -527,6 +562,7 @@ var DISEASE_KB = [
 
   {
     name: '猫浅表脓皮病',
+    category: 'bacterial',
     aliases: ['猫细菌感染', 'feline pyoderma'],
     species: ['猫'],
     keywords: {
@@ -546,6 +582,7 @@ var DISEASE_KB = [
 
   {
     name: '猫注射部位肉瘤',
+    category: 'mass',
     aliases: ['注射部位肉瘤', '纤维肉瘤', 'injection site sarcoma'],
     species: ['猫'],
     keywords: {
@@ -560,6 +597,7 @@ var DISEASE_KB = [
 
   {
     name: '猫甲状腺功能亢进相关皮肤改变',
+    category: 'endocrine',
     aliases: ['猫甲亢', '甲亢皮肤病', 'feline hyperthyroidism'],
     species: ['猫'],
     keywords: {
@@ -591,6 +629,7 @@ var DISEASE_KB = [
 
   {
     name: '耳螨感染',
+    category: 'parasite',
     aliases: ['耳螨', '耳痒螨', 'otodectes', 'ear mites'],
     species: ['犬', '猫'],
     keywords: {
@@ -605,6 +644,7 @@ var DISEASE_KB = [
 
   {
     name: '马拉色菌性外耳炎',
+    category: 'ear',
     aliases: ['马拉色菌耳炎', '酵母菌耳炎', 'malassezia otitis'],
     species: ['犬', '猫'],
     keywords: {
@@ -619,6 +659,7 @@ var DISEASE_KB = [
 
   {
     name: '细菌性外耳炎',
+    category: 'ear',
     aliases: ['细菌耳炎', '外耳炎', 'bacterial otitis'],
     species: ['犬', '猫'],
     keywords: {
@@ -633,6 +674,7 @@ var DISEASE_KB = [
 
   {
     name: '皮脂腺囊肿',
+    category: 'mass',
     aliases: ['皮脂腺瘤', '粉瘤', 'sebaceous cyst'],
     species: ['犬', '猫'],
     keywords: {
@@ -647,6 +689,7 @@ var DISEASE_KB = [
 
   {
     name: '蜱虫叮咬',
+    category: 'parasite',
     aliases: ['蜱虫', '壁虱', 'tick bite'],
     species: ['犬', '猫'],
     keywords: {
@@ -661,6 +704,7 @@ var DISEASE_KB = [
 
   {
     name: '蚊虫叮咬/昆虫过敏',
+    category: 'allergy',
     aliases: ['蚊虫叮咬', '虫咬', '昆虫叮咬', 'insect bite'],
     species: ['犬', '猫'],
     keywords: {
@@ -675,6 +719,7 @@ var DISEASE_KB = [
 
   {
     name: '皮肤肿瘤（肥大细胞瘤等）',
+    category: 'mass',
     aliases: ['肥大细胞瘤', '肿瘤', '肿块', 'mast cell tumor'],
     species: ['犬', '猫'],
     keywords: {
@@ -689,6 +734,7 @@ var DISEASE_KB = [
 
   {
     name: '脓肿/蜂窝织炎',
+    category: 'bacterial',
     aliases: ['脓肿', '蜂窝织炎', 'abscess', 'cellulitis'],
     species: ['犬', '猫'],
     keywords: {
@@ -703,6 +749,7 @@ var DISEASE_KB = [
 
   {
     name: '皮肤创伤/擦伤',
+    category: 'trauma',
     aliases: ['擦伤', '外伤', '抓伤', 'trauma', 'abrasion'],
     species: ['犬', '猫'],
     keywords: {
@@ -717,6 +764,7 @@ var DISEASE_KB = [
 
   {
     name: '压力性胼胝/肘部胼胝',
+    category: 'trauma',
     aliases: ['胼胝', '肘部胼胝', 'callus dermatitis', 'pressure callus'],
     species: ['犬'],
     keywords: {
@@ -731,6 +779,7 @@ var DISEASE_KB = [
 
   {
     name: '鼻/足垫角化过度',
+    category: 'metabolic',
     aliases: ['角化过度', '鼻部角化', '足垫角化', 'hyperkeratosis'],
     species: ['犬'],
     keywords: {
@@ -745,6 +794,7 @@ var DISEASE_KB = [
 
   {
     name: '甲状腺功能减退相关皮肤改变',
+    category: 'endocrine',
     aliases: ['甲减皮肤病', '内分泌脱毛', 'hypothyroidism'],
     species: ['犬'],
     keywords: {
@@ -759,6 +809,7 @@ var DISEASE_KB = [
 
   {
     name: '库兴综合征相关皮肤改变',
+    category: 'endocrine',
     aliases: ['库兴', '肾上腺皮质功能亢进', 'cushing', 'hyperadrenocorticism'],
     species: ['犬'],
     keywords: {
@@ -773,6 +824,7 @@ var DISEASE_KB = [
 
   {
     name: '姬螯螨病（行走的皮屑）',
+    category: 'parasite',
     aliases: ['姬螯螨', '行走的皮屑', 'cheyletiellosis', 'walking dandruff'],
     species: ['犬', '猫'],
     keywords: {
@@ -787,6 +839,7 @@ var DISEASE_KB = [
 
   {
     name: '虱感染',
+    category: 'parasite',
     aliases: ['虱子', '咬虱', 'lice infestation', 'pediculosis'],
     species: ['犬', '猫'],
     keywords: {
@@ -942,7 +995,10 @@ var SUPPLEMENTAL_DISEASE_KB = [
     typicalFeatures: '甲沟或甲床红肿疼痛、渗脓，动物常舔咬患趾并可能跛行。',
     ddx: '与真菌性甲感染区分：细菌性甲感染更急性、红肿流脓和疼痛明显；真菌性甲感染更慢性，表现为甲板增厚、浑浊、变脆和变形。',
     urgency: 'moderate',
-    redFlags: ['甲床深部感染', '趾骨感染疑虑', '爪甲脱落', '跛行加重']
+    redFlags: ['甲床深部感染', '趾骨感染疑虑', '爪甲脱落', '跛行加重'],
+    sources: [
+      { title: 'Merck Veterinary Manual - Pyoderma in Dogs and Cats', url: 'https://www.merckvetmanual.com/integumentary-system/pyoderma/pyoderma-in-dogs-and-cats', tier: 'manual' }
+    ]
   },
   {
     name: '真菌性甲感染（甲癣）',
@@ -978,7 +1034,7 @@ var SUPPLEMENTAL_DISEASE_KB = [
     name: '肛门囊病',
     aliases: ['肛门腺炎', '肛门囊炎', '肛门腺堵塞', 'anal sac disease'],
     species: ['犬', '猫'],
-    category: 'rare_warning',
+    category: 'bacterial',
     keywords: {
       breeds: ['小型犬', '肥胖犬'],
       locations: ['肛周', '臀部', '尾根'],
@@ -1024,7 +1080,7 @@ var SUPPLEMENTAL_DISEASE_KB = [
     name: '幼犬蜂窝织炎',
     aliases: ['幼犬蜂窝组织炎', '幼犬脓皮症样综合征', 'juvenile cellulitis'],
     species: ['犬'],
-    category: 'rare_warning',
+    category: 'autoimmune',
     keywords: {
       breeds: ['幼犬', '金毛', '腊肠', '比格'],
       locations: ['面部', '眼周', '耳部', '下颌淋巴结'],
@@ -1039,7 +1095,7 @@ var SUPPLEMENTAL_DISEASE_KB = [
     name: '盘状红斑狼疮',
     aliases: ['DLE', '鼻部狼疮', 'discoid lupus erythematosus'],
     species: ['犬'],
-    category: 'rare_warning',
+    category: 'autoimmune',
     keywords: {
       breeds: ['牧羊犬', '哈士奇', '牧羊犬系'],
       locations: ['鼻部', '鼻镜', '唇部', '眼周'],
@@ -1054,7 +1110,7 @@ var SUPPLEMENTAL_DISEASE_KB = [
     name: '红斑型天疱疮',
     aliases: ['pemphigus erythematosus', '面部天疱疮'],
     species: ['犬', '猫'],
-    category: 'rare_warning',
+    category: 'autoimmune',
     keywords: {
       breeds: ['牧羊犬', '柯利'],
       locations: ['面部', '鼻部', '耳部', '眼周'],
@@ -1245,9 +1301,36 @@ var SOURCE_LIBRARY = {
     { title: 'Merck Veterinary Manual - Tumors of the Skin in Dogs', url: 'https://www.merckvetmanual.com/dog-owners/skin-disorders-of-dogs/tumors-of-the-skin-in-dogs', tier: 'manual' },
     { title: 'Merck Veterinary Manual - Tumors of the Skin in Cats', url: 'https://www.merckvetmanual.com/cat-owners/skin-disorders-of-cats/tumors-of-the-skin-in-cats', tier: 'manual' }
   ],
-  rare_warning: [
-    { title: 'Merck Veterinary Manual - Diagnosis of Skin Diseases in Small Animals', url: 'https://www.merckvetmanual.com/integumentary-system/integumentary-system-introduction/diagnosis-of-skin-diseases-in-small-animals', tier: 'manual' }
-  ]
+  autoimmune: [
+    { title: 'Merck Veterinary Manual - Immune-Mediated Skin Diseases in Animals', url: 'https://www.merckvetmanual.com/integumentary-system/immune-mediated-skin-diseases/immune-mediated-skin-diseases-in-animals', tier: 'manual' },
+    { title: 'Muller and Kirk\'s Small Animal Dermatology - Autoimmune and Immune-Mediated Disorders', url: '', tier: 'textbook' },
+    { title: 'ACVD Clinical Consensus Guidelines - Canine Pemphigus', url: 'https://acvd.org/about-us/clinical-consensus-guidelines/', tier: 'consensus' }
+  ],
+  endocrine: [
+    { title: 'Merck Veterinary Manual - Endocrine Skin Diseases in Animals', url: 'https://www.merckvetmanual.com/integumentary-system/endocrine-skin-diseases/endocrine-skin-diseases-in-animals', tier: 'manual' },
+    { title: 'Ettinger\'s Textbook of Veterinary Internal Medicine - Endocrine Dermatopathies', url: '', tier: 'textbook' }
+  ],
+  trauma: [
+    { title: 'Merck Veterinary Manual - Wound Management in Animals', url: 'https://www.merckvetmanual.com/special-pet-topics/wound-management/wound-management-in-animals', tier: 'manual' },
+    { title: 'Small Animal Surgery Textbook - Skin and Wound Management', url: '', tier: 'textbook' }
+  ],
+  behavioral: [
+    { title: 'Merck Veterinary Manual - Psychogenic Skin Disorders in Animals', url: 'https://www.merckvetmanual.com/behavior/psychogenic-skin-disorders/psychogenic-skin-disorders-in-animals', tier: 'manual' },
+    { title: 'ACVD Clinical Consensus Guidelines - Behavioral Dermatoses', url: 'https://acvd.org/about-us/clinical-consensus-guidelines/', tier: 'consensus' }
+  ],
+  solar: [
+    { title: 'Merck Veterinary Manual - Solar Dermatitis in Animals', url: 'https://www.merckvetmanual.com/integumentary-system/solar-dermatitis/solar-dermatitis-in-animals', tier: 'manual' },
+    { title: 'Muller and Kirk\'s Small Animal Dermatology - Photosensitivity and Solar Dermatitis', url: '', tier: 'textbook' }
+  ],
+  metabolic: [
+    { title: 'Merck Veterinary Manual - Nutritional and Metabolic Skin Diseases in Animals', url: 'https://www.merckvetmanual.com/integumentary-system/nutritional-and-metabolic-skin-diseases/nutritional-and-metabolic-skin-diseases-in-animals', tier: 'manual' },
+    { title: 'Muller and Kirk\'s Small Animal Dermatology - Metabolic and Nutritional Dermatoses', url: '', tier: 'textbook' }
+  ],
+  // rare_warning 不再挂通用来源：弱命中 / 罕见病时返回空数组，
+  // 前端 sourceList 为空会自动隐藏“临床参考来源”区块，
+  // 避免不同图片都指向同一组通用 Merck / WAVD 链接造成“来源都一样”的观感。
+  // 需要给罕见病挂来源时，请在具体疾病条目里写 sources 字段（精确到该病的专题页）。
+  rare_warning: []
 }
 
 var CATEGORY_TESTS = {
@@ -1260,6 +1343,12 @@ var CATEGORY_TESTS = {
   paw: ['趾间细胞学检查', '皮肤刮片', '异物/外伤检查', '反复病例评估过敏和足部结构'],
   feline: ['跳蚤梳检', '真菌培养或PCR', '皮肤细胞学检查', '必要时活检或排除过敏'],
   mass: ['细针抽吸细胞学', '活检/病理检查', '测量并记录大小变化', '评估区域淋巴结和全身状态'],
+  autoimmune: ['皮肤细胞学检查', '活检/病理检查', '抗核抗体等免疫学检查', '评估全身状况排除基础病'],
+  endocrine: ['甲状腺功能/T4检测', 'ACTH刺激试验或低剂量地塞米松抑制试验（库兴筛查）', '皮肤细胞学检查继发感染', '生化全项和血常规'],
+  trauma: ['清创和伤口评估', 'X光排除深部异物或骨折', '细菌培养（深部感染时）', '破伤风疫苗接种史核查'],
+  behavioral: ['排除瘙痒性皮肤病（过敏、寄生虫）', '排查环境压力和焦虑因素', '行为学评估', '必要时抗焦虑治疗性试验'],
+  solar: ['皮肤细胞学检查排除感染', '伍德灯检查排除合并真菌', '活检（慢性/可疑病例排除鳞癌）', '防晒管理指导'],
+  metabolic: ['皮肤细胞学检查', '皮肤刮片和真菌检查', '生化全项（锌、激素水平等）', '活检/病理检查（必要时）'],
   rare_warning: ['皮肤细胞学检查', '皮肤刮片和真菌检查', '活检/病理检查', '基础病筛查']
 }
 
@@ -1273,6 +1362,12 @@ var CATEGORY_HOME_CARE = {
   paw: ['减少舔爪', '散步后擦干爪缝', '观察是否跛行或单侧疼痛', '不要挤压趾间结节'],
   feline: ['减少应激并记录过度舔毛', '检查跳蚤和同住动物情况', '避免自行剃毛或涂刺激性药膏', '若人也有皮损应减少接触并就医咨询'],
   mass: ['拍照并测量肿块大小', '不要挤压、挑破或热敷肿块', '记录是否增大、出血或破溃', '尽快预约线下检查'],
+  autoimmune: ['记录皮损范围和扩散速度', '避免自行使用激素或免疫抑制剂', '若破溃、疼痛或精神食欲异常应尽快就医', '准备既往用药和病史给兽医'],
+  endocrine: ['记录饮水量、食欲和体重变化', '避免自行使用人用激素或药膏', '皮肤变薄区域注意防擦伤', '配合线下内分泌检查'],
+  trauma: ['保持伤口清洁干燥', '避免舔咬舔抓伤口', '穿伊丽莎白圈防止继续舔咬', '记录伤口是否有红肿扩散或流脓'],
+  behavioral: ['减少环境变化和压力源', '增加环境丰容和陪伴', '避免过度关注焦虑行为', '记录舔毛/舔咬频率和时间'],
+  solar: ['避免强烈日晒时段外出', '无毛区和白色毛发区域注意防晒', '建议宠物专用防晒品', '记录是否有复发或加重趋势'],
+  metabolic: ['记录皮损形态变化', '均衡饮食，避免自行补充锌或维生素', '避免自行上药掩盖病变', '若反复不愈线下进一步检查'],
   rare_warning: ['记录范围和扩散速度', '避免自行上药掩盖病变', '若破溃、疼痛或精神食欲异常应尽快就医', '准备既往用药和病史给兽医']
 }
 
@@ -1617,7 +1712,7 @@ function toClinicalCard(entry, index) {
       evidenceTemplate: '支持点包括：{matchedSigns}。',
       uncertainty: '单靠照片不能确诊，需要结合病史、体检和必要的实验室检查。'
     },
-    sources: entry.sources || SOURCE_LIBRARY[category] || SOURCE_LIBRARY.rare_warning,
+    sources: entry.sources || (SOURCE_LIBRARY[category] || []),
     reviewStatus: entry.reviewStatus || 'draft',
     version: entry.version || KB_VERSION,
     keywords: entry.keywords || { breeds: [], locations: [], symptoms: [] },

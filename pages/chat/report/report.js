@@ -1,0 +1,121 @@
+var storage = require('../../../utils/storage')
+var chatDoctor = require('../../../utils/chatDoctor')
+
+Page({
+  data: {
+    record: null,
+    displayRecord: null,
+    notFound: false
+  },
+
+  onLoad: function (options) {
+    if (!options.id) {
+      this.setData({ notFound: true })
+      return
+    }
+    var record = storage.getRecordById(options.id)
+    if (!record) {
+      this.setData({ notFound: true })
+      return
+    }
+    this.setData({ record: record, displayRecord: this._buildDisplay(record) })
+  },
+
+  _buildDisplay: function (record) {
+    var d = record || {}
+    var lines = []
+
+    // 诊断结论
+    var diagnosis = d.disease || d.primaryDiagnosis || '未能明确判断'
+    lines.push({ label: '初步判断', value: diagnosis })
+
+    if (typeof d.confidence === 'number') {
+      lines.push({
+        label: '参考把握',
+        value: (d.confidenceLabel ? d.confidenceLabel + ' ' : '') + d.confidence + '%'
+      })
+    }
+
+    if (Array.isArray(d.diagnosisCandidates) && d.diagnosisCandidates.length > 1) {
+      var candidates = d.diagnosisCandidates.slice(0, 3).map(function (item) {
+        return (item.name || '未明确') + (typeof item.probability === 'number' ? ' ' + item.probability + '%' : '')
+      })
+      lines.push({ label: '鉴别方向', value: candidates.join('\n') })
+    }
+
+    // 简要描述
+    if (d.possibleMeaning) {
+      lines.push({ label: '说明', value: chatDoctor.cleanText(d.possibleMeaning) })
+    }
+
+    // 护理建议
+    if (d.homeCare || d.careSuggestion) {
+      var care = chatDoctor.splitAdvice(d.homeCare || d.careSuggestion)
+      lines.push({ label: '日常护理', value: care.join('\n') })
+    }
+
+    // 何时就医
+    if (d.whenToSeeVet || d.vetWarning) {
+      var vet = chatDoctor.splitAdvice(d.whenToSeeVet || d.vetWarning)
+      lines.push({ label: '何时就医', value: vet.join('\n') })
+    }
+
+    // 患处和症状
+    if (d.bodyPartLabel) {
+      lines.push({ label: '患处', value: d.bodyPartLabel })
+    }
+    if (d.complaint) {
+      lines.push({ label: '主人描述', value: d.complaint })
+    }
+
+    if (d.ragMatchName || d.ragSummary) {
+      lines.push({
+        label: '知识库核对',
+        value: chatDoctor.cleanText(d.ragSummary || ('匹配参考：' + d.ragMatchName))
+      })
+    }
+    if (Array.isArray(d.ragSources) && d.ragSources.length > 0) {
+      var sourceTitles = d.ragSources.slice(0, 4).map(function (source) {
+        return source && source.title ? source.title : ''
+      }).filter(Boolean)
+      if (sourceTitles.length > 0) lines.push({ label: '参考来源', value: sourceTitles.join('\n') })
+    }
+
+    // 紧急程度
+    var urgencyText = ''
+    if (d.urgency === 'emergency') urgencyText = '紧急'
+    else if (d.urgency === 'urgent') urgencyText = '建议尽快就诊'
+    else if (d.urgency === 'moderate') urgencyText = '建议关注'
+    else urgencyText = '观察即可'
+    if (urgencyText) lines.push({ label: '紧急程度', value: urgencyText })
+
+    // 照片
+    var photos = []
+    if (d.imagePaths && d.imagePaths.length > 0) {
+      photos = d.imagePaths
+    } else if (d.imagePath) {
+      photos = [d.imagePath]
+    }
+
+    return {
+      petName: d.petName || '宠物',
+      petTypeLabel: d.petTypeLabel || '',
+      breed: d.breed || '',
+      dateStr: d.dateStr || '',
+      lines: lines,
+      photos: photos,
+      urgency: d.urgency || 'low',
+      urgencyText: urgencyText
+    }
+  },
+
+  onBack: function () {
+    wx.navigateBack()
+  },
+
+  goHistory: function () {
+    wx.switchTab({ url: '/pages/detail/detail' })
+  },
+
+  noop: function () {}
+})

@@ -10,6 +10,11 @@
       </view>
       <view class="report-meta-row">
         <view class="report-meta-item">
+          <text class="meta-label">报告编号</text>
+          <text class="meta-value meta-no text-numeric">{{record.reportNo}}</text>
+        </view>
+        <view class="report-meta-divider"></view>
+        <view class="report-meta-item">
           <text class="meta-label">生成时间</text>
           <text class="meta-value">{{record.generatedAtText || record.timestamp || '--'}}</text>
         </view>
@@ -23,7 +28,6 @@
 
     <!-- ═══ Triage Banner ═══ -->
     <view class="triage-banner">
-      <view class="triage-sev-bar"></view>
       <view class="triage-copy">
         <view class="triage-title">{{severityInfo.title}}</view>
         <view class="triage-desc">{{severityInfo.desc}}</view>
@@ -60,8 +64,18 @@
       <view class="confidence-value text-numeric" wx:if="{{record.hasConfidence}}">{{record.confidenceText}}</view>
       <view class="confidence-value confidence-na" wx:else>{{record.confidenceText}}</view>
     </view>
-    <view class="score-track" wx:if="{{record.hasConfidence}}">
-      <view style="width: {{record.confidencePercent}}%;"></view>
+    <view class="score-segments" wx:if="{{record.hasConfidence}}">
+      <view class="score-seg-track">
+        <view class="score-seg-zone zone-low"></view>
+        <view class="score-seg-zone zone-mid"></view>
+        <view class="score-seg-zone zone-high"></view>
+        <view class="score-marker" style="left: {{record.confidencePercent}}%;"></view>
+      </view>
+      <view class="score-seg-labels">
+        <text class="score-seg-label {{record.confidencePercent < 40 ? 'on' : ''}}">较低</text>
+        <text class="score-seg-label {{record.confidencePercent >= 40 && record.confidencePercent < 70 ? 'on' : ''}}">中等</text>
+        <text class="score-seg-label {{record.confidencePercent >= 70 ? 'on' : ''}}">较高</text>
+      </view>
     </view>
   </view>
 
@@ -71,14 +85,14 @@
       <view class="block-title-wrap">
         <view class="block-title">影像依据</view>
       </view>
-      <view class="block-desc">仅展示已上传照片与真实圈选状态</view>
+      <view class="block-desc">已圈选区域以虚线框标注在照片上</view>
     </view>
     <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="image-rail">
       <view class="image-rail-inner">
         <view class="image-proof" wx:for="{{record.imageItems}}" wx:key="path">
           <image src="{{item.path}}" mode="aspectFill" lazy-load />
+          <view class="proof-lesion" wx:if="{{item.lesionStyle}}" style="{{item.lesionStyle}}"></view>
           <view class="proof-status {{item.hasLesion ? 'on' : ''}}">
-            <text class="proof-dot">{{item.hasLesion ? '●' : '○'}}</text>
             {{item.hasLesion ? '已圈选' : '未圈选'}}
           </view>
         </view>
@@ -142,21 +156,18 @@
     <view class="advice-list">
       <view class="advice-card advice-green">
         <view class="advice-header">
-          <view class="advice-indicator"></view>
           <view class="advice-title">家庭护理</view>
         </view>
         <view class="advice-line" wx:for="{{record.homeCareList}}" wx:key="index">{{item}}</view>
       </view>
       <view class="advice-card advice-amber">
         <view class="advice-header">
-          <view class="advice-indicator"></view>
           <view class="advice-title">继续观察</view>
         </view>
         <view class="advice-line" wx:for="{{record.watchList}}" wx:key="index">{{item}}</view>
       </view>
       <view class="advice-card advice-red">
         <view class="advice-header">
-          <view class="advice-indicator"></view>
           <view class="advice-title">何时就医</view>
         </view>
         <view class="advice-line" wx:for="{{record.vetList}}" wx:key="index">{{item}}</view>

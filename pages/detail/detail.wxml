@@ -63,7 +63,10 @@
   <!-- 空状态：无记录 -->
   <view wx:if="{{records.length === 0 && !searchText}}" class="empty-panel">
     <view class="empty-icon-wrap">
-      <view class="empty-icon-emoji">📋</view>
+      <view class="illus-clip">
+        <view class="illus-clip-notch"></view>
+        <view class="illus-clip-pulse"></view>
+      </view>
     </view>
     <view class="empty-title">还没有问诊记录</view>
     <view class="empty-desc">完成一次初筛后，报告会自动保存在这里，方便后续对比。</view>
@@ -75,6 +78,7 @@
     <view class="empty-icon-wrap">
       <view class="empty-icon-search">
         <view class="search-empty-circle"></view>
+        <view class="search-empty-dash"></view>
         <view class="search-empty-line"></view>
       </view>
     </view>
@@ -86,8 +90,6 @@
   <!-- 记录列表 -->
   <view wx:else class="case-list">
     <view class="case-card sev-{{item.urgency || 'moderate'}}" wx:for="{{displayRecords}}" wx:key="id" bindtap="onRecordTap" data-id="{{item.id}}">
-      <!-- 严重度色条 -->
-      <view class="sev-bar"></view>
       <!-- 日期列 -->
       <view class="case-date">
         <view class="date-tag">
@@ -109,7 +111,6 @@
         <view class="disease-name">{{item.disease || '初筛结果'}}</view>
         <view class="case-meta">
           <text wx:if="{{item.bodyPartLabel}}" class="meta-tag">{{item.bodyPartLabel}}</text>
-          <text wx:if="{{item.bodyPartLabel && item.urgencyText}}" class="meta-dot">·</text>
           <text class="meta-urgency">{{item.urgencyText}}</text>
           <text wx:if="{{item.trendTag}}" class="meta-trend trend-{{item.trendTag.trend}}">{{item.trendTag.icon}} {{item.trendTag.text}}</text>
         </view>
