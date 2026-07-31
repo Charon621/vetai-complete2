@@ -150,6 +150,87 @@ assert.strictEqual(
 )
 
 // ============================================================
+// BUG-N1：负知识三门槛（verification 参数）
+// 快路径必须：无硬排除、无关键冲突、无必须线下才能区分
+// ============================================================
+// 基础强命中 + 无核验（旧调用兼容）：仍通过
+assert.strictEqual(
+  api.isStrongVisionRagHit([
+    { score: 10, matched: ['视觉:圆形脱毛', '组合:圆形脱毛+鳞屑/结痂+断毛'] },
+    { score: 4, matched: ['视觉:红斑'] }
+  ], [{ supportCount: 4, conflictCount: 0, hardExclude: false, needsOfflineTest: false }]),
+  true,
+  'strong hit with clean verification should fast-path (BUG-N1)'
+)
+
+// 硬排除 → 不得快路径
+assert.strictEqual(
+  api.isStrongVisionRagHit([
+    { score: 10, matched: ['视觉:圆形脱毛', '组合:圆形脱毛+鳞屑/结痂+断毛'] },
+    { score: 4, matched: ['视觉:红斑'] }
+  ], [{ supportCount: 2, conflictCount: 1, hardExclude: true, needsOfflineTest: false }]),
+  false,
+  'hardExclude must block fast path (BUG-N1)'
+)
+
+// 关键冲突 → 不得快路径
+assert.strictEqual(
+  api.isStrongVisionRagHit([
+    { score: 10, matched: ['视觉:圆形脱毛', '组合:圆形脱毛+鳞屑/结痂+断毛'] },
+    { score: 4, matched: ['视觉:红斑'] }
+  ], [{ supportCount: 2, conflictCount: 2, hardExclude: false, needsOfflineTest: false }]),
+  false,
+  'conflictCount > 0 must block fast path (BUG-N1)'
+)
+
+// 必须线下才能区分 → 不得快路径
+assert.strictEqual(
+  api.isStrongVisionRagHit([
+    { score: 10, matched: ['视觉:圆形脱毛', '组合:圆形脱毛+鳞屑/结痂+断毛'] },
+    { score: 4, matched: ['视觉:红斑'] }
+  ], [{ supportCount: 3, conflictCount: 0, hardExclude: false, needsOfflineTest: true }]),
+  false,
+  'needsOfflineTest must block fast path (BUG-N1)'
+)
+
+// 物种错配 → 不得快路径（hardExclude 由 verifyCandidates 标记）
+assert.strictEqual(
+  api.isStrongVisionRagHit([
+    { score: 10, matched: ['视觉:丘疹', '视觉:脓疱', '组合:丘疹/脓疱+表皮领圈/结痂'] },
+    { score: 4, matched: ['视觉:红斑'] }
+  ], [{ supportCount: 3, conflictCount: 0, hardExclude: true, needsOfflineTest: false }]),
+  false,
+  'species mismatch via hardExclude must block fast path (BUG-N1)'
+)
+
+// 泛词/单一气味/单一脱毛/单一肿块：基础门槛已经挡住（无 combo/别名/3 强视觉），
+// 再加核验也不放行 —— 验证核验参数不会放宽旧门槛
+assert.strictEqual(
+  api.isStrongVisionRagHit([
+    { score: 10, matched: ['视觉:异味'] },
+    { score: 4, matched: [] }
+  ], [{ supportCount: 1, conflictCount: 1, hardExclude: false, needsOfflineTest: false }]),
+  false,
+  'single odor hit must not fast-path even with verification present (BUG-N1)'
+)
+assert.strictEqual(
+  api.isStrongVisionRagHit([
+    { score: 10, matched: ['视觉:肿块'] },
+    { score: 4, matched: [] }
+  ], [{ supportCount: 1, conflictCount: 1, hardExclude: false, needsOfflineTest: true }]),
+  false,
+  'single lump hit must not fast-path even with verification present (BUG-N1)'
+)
+assert.strictEqual(
+  api.isStrongVisionRagHit([
+    { score: 10, matched: ['视觉:脱毛'] },
+    { score: 4, matched: [] }
+  ], [{ supportCount: 1, conflictCount: 0, hardExclude: false, needsOfflineTest: false }]),
+  false,
+  'single hair loss hit must not fast-path even with verification present (BUG-N1)'
+)
+
+console.log('api tests passed')
 // isMucosalOrOralCase：口腔/黏膜识别词表边界（BUG-D4）
 // ============================================================
 assert.strictEqual(api.isMucosalOrOralCase({ complaint: '牙龈红肿出血' }, null), true, 'gum case is mucosal')

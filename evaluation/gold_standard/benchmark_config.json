@@ -181,6 +181,40 @@
     "bootstrap_cluster_unit": "animal_id_hash",
     "stress_variants_use_paired_analysis": true
   },
+  "external_stratification": {
+    "note": "BUG-N3：按外部分层维度汇总不确定性、拒答率、建议就医召回率、JSON 稳定性与耗时，而非只出总体数字。协议先行、解盲前冻结，采集后再补分层标准即为违规。",
+    "dimensions": [
+      "species",
+      "coat_color_group",
+      "coat_length_group",
+      "capture_environment",
+      "lighting_condition",
+      "device_type",
+      "image_distance",
+      "background_complexity",
+      "input_channel",
+      "conversation_turn_count",
+      "current_history_conflict",
+      "photo_quality"
+    ],
+    "required_metrics_per_dimension": [
+      "abstention_or_rephoto_rate",
+      "hallucinated_body_site_rate",
+      "high_risk_see_vet_recall",
+      "dangerous_false_reassurance_rate",
+      "json_direct_parse_rate",
+      "precheck_latency_p50_p95",
+      "full_latency_p50_p95",
+      "end_to_end_latency_p50_p95"
+    ],
+    "reporting_rule": {
+      "always_show_numerator_and_denominator": true,
+      "interval": "wilson_95_percent",
+      "small_sample_floor": 5,
+      "no_point_estimate_promotion_below_floor": true
+    },
+    "freeze_rule": "stratification_schema_must_be_frozen_before_unblinding; adding_schema_after_unblinding_is_forbidden"
+  },
   "pilot_public_images": {
     "path": "pilot_public_images",
     "status": "DEV_ONLY",

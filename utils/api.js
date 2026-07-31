@@ -298,24 +298,21 @@ function buildPrompt(petInfo, lesionBoxes) {
   lesionBoxes = Array.isArray(lesionBoxes) ? lesionBoxes : []
   var mucosalCase = petInfo.skinKbExcluded === true || isMucosalOrOralCase(petInfo, null)
   var shouldUseRagPrompt = petInfo.disableKnowledgeBase !== true && petInfo.disableRagPrompt !== true && petInfo.skinKbExcluded !== true
+  var precheckData = petInfo.visualPrecheck || {}
+  var ragQuery = buildKbQuery(petInfo, precheckData)
   var visualRagCandidates = shouldUseRagPrompt && petInfo.visualRagResults
     ? petInfo.visualRagResults.filter(kb.isPromptWorthyResult)
     : []
-  var precheckData = petInfo.visualPrecheck || {}
   if (shouldUseRagPrompt && !visualRagCandidates.length) {
-    visualRagCandidates = kb.search({
-      species: petInfo.species || '',
-      breed: petInfo.breed || '',
-      bodyPart: petInfo.bodyPartLabel || petInfo.bodyPart || '',
-      complaint: [
-        petInfo.complaint || '',
-        precheckData.shortObservation || '',
-        (precheckData.visualFeatures || []).join(' ')
-      ].filter(Boolean).join('\n'),
-      visualFeatures: precheckData.visualFeatures || [],
-      lesionPattern: precheckData.lesionPattern || '',
-      lesionShape: precheckData.lesionShape || ''
-    }).filter(kb.isPromptWorthyResult)
+    visualRagCandidates = kb.search(ragQuery).filter(kb.isPromptWorthyResult)
+  }
+  // BUG-N1：完整诊断只传已核验局部证据 —— 硬排除候选不进参考清单；
+  // 核验结果以内部字段 _verifiedEvidence 挂到 petInfo，供上层埋点/审计，
+  // 不进入用户可见文案。
+  if (shouldUseRagPrompt && visualRagCandidates.length) {
+    var verified = verifyRagCandidates(ragQuery, visualRagCandidates)
+    visualRagCandidates = verified.kept
+    petInfo._verifiedEvidence = verified.verification
   }
 
   var imageRoles = Array.isArray(petInfo.imageRoles) ? petInfo.imageRoles : []
@@ -1269,6 +1266,44 @@ function buildVisionRagQuery(petInfo, featureData) {
   }
 }
 
+// BUG-N1：构建检索 query 的统一入口（buildPrompt 的 fallback 检索与
+// diagnoseWithParallelPrecheck 的视觉驱动检索使用同一口径，避免两处漂移）。
+function buildKbQuery(petInfo, featureData) {
+  petInfo = petInfo || {}
+  featureData = featureData || {}
+  var precheckData = featureData
+  var complaintParts = [
+    petInfo.complaint || '',
+    precheckData.shortObservation || '',
+    (precheckData.visualFeatures || []).join(' ')
+  ].filter(Boolean)
+  return {
+    species: petInfo.species || '',
+    breed: petInfo.breed || '',
+    bodyPart: petInfo.bodyPartLabel || petInfo.bodyPart || '',
+    complaint: complaintParts.join('\n'),
+    visualFeatures: precheckData.visualFeatures || [],
+    lesionPattern: precheckData.lesionPattern || '',
+    lesionShape: precheckData.lesionShape || ''
+  }
+}
+
+// BUG-N1：核验过滤 —— 只保留通过核验的候选（无硬排除），并附加核验内部信息
+// 供上层决策。返回 { kept, verification }：
+//   kept         过滤掉 hardExclude 后的候选数组
+//   verification verifyCandidates 的完整输出（与原始候选顺序一致）
+function verifyRagCandidates(query, candidates) {
+  var results = Array.isArray(candidates) ? candidates : []
+  var verification = kb.verifyCandidates(query, results)
+  var kept = []
+  for (var i = 0; i < results.length; i++) {
+    var v = verification[i] || {}
+    if (v.hardExclude) continue
+    kept.push(results[i])
+  }
+  return { kept: kept, verification: verification }
+}
+
 function textHasAny(text, terms) {
   text = String(text || '').toLowerCase()
   for (var i = 0; i < terms.length; i++) {
@@ -1388,7 +1423,13 @@ function displayDiagnosisForSpecies(name, species) {
   return name
 }
 
-function isStrongVisionRagHit(results) {
+/**
+ * 快路径强命中检查（BUG-G8 门槛 + BUG-N1 负知识三门槛）
+ * @param {Array} results - KB 检索结果
+ * @param {Array} [verification] - BUG-N1 verifyCandidates 的核验输出（与 results 顺序一致）；
+ *                                 缺省时跳过负知识门槛，保持旧调用兼容
+ */
+function isStrongVisionRagHit(results, verification) {
   if (!results || !results.length) return false
   var top = results[0]
   var second = results[1]
@@ -1419,6 +1460,15 @@ function isStrongVisionRagHit(results) {
   }).length
   if (!hasCombo && !hasAlias && strongVisualHits < 3) return false
 
+  // BUG-N1：负知识三门槛 —— 无硬排除、无关键冲突、无必须线下才能区分。
+  // 核验输出与 results 顺序一致，取 top 候选（results[0]）对应项。
+  if (Array.isArray(verification) && verification.length) {
+    var v = verification[0] || {}
+    if (v.hardExclude) return false
+    if ((v.conflictCount || 0) > 0) return false
+    if (v.needsOfflineTest) return false
+  }
+
   return true
 }
 
@@ -1427,7 +1477,7 @@ function scoreToFastProbability(score, rank) {
   return Math.max(20, Math.round(base - rank * 8))
 }
 
-function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, petInfo) {
+function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, petInfo, verification) {
   var top = results[0]
   var topDisplayName = displayDiagnosisForSpecies(top.name, petInfo && petInfo.species)
   var candidates = results.slice(0, 3).map(function (hit, index) {
@@ -1462,7 +1512,21 @@ function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, 
   var uncertainty = (top.report && top.report.uncertainty) || '单靠照片不能确诊，需要结合病史、体检和必要的实验室检查。'
   var sourceList = collectSourcesFromResults([top])
 
-  return normalizeDiagnosis({
+  // BUG-N1：把核验内部信息挂到结果（_ 前缀字段，不进入用户可见文案）。
+  // 若存在必须线下才能判定的条件，用户可见文案补充"线下检查确认"建议，
+  // 但不出现知识库/检索等内部机制词。
+  var verifiedTop = null
+  if (Array.isArray(verification) && verification.length) {
+    verifiedTop = verification[0] || null
+  }
+  var offlineHint = ''
+  if (verifiedTop && verifiedTop.needsOfflineTest) {
+    offlineHint = '该方向的部分关键区分需要线下检查确认（如' +
+      ((verifiedTop.missingEvidence || []).filter(function (s) { return s.indexOf('需') === 0 }).join('、') || '细胞学/刮片等基础检查') +
+      '），建议结合线下检查后由兽医确认。'
+  }
+
+  var result = normalizeDiagnosis({
     observations: observation,
     primaryDiagnosis: topDisplayName,
     primaryDiagnosisProbability: candidates[0] ? candidates[0].probability : 50,
@@ -1484,6 +1548,18 @@ function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, 
     diagnosisProbabilityNote: DIAGNOSIS_SCORE_NOTE,
     ragSources: sourceList
   }, providerName, providerCfg, petInfo)
+
+  // BUG-N1：核验内部信息只挂 _ 前缀字段（埋点/审计用，不进用户可见文案）；
+  // needsOfflineTest 的补充说明进 careSuggestion，文案不含机制词。
+  if (verifiedTop) {
+    result._verifiedEvidence = verifiedTop.verifiedEvidence || []
+    result._needsOfflineTest = !!verifiedTop.needsOfflineTest
+  }
+  if (offlineHint) {
+    result.careSuggestion = [result.careSuggestion, offlineHint].filter(Boolean).join('\n')
+    result.ragRecommendation = [result.ragRecommendation, offlineHint].filter(Boolean).join(' ')
+  }
+  return result
 }
 
 function buildImageRejectResult(featureData, providerName, providerCfg, petInfo, imageCount) {
@@ -1588,10 +1664,14 @@ function diagnoseWithParallelPrecheck(images, petInfo, providerName, providerCfg
 
       // 快路径（BUG-G8 已启用）：强命中时提前出报告，未命中则等完整诊断
       if (config.VISION_RAG_FAST_PATH !== false) {
-        var results = kb.search(buildVisionRagQuery(petInfo, featureData))
-        if (isStrongVisionRagHit(results)) {
+        var ragQuery = buildVisionRagQuery(petInfo, featureData)
+        var results = kb.search(ragQuery)
+        // BUG-N1：负知识核验 —— 快路径增加无硬排除、无关键冲突、
+        // 无必须线下才能区分三门槛；不满足则回退完整诊断（不 resolve）。
+        var verification = kb.verifyCandidates(ragQuery, results)
+        if (isStrongVisionRagHit(results, verification)) {
           settled = true
-          var data = buildFastRagDiagnosis(results, featureData, providerName, providerCfg, petInfo)
+          var data = buildFastRagDiagnosis(results, featureData, providerName, providerCfg, petInfo, verification)
           data.ragTitle = '临床特征匹配'
           data.ragSummary = featureData.shortObservation || data.ragSummary
           data.ragBasis = results[0].typicalFeatures || data.ragBasis
@@ -1602,11 +1682,15 @@ function diagnoseWithParallelPrecheck(images, petInfo, providerName, providerCfg
           data._ragMatchName = results[0].name
           data._ragMatchScore = results[0].score
           data._ragMatched = results[0].matched || []
+          // BUG-N1：快路径埋点补核验元信息（不含病例正文/图片）
           analytics.track('visionRag', {
             hit: true,
             topName: results[0].name,
             topScore: results[0].score,
-            featureCount: featureData.visualFeatures.length
+            featureCount: featureData.visualFeatures.length,
+            verifiedSupport: verification[0] ? verification[0].supportCount : 0,
+            verifiedConflict: verification[0] ? verification[0].conflictCount : 0,
+            needsOfflineTest: verification[0] ? !!verification[0].needsOfflineTest : false
           })
           resolve({
             success: true,

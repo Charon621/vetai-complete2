@@ -497,4 +497,123 @@ assert.ok(pyoderma.aliases.indexOf('毛囊炎') >= 0,
 assert.ok(pyoderma.breeds.indexOf('贵宾') >= 0,
   'merged entry must absorb breeds from the folded-in card')
 
+// ============================================================
+// BUG-N1：负知识驱动的两级证据门控
+// ============================================================
+
+// 首批高混淆组目标卡：计划一试点覆盖的 15 张卡
+const N1_TARGET_CARDS = [
+  '急性湿性皮炎（热点）',
+  '皮肤癣菌病（犬猫）',
+  '特应性皮炎（环境过敏）',
+  '食物过敏性皮炎',
+  '浅表脓皮病',
+  '马拉色菌皮炎',
+  '蠕形螨病（局灶型）',
+  '全身型蠕形螨病',
+  '疥螨病',
+  '耳螨感染',
+  '马拉色菌性外耳炎',
+  '细菌性外耳炎',
+  '皮脂腺囊肿',
+  '皮肤肿瘤（肥大细胞瘤等）',
+  '脓肿/蜂窝织炎'
+]
+
+// 每张目标卡都必须有结构化的负知识字段（数组字段可空，但物种限制字段必须存在）
+N1_TARGET_CARDS.forEach(function (name) {
+  const card = kb.DISEASE_KB.filter(function (c) { return c.name === name })[0]
+  assert.ok(card, 'BUG-N1 target card missing from KB: ' + name)
+  assert.ok(Array.isArray(card.exclusionRules), name + ' missing exclusionRules (BUG-N1)')
+  assert.ok(card.speciesLimits && typeof card.speciesLimits === 'object', name + ' missing speciesLimits (BUG-N1)')
+  assert.ok(Array.isArray(card.unreadableConditions), name + ' missing unreadableConditions (BUG-N1)')
+  assert.ok(Array.isArray(card.forbiddenAttributions), name + ' missing forbiddenAttributions (BUG-N1)')
+  assert.ok(Array.isArray(card.conflictChecks), name + ' missing conflictChecks (BUG-N1)')
+  // 高混淆组必须至少有一条硬排除或冲突检查，否则负知识没有实际约束力
+  assert.ok(card.exclusionRules.length > 0 || card.conflictChecks.length > 0,
+    name + ' should carry exclusionRules or conflictChecks (BUG-N1)')
+})
+
+// verifyCandidates 导出与基本结构
+assert.strictEqual(typeof kb.verifyCandidates, 'function', 'verifyCandidates must be exported (BUG-N1)')
+const ringwormVerify = kb.verifyCandidates(
+  { species: '猫', bodyPart: '面部', complaint: '圆形脱毛 鳞屑 断毛 结痂 多宠' },
+  kb.search({ species: '猫', bodyPart: '面部', complaint: '圆形脱毛 鳞屑 断毛 结痂 多宠' })
+)
+assert.ok(Array.isArray(ringwormVerify), 'verifyCandidates returns an array (BUG-N1)')
+const ringwormTop = ringwormVerify[0]
+assert.strictEqual(typeof ringwormTop.supportCount, 'number', 'verification has supportCount (BUG-N1)')
+assert.strictEqual(typeof ringwormTop.conflictCount, 'number', 'verification has conflictCount (BUG-N1)')
+assert.strictEqual(typeof ringwormTop.hardExclude, 'boolean', 'verification has hardExclude (BUG-N1)')
+assert.strictEqual(typeof ringwormTop.needsOfflineTest, 'boolean', 'verification has needsOfflineTest (BUG-N1)')
+assert.ok(Array.isArray(ringwormTop.verifiedEvidence), 'verification has verifiedEvidence (BUG-N1)')
+assert.ok(Array.isArray(ringwormTop.missingEvidence), 'verification has missingEvidence (BUG-N1)')
+
+// 1. 正向：同一候选在支持证据齐备时可进入（不硬排除）
+assert.strictEqual(ringwormTop.hardExclude, false,
+  'ringworm with full evidence must not be hard-excluded (BUG-N1)')
+assert.ok(ringwormTop.supportCount >= 2,
+  'ringworm with full evidence should have enough support (BUG-N1)')
+
+// 2. 负向：加入关键反证（急性渗出糜烂）后应降级/退出
+const ringwormConflictVerify = kb.verifyCandidates(
+  { species: '猫', bodyPart: '面部', complaint: '圆形脱毛 鳞屑 断毛 急性渗出 糜烂' },
+  kb.search({ species: '猫', bodyPart: '面部', complaint: '圆形脱毛 鳞屑 断毛 急性渗出 糜烂' })
+)
+const ringwormConflictTop = ringwormConflictVerify[0]
+assert.strictEqual(ringwormConflictTop.hardExclude, true,
+  'ringworm + acute exudate should be hard-excluded (BUG-N1)')
+
+// 3. 犬猫物种错配：犬专属卡（浅表脓皮病/疥螨）在猫查询中必须 hardExclude
+const catQuery = { species: '猫', bodyPart: '腹部', complaint: '丘疹 脓疱 结痂 脱毛' }
+const catPyodermaVerify = kb.verifyCandidates(catQuery, [
+  { name: '浅表脓皮病', canonicalName: '浅表脓皮病', matched: ['视觉:丘疹', '视觉:脓疱'] }
+])
+assert.strictEqual(catPyodermaVerify[0].hardExclude, true,
+  'dog-only 浅表脓皮病 must be hard-excluded for cat (BUG-N1)')
+const catScabiesVerify = kb.verifyCandidates(
+  { species: '猫', bodyPart: '耳部', complaint: '剧烈瘙痒 结痂' },
+  [{ name: '疥螨病', canonicalName: '疥螨病', matched: ['视觉:结痂', '病史:瘙痒'] }]
+)
+assert.strictEqual(catScabiesVerify[0].hardExclude, true,
+  'dog-only 疥螨病 must be hard-excluded for cat (BUG-N1)')
+
+// 4. 反向保护：物种匹配时不应误排除
+const dogPyodermaVerify = kb.verifyCandidates(
+  { species: '犬', bodyPart: '腹部', complaint: '丘疹 脓疱 表皮领圈 结痂' },
+  kb.search({ species: '犬', bodyPart: '腹部', complaint: '丘疹 脓疱 表皮领圈 结痂' })
+)
+const dogPyodermaTop = dogPyodermaVerify.filter(function (v) { return v.canonicalName === '浅表脓皮病' })[0]
+assert.ok(dogPyodermaTop && !dogPyodermaTop.hardExclude,
+  'dog 浅表脓皮病 with matching evidence must not be excluded (BUG-N1)')
+
+// 5. 单一气味不得触发快路径：异味命中 forbiddenAttributions 且支持不足 → conflictCount > 0
+const odorOnlyVerify = kb.verifyCandidates(
+  { species: '犬', bodyPart: '躯干', complaint: '异味' },
+  [{ name: '马拉色菌皮炎', canonicalName: '马拉色菌皮炎', matched: ['病史:异味'] }]
+)
+assert.ok(odorOnlyVerify[0].conflictCount > 0,
+  'odor-only attribution should be flagged as conflict (BUG-N1)')
+
+// 6. 相邻候选冲突：耳道同时有油腻+黑褐色蜡样 → 两个候选都标记冲突
+const earConflictVerify = kb.verifyCandidates(
+  { species: '猫', bodyPart: '耳道', complaint: '油腻 异味 黑褐色 蜡样 分泌物' },
+  kb.search({ species: '猫', bodyPart: '耳道', complaint: '油腻 异味 黑褐色 蜡样 分泌物' })
+)
+earConflictVerify.forEach(function (v) {
+  if (v.canonicalName === '马拉色菌性外耳炎' || v.canonicalName === '耳螨感染') {
+    assert.ok(v.conflictCount > 0,
+      v.canonicalName + ' should flag conflict on mixed ear evidence (BUG-N1)')
+  }
+})
+
+// 7. 泛词：只有泛词命中的候选不得进入快路径（快路径门槛在 api 侧，这里验证核验不误伤也不放水）
+const genericOnlyVerify = kb.verifyCandidates(
+  { species: '犬', bodyPart: '背部', complaint: '红肿 脱毛 瘙痒 结痂' },
+  kb.search({ species: '犬', bodyPart: '背部', complaint: '红肿 脱毛 瘙痒 结痂' })
+)
+genericOnlyVerify.forEach(function (v) {
+  assert.strictEqual(v.hardExclude, false, 'generic signs alone must not trigger hard exclude (BUG-N1)')
+})
+
 console.log('kb tests passed')

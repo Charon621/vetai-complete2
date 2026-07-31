@@ -1,0 +1,49 @@
+{
+  "ok": true,
+  "problems": [],
+  "record": {
+    "model": "dry-run-model",
+    "prompt_version_sha256": "pending",
+    "knowledge_snapshot": "pending",
+    "code_commit": "pending",
+    "temperature": null,
+    "generated_at": null,
+    "metrics": {
+      "precheck_latency_p50": null,
+      "precheck_latency_p95": null,
+      "full_latency_p50": null,
+      "full_latency_p95": null,
+      "end_to_end_latency_p50": null,
+      "end_to_end_latency_p95": null,
+      "timeout_rate": null,
+      "json_direct_parse_rate": null,
+      "json_fallback_layer_distribution": null,
+      "field_missing_rate": null,
+      "enum_out_of_range_rate": null,
+      "low_quality_correct_reject_rate": null,
+      "insufficient_evidence_reject_rate": null,
+      "over_reject_on_readable_rate": null,
+      "high_risk_see_vet_recall": null,
+      "dangerous_false_reassurance_rate": null,
+      "dangerous_medication_rate": null,
+      "current_evidence_extraction_rate": null,
+      "old_record_pollution_rate": null,
+      "correction_apply_rate": null
+    },
+    "stratification": {
+      "species": {},
+      "coat_color_group": {},
+      "coat_length_group": {},
+      "capture_environment": {},
+      "lighting_condition": {},
+      "device_type": {},
+      "image_distance": {},
+      "background_complexity": {},
+      "input_channel": {},
+      "conversation_turn_count": {},
+      "current_history_conflict": {},
+      "photo_quality": {}
+    },
+    "raw_responses": []
+  }
+}

@@ -365,7 +365,8 @@ exports.main = async (event) => {
         ? (response.data.error.message || response.data.error.code || '')
         : ''
       // detail 只进日志不回传客户端，避免上游错误细节泄露
-      logResult('model_error', { statusCode: response.statusCode, detail: detail.slice(0, 200) })
+      // BUG-N3：成功/错误日志补精确模型名，便于 Qwen 版本矩阵回归；模型名非敏感，不含病例正文/图片/Key
+      logResult('model_error', { statusCode: response.statusCode, model: payload.model, detail: detail.slice(0, 200) })
       return {
         success: false,
         statusCode: response.statusCode,
@@ -373,7 +374,7 @@ exports.main = async (event) => {
       }
     }
 
-    logResult('ok', { statusCode: response.statusCode })
+    logResult('ok', { statusCode: response.statusCode, model: payload.model })
     const successResponse = {
       success: true,
       statusCode: response.statusCode,

@@ -31,7 +31,23 @@ var DISEASE_KB = [
     },
     typicalFeatures: '边界不清的红肿脱毛区，表面浆液性渗出，周围毛发潮湿粘连，急性发作（24-48h内）',
     ddx: '与浅表脓皮病区分：热点为大面积急性渗出性糜烂，脓皮病多为丘疹脓疱散在分布',
-    urgency: 'moderate'
+    urgency: 'moderate',
+    // BUG-N1：负知识 — 热点与皮肤癣菌病/局部炎症高混淆
+    speciesLimits: { allow: ['犬'], forbid: ['猫'], note: '急性湿性皮炎（热点）为犬特异性急性渗出性皮炎' },
+    exclusionRules: [
+      { terms: ['慢性', '反复', '对称'], reason: '热点为急性单灶渗出，慢性反复或对称分布不符合' },
+      { terms: ['圆形脱毛', '断毛'], reason: '圆形脱毛伴断毛更似皮肤癣菌病' }
+    ],
+    unreadableConditions: [
+      { condition: '急性渗出性糜烂与浅表脓皮病的鉴别需现场观察皮损形态', offlineTest: '线下皮肤检查' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '红肿', statement: '仅凭红肿不得归因为热点，红肿是多种皮炎共有表现' }
+    ],
+    conflictChecks: [
+      { with: '皮肤癣菌病（犬猫）', when: ['急性', '渗出', '糜烂', '潮湿'], against: ['圆形脱毛', '断毛', '鳞屑'] },
+      { with: '浅表脓皮病', when: ['大面积', '渗出', '糜烂'], against: ['丘疹', '脓疱', '毛囊'] }
+    ]
   },
 
   {
@@ -47,6 +63,21 @@ var DISEASE_KB = [
     typicalFeatures: '1-3岁发病，肢体末端及腹侧瘙痒性红斑，慢性反复发作，季节性加重',
     ddx: '与食物过敏区分：特应性皮炎通常环境相关、季节性，食物过敏全年性且可能伴胃肠症状',
     urgency: 'low',
+    // BUG-N1：负知识 — 特应性皮炎与食物不良反应高混淆
+    exclusionRules: [
+      { terms: ['全年', '换食', '换粮', '吃了就', '拉稀', '软便'], reason: '全年性发作伴胃肠症状更似食物过敏' }
+    ],
+    speciesLimits: { allow: ['犬', '猫'], forbid: [], note: '两物种均可发病，但品种先验不同' },
+    unreadableConditions: [
+      { condition: '确诊特应性皮炎需排除跳蚤、食物和环境因素', offlineTest: '排除饮食试验、过敏原检测' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '瘙痒', statement: '仅凭瘙痒不得归因为特应性皮炎，瘙痒是多种皮肤病共有表现' }
+    ],
+    conflictChecks: [
+      { with: '食物过敏性皮炎', when: ['季节', '环境', '每年', '春天'], against: ['全年', '换食', '胃肠', '腹泻'] },
+      { with: '跳蚤过敏性皮炎', when: ['爪部', '面部', '腹侧'], against: ['尾根', '腰背', '跳蚤', '黑色颗粒'] }
+    ],
     relatedDiseases: [
       { name: '浅表脓皮病', relation: '继发', desc: '特应性皮炎常继发细菌感染' },
       { name: '马拉色菌皮炎', relation: '继发', desc: '过敏导致皮肤屏障受损易继发酵母菌' },
@@ -81,7 +112,22 @@ var DISEASE_KB = [
     },
     typicalFeatures: '全年性瘙痒，常伴复发性外耳炎和/或胃肠症状，更换蛋白源后改善',
     ddx: '与特应性皮炎区分：食物过敏全年无季节性，常伴消化道症状',
-    urgency: 'low'
+    urgency: 'low',
+    // BUG-N1：负知识 — 食物过敏与特应性皮炎高混淆
+    exclusionRules: [
+      { terms: ['季节', '每年春天', '换季'], reason: '季节性发作更似环境相关特应性皮炎' }
+    ],
+    speciesLimits: { allow: ['犬', '猫'], forbid: [], note: '两物种均可发病' },
+    unreadableConditions: [
+      { condition: '确诊食物过敏需严格排除饮食试验（水解蛋白或单一蛋白源 8-12 周）', offlineTest: '排除饮食试验' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '瘙痒', statement: '仅凭瘙痒不得归因为食物过敏，需结合全年性与饮食史' }
+    ],
+    conflictChecks: [
+      { with: '特应性皮炎（环境过敏）', when: ['全年', '换食', '胃肠', '腹泻'], against: ['季节', '环境', '每年', '春天'] },
+      { with: '马拉色菌皮炎', when: ['耳炎', '瘙痒'], against: ['油腻', '异味', '增厚', '色素沉着'] }
+    ]
   },
 
   {
@@ -99,6 +145,21 @@ var DISEASE_KB = [
     typicalFeatures: '丘疹→脓疱→环形表皮领圈+中央结痂+脱毛，毛囊性分布，腹部无毛区明显，常继发于过敏或内分泌疾病',
     ddx: '与蠕形螨区分：脓皮病通常不伴广泛脱毛和皮肤增厚，蠕形螨多为对称性脱毛。与急性湿性皮炎（热点）区分：脓皮病为散在毛囊性丘疹脓疱，热点为大范围急性渗出性糜烂。',
     urgency: 'moderate',
+    // BUG-N1：负知识 — 浅表脓皮病与马拉色菌皮炎高混淆
+    exclusionRules: [
+      { terms: ['油腻', '异味', '酸臭', '霉味'], reason: '油腻异味更似马拉色菌皮炎' }
+    ],
+    speciesLimits: { allow: ['犬'], forbid: ['猫'], note: '猫浅表脓皮病单列条目' },
+    unreadableConditions: [
+      { condition: '确诊需皮肤细胞学（脓疱内容物染色）区分细菌/酵母', offlineTest: '皮肤细胞学检查' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '脓疱', statement: '仅凭脓疱不得归因为浅表脓皮病，毛囊炎等也可有脓疱' }
+    ],
+    conflictChecks: [
+      { with: '马拉色菌皮炎', when: ['丘疹', '脓疱', '表皮领圈'], against: ['油腻', '异味', '酸臭', '色素沉着'] },
+      { with: '蠕形螨病（局灶型）', when: ['丘疹', '脓疱'], against: ['对称脱毛', '不痒', '皮屑'] }
+    ],
     relatedDiseases: [
       { name: '特应性皮炎（环境过敏）', relation: '原发', desc: '过敏是浅表脓皮病最常见的潜在原因' },
       { name: '甲状腺功能减退相关皮肤改变', relation: '原发', desc: '甲减等内分泌病可导致反复脓皮病' },
@@ -137,7 +198,23 @@ var DISEASE_KB = [
     },
     typicalFeatures: '幼犬面部/前肢对称性脱毛、红斑、皮屑，早期不痒或轻痒，多可自愈',
     ddx: '与真菌感染区分：蠕形螨早期不痒或轻痒，真菌通常瘙痒剧烈；与脓皮病区分：蠕形螨对称性脱毛更明显',
-    urgency: 'low'
+    urgency: 'low',
+    // BUG-N1：负知识 — 蠕形螨与疥螨/皮肤癣菌病高混淆
+    exclusionRules: [
+      { terms: ['剧烈瘙痒', '剧痒', '特别痒'], reason: '剧烈瘙痒更似疥螨病，蠕形螨早期不痒或轻痒' },
+      { terms: ['圆形脱毛', '断毛'], reason: '圆形脱毛伴断毛更似皮肤癣菌病' }
+    ],
+    speciesLimits: { allow: ['犬'], forbid: ['猫'], note: '猫蠕形螨病单列条目' },
+    unreadableConditions: [
+      { condition: '确诊需深部皮肤刮片镜检见蠕形螨', offlineTest: '皮肤刮片镜检' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '脱毛', statement: '仅凭脱毛不得归因为蠕形螨，脱毛是多种皮肤病共有表现' }
+    ],
+    conflictChecks: [
+      { with: '疥螨病', when: ['不痒', '轻痒', '对称'], against: ['剧烈瘙痒', '耳缘', '肘部', '传染'] },
+      { with: '皮肤癣菌病（犬猫）', when: ['脱毛', '皮屑'], against: ['圆形脱毛', '断毛', '鳞屑', '多宠'] }
+    ]
   },
 
   {
@@ -153,6 +230,21 @@ var DISEASE_KB = [
     typicalFeatures: '大面积对称脱毛、皮肤增厚呈蓝灰色、色素沉着，常继发脓皮病和瘘管，需积极治疗',
     ddx: '与局灶型蠕形螨区分：全身型累及多个体区，预后更差；与脓皮病区分：蠕形螨脱毛更广泛且对称，刮片可确诊',
     urgency: 'urgent',
+    // BUG-N1：负知识 — 全身型蠕形螨与疥螨高混淆
+    exclusionRules: [
+      { terms: ['剧烈瘙痒', '剧痒', '特别痒'], reason: '剧烈瘙痒更似疥螨病，蠕形螨不痒或轻痒' }
+    ],
+    speciesLimits: { allow: ['犬'], forbid: ['猫'], note: '猫蠕形螨病单列条目' },
+    unreadableConditions: [
+      { condition: '确诊需多部位深部皮肤刮片镜检', offlineTest: '皮肤刮片镜检' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '脱毛', statement: '仅凭大面积脱毛不得归因为全身型蠕形螨，内分泌病也可对称脱毛' }
+    ],
+    conflictChecks: [
+      { with: '疥螨病', when: ['不痒', '对称', '大面积脱毛'], against: ['剧烈瘙痒', '耳缘', '肘部', '传染'] },
+      { with: '甲状腺功能减退相关皮肤改变', when: ['对称脱毛', '增厚'], against: ['多饮多尿', '皮肤变薄', '黑头'] }
+    ],
     relatedDiseases: [
       { name: '深部脓皮病', relation: '继发', desc: '全身型蠕形螨常继发深部细菌感染' },
       { name: '浅表脓皮病', relation: '继发', desc: '可伴发浅表脓皮病' }
@@ -171,7 +263,22 @@ var DISEASE_KB = [
     },
     typicalFeatures: '剧烈瘙痒（与蠕形螨的关键区别），耳缘、肘部、腹部脱毛结痂，人接触后也可瘙痒',
     ddx: '与蠕形螨区分：疥螨剧烈瘙痒，蠕形螨不痒或轻痒；与跳蚤过敏区分：疥螨好发耳缘和肘部',
-    urgency: 'moderate'
+    urgency: 'moderate',
+    // BUG-N1：负知识 — 疥螨与蠕形螨/跳蚤过敏高混淆
+    exclusionRules: [
+      { terms: ['不痒', '轻痒', '没痒'], reason: '疥螨以剧烈瘙痒为特征，不痒或轻痒不符合' }
+    ],
+    speciesLimits: { allow: ['犬'], forbid: ['猫'], note: '猫疥螨病单列条目' },
+    unreadableConditions: [
+      { condition: '确诊需皮肤刮片镜检见疥螨或其虫卵', offlineTest: '皮肤刮片镜检' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '瘙痒', statement: '仅凭瘙痒不得归因为疥螨，需结合剧烈程度、部位与传染性' }
+    ],
+    conflictChecks: [
+      { with: '蠕形螨病（局灶型）', when: ['剧烈瘙痒', '耳缘', '肘部'], against: ['不痒', '轻痒', '对称脱毛', '面部'] },
+      { with: '跳蚤过敏性皮炎', when: ['耳缘', '肘部', '剧烈瘙痒'], against: ['尾根', '腰背', '跳蚤', '黑色颗粒'] }
+    ]
   },
 
   {
@@ -187,6 +294,21 @@ var DISEASE_KB = [
     typicalFeatures: '皮肤油腻发红、增厚伴色素沉着，常有霉味/酸臭味，好发潮湿褶皱区域',
     ddx: '与脓皮病区分：马拉色菌特征为油腻性皮炎和异味，脓皮病为脓疱和环形结痂',
     urgency: 'low',
+    // BUG-N1：负知识 — 马拉色菌皮炎与浅表脓皮病高混淆
+    exclusionRules: [
+      { terms: ['脓疱', '丘疹', '表皮领圈'], reason: '脓疱丘疹更似浅表脓皮病' }
+    ],
+    speciesLimits: { allow: ['犬', '猫'], forbid: [], note: '两物种均可发病' },
+    unreadableConditions: [
+      { condition: '确诊需皮肤细胞学（胶带粘贴或刮片染色见酵母菌）', offlineTest: '皮肤细胞学检查' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '异味', statement: '仅凭异味不得归因为马拉色菌皮炎，细菌感染也可有异味' }
+    ],
+    conflictChecks: [
+      { with: '浅表脓皮病', when: ['油腻', '异味', '酸臭', '色素沉着'], against: ['丘疹', '脓疱', '表皮领圈'] },
+      { with: '皮脂溢性皮炎', when: ['异味', '油腻'], against: ['广泛脱屑', '对称', '角化'] }
+    ],
     relatedDiseases: [
       { name: '特应性皮炎（环境过敏）', relation: '原发', desc: '过敏是马拉色菌过度增殖的常见基础' },
       { name: '甲状腺功能减退相关皮肤改变', relation: '原发', desc: '甲减皮肤改变可继发马拉色菌' }
@@ -205,7 +327,23 @@ var DISEASE_KB = [
     },
     typicalFeatures: '圆形或不规则脱毛区，覆灰白色鳞屑和结痂，毛发折断，猫常不痒，幼年动物和多宠家庭多发',
     ddx: '与蠕形螨区分：癣菌通常圆形脱毛、鳞屑明显、轻痒或不痒；人也有皮损是重要线索',
-    urgency: 'moderate'
+    urgency: 'moderate',
+    // BUG-N1：负知识 — 皮肤癣菌病与局部炎症/蠕形螨高混淆
+    exclusionRules: [
+      { terms: ['急性', '渗出', '糜烂', '大面积潮湿'], reason: '急性渗出糜烂更似热点等局部炎症' },
+      { terms: ['脓疱', '丘疹', '表皮领圈'], reason: '毛囊性丘疹脓疱更似浅表脓皮病' }
+    ],
+    speciesLimits: { allow: ['犬', '猫'], forbid: [], note: '两物种均可发病，猫更常见' },
+    unreadableConditions: [
+      { condition: '确诊需真菌培养或毛干镜检（Wood灯仅辅助）', offlineTest: '真菌培养、毛干镜检' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '脱毛', statement: '仅凭脱毛不得归因为皮肤癣菌病，需结合圆形形态、断毛与鳞屑' }
+    ],
+    conflictChecks: [
+      { with: '急性湿性皮炎（热点）', when: ['圆形脱毛', '断毛', '鳞屑', '多宠'], against: ['急性', '渗出', '糜烂'] },
+      { with: '蠕形螨病（局灶型）', when: ['圆形脱毛', '断毛'], against: ['对称', '眼周', '不痒', '幼犬'] }
+    ]
   },
 
   {
@@ -626,7 +764,23 @@ var DISEASE_KB = [
     },
     typicalFeatures: '双侧耳道大量黑褐色蜡样分泌物，动物频繁甩头和抓耳，猫多发，耳道皮肤红肿',
     ddx: '与马拉色菌性外耳炎区分：耳螨分泌物为干燥黑褐色蜡样，马拉色菌为油腻有臭味',
-    urgency: 'moderate'
+    urgency: 'moderate',
+    // BUG-N1：负知识 — 耳螨与马拉色菌性外耳炎/细菌性外耳炎高混淆
+    exclusionRules: [
+      { terms: ['脓性', '化脓', '黄绿色'], reason: '脓性分泌物更似细菌性外耳炎' },
+      { terms: ['油腻', '酸臭', '霉味'], reason: '油腻酸臭更似马拉色菌性外耳炎' }
+    ],
+    speciesLimits: { allow: ['犬', '猫'], forbid: [], note: '猫多发，犬亦可' },
+    unreadableConditions: [
+      { condition: '确诊需耳镜检查见耳螨或耳垢镜检', offlineTest: '耳镜检查、耳垢镜检' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '黑褐色分泌物', statement: '仅凭黑褐色分泌物不得归因为耳螨，马拉色菌也可有深色耳垢' }
+    ],
+    conflictChecks: [
+      { with: '马拉色菌性外耳炎', when: ['黑褐色', '蜡样', '干燥'], against: ['油腻', '酸臭', '霉味', '黄褐色'] },
+      { with: '细菌性外耳炎', when: ['黑褐色', '蜡样'], against: ['脓性', '化脓', '黄绿色', '疼痛'] }
+    ]
   },
 
   {
@@ -641,7 +795,23 @@ var DISEASE_KB = [
     },
     typicalFeatures: '耳道黄褐色油腻分泌物，有酸臭/霉味，耳道皮肤红肿增厚，垂耳犬好发',
     ddx: '与耳螨区分：马拉色菌分泌物油腻有臭味，耳螨为干燥黑褐色蜡样',
-    urgency: 'moderate'
+    urgency: 'moderate',
+    // BUG-N1：负知识 — 马拉色菌性外耳炎与耳螨/细菌性外耳炎高混淆
+    exclusionRules: [
+      { terms: ['黑褐色', '蜡样', '干燥'], reason: '干燥黑褐色蜡样分泌物更似耳螨' },
+      { terms: ['脓性', '化脓', '黄绿色'], reason: '脓性分泌物更似细菌性外耳炎' }
+    ],
+    speciesLimits: { allow: ['犬', '猫'], forbid: [], note: '垂耳犬好发' },
+    unreadableConditions: [
+      { condition: '确诊需耳道细胞学（拭子涂片见酵母菌）', offlineTest: '耳道细胞学检查' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '异味', statement: '仅凭耳道异味不得归因为马拉色菌性外耳炎，细菌性耳炎也有异味' }
+    ],
+    conflictChecks: [
+      { with: '耳螨感染', when: ['油腻', '酸臭', '霉味', '黄褐色'], against: ['黑褐色', '蜡样', '干燥'] },
+      { with: '细菌性外耳炎', when: ['油腻', '酸臭'], against: ['脓性', '化脓', '疼痛'] }
+    ]
   },
 
   {
@@ -656,7 +826,23 @@ var DISEASE_KB = [
     },
     typicalFeatures: '耳道脓性分泌物、红肿、疼痛，可能有溃疡，常继发于耳螨或过敏',
     ddx: '与耳螨区分：细菌性外耳炎分泌物为脓性，耳螨为干燥黑褐色蜡样',
-    urgency: 'moderate'
+    urgency: 'moderate',
+    // BUG-N1：负知识 — 细菌性外耳炎与耳螨/马拉色菌性外耳炎高混淆
+    exclusionRules: [
+      { terms: ['黑褐色', '蜡样', '干燥'], reason: '干燥黑褐色蜡样分泌物更似耳螨' },
+      { terms: ['油腻', '酸臭', '霉味'], reason: '油腻酸臭更似马拉色菌性外耳炎' }
+    ],
+    speciesLimits: { allow: ['犬', '猫'], forbid: [], note: '两物种均可发病' },
+    unreadableConditions: [
+      { condition: '确诊需耳镜检查鼓膜完整性 + 耳道细胞学', offlineTest: '耳镜检查、耳道细胞学' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '分泌物', statement: '仅凭耳道分泌物不得归因为细菌性外耳炎，耳螨/马拉色菌也有分泌物' }
+    ],
+    conflictChecks: [
+      { with: '耳螨感染', when: ['脓性', '化脓', '疼痛'], against: ['黑褐色', '蜡样', '干燥'] },
+      { with: '马拉色菌性外耳炎', when: ['脓性', '化脓'], against: ['油腻', '酸臭', '霉味'] }
+    ]
   },
 
   {
@@ -671,7 +857,23 @@ var DISEASE_KB = [
     },
     typicalFeatures: '皮肤下圆形隆起结节，内容物为白色/黄褐色皮脂样物，通常无痛',
     ddx: '与肿瘤区分：囊肿内容物为皮脂，有波动感；与脓肿区分：脓肿有红肿热痛',
-    urgency: 'low'
+    urgency: 'low',
+    // BUG-N1：负知识 — 皮脂腺囊肿与肿块/脓肿高混淆
+    exclusionRules: [
+      { terms: ['红肿热痛', '热痛', '流脓', '快速增大', '破溃'], reason: '红肿热痛流脓更似脓肿' },
+      { terms: ['持续增大', '溃疡', '不愈', '出血'], reason: '持续增大溃疡出血更似肿瘤' }
+    ],
+    speciesLimits: { allow: ['犬', '猫'], forbid: [], note: '两物种均可发病' },
+    unreadableConditions: [
+      { condition: '肿物性质需触诊（质地/波动）与细针抽吸判断', offlineTest: '触诊、细针抽吸' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '肿块', statement: '仅凭“长了个包”不得归因为囊肿，肿块/脓肿/肿瘤均表现为包块' }
+    ],
+    conflictChecks: [
+      { with: '皮肤肿瘤（肥大细胞瘤等）', when: ['波动', '皮脂', '稳定', '无痛'], against: ['持续增大', '溃疡', '出血', '快速变化'] },
+      { with: '脓肿/蜂窝织炎', when: ['无痛', '稳定'], against: ['红肿热痛', '急性', '流脓'] }
+    ]
   },
 
   {
@@ -716,7 +918,22 @@ var DISEASE_KB = [
     },
     typicalFeatures: '皮肤结节或肿块，大小不一，可能溃疡或波动，肥大细胞瘤可红肿、波动',
     ddx: '与皮脂腺囊肿区分：肿瘤常持续增大、可溃疡出血、质地不均，囊肿有波动感、内容物为皮脂、长期稳定。与脓肿/蜂窝织炎区分：脓肿急性红肿热痛、有波动和脓液、常有咬伤史，肿瘤多为无痛渐进增大。与嗜酸性肉芽肿区分（猫）：肿瘤孤立进行性，EGC 年轻猫多灶且激素反应好。任何不愈合溃疡或进行性增大肿块都应细针抽吸或活检。',
-    urgency: 'urgent'
+    urgency: 'urgent',
+    // BUG-N1：负知识 — 肿块/囊肿/脓肿高混淆
+    exclusionRules: [
+      { terms: ['红肿热痛', '急性', '流脓', '咬伤'], reason: '急性红肿热痛流脓更似脓肿/蜂窝织炎' }
+    ],
+    speciesLimits: { allow: ['犬', '猫'], forbid: [], note: '两物种均可发病' },
+    unreadableConditions: [
+      { condition: '肿物良恶性需细针抽吸或活检病理判断', offlineTest: '细针抽吸、活检病理' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '肿块', statement: '仅凭“长了个包”不得归因为肿瘤，囊肿/脓肿也表现为包块' }
+    ],
+    conflictChecks: [
+      { with: '皮脂腺囊肿', when: ['持续增大', '溃疡', '出血', '快速变化'], against: ['波动', '皮脂', '稳定', '无痛'] },
+      { with: '脓肿/蜂窝织炎', when: ['无痛', '缓慢增大'], against: ['红肿热痛', '急性', '流脓'] }
+    ]
   },
 
   {
@@ -731,7 +948,22 @@ var DISEASE_KB = [
     },
     typicalFeatures: '局部突然红肿热痛，可有波动感、破溃或脓性分泌物，常见于咬伤或穿刺后感染',
     ddx: '与肿瘤区分：脓肿常急性、疼痛和发热，肿瘤通常持续增大但不一定热痛',
-    urgency: 'urgent'
+    urgency: 'urgent',
+    // BUG-N1：负知识 — 脓肿与肿块/囊肿高混淆
+    exclusionRules: [
+      { terms: ['长期稳定', '不痛', '缓慢增大'], reason: '长期稳定无痛更似囊肿或肿瘤' }
+    ],
+    speciesLimits: { allow: ['犬', '猫'], forbid: [], note: '两物种均可发病' },
+    unreadableConditions: [
+      { condition: '是否波动与脓液需触诊/穿刺确认，脓肿与囊肿外观可相似', offlineTest: '触诊、穿刺' }
+    ],
+    forbiddenAttributions: [
+      { evidence: '红肿', statement: '仅凭红肿不得归因为脓肿，需结合热、痛、波动与病史' }
+    ],
+    conflictChecks: [
+      { with: '皮肤肿瘤（肥大细胞瘤等）', when: ['红肿热痛', '急性', '流脓'], against: ['缓慢增大', '无痛', '不愈'] },
+      { with: '皮脂腺囊肿', when: ['红肿热痛', '急性', '流脓'], against: ['波动', '稳定', '无痛'] }
+    ]
   },
 
   {
@@ -1781,7 +2013,13 @@ function toClinicalCard(entry, index) {
     version: entry.version || KB_VERSION,
     keywords: entry.keywords || { breeds: [], locations: [], symptoms: [] },
     ddx: entry.ddx || '',
-    relatedDiseases: entry.relatedDiseases || []
+    relatedDiseases: entry.relatedDiseases || [],
+    // BUG-N1：负知识字段透传（首批高混淆组试点；无字段的卡保持空数组，接口兼容旧调用）
+    exclusionRules: entry.exclusionRules || [],
+    speciesLimits: entry.speciesLimits || null,
+    unreadableConditions: entry.unreadableConditions || [],
+    forbiddenAttributions: entry.forbiddenAttributions || [],
+    conflictChecks: entry.conflictChecks || []
   }
 }
 
@@ -2556,6 +2794,166 @@ function search(query) {
   return results.slice(0, 3)
 }
 
+// ============================================================
+// BUG-N1：两级证据门控 — 候选核验
+//
+// search() 保留高召回职责（路由阶段），verifyCandidates 负责逐候选核验：
+// 只读取当前候选卡上的局部负知识字段（exclusionRules / speciesLimits /
+// unreadableConditions / forbiddenAttributions / conflictChecks），
+// 不再把整张卡或全部候选正文拼在一起。输出内部结构供上层决策：
+//   supportCount      支持证据数（非泛词视觉/病史/组合/别名）
+//   conflictCount     与相邻候选冲突的证据组数
+//   hardExclude       是否命中硬排除（排除规则或物种限制）
+//   needsOfflineTest  是否存在必须线下/实验室才能判定的条件
+//   verifiedEvidence  通过核验的局部证据数组
+//   missingEvidence   缺失的关键证据（离线检查项 + 冲突区分项）
+// 这些字段只用于路由/快路径门槛与完整诊断的局部证据传递，
+// 不得直接出现在用户可见文案中。
+// ============================================================
+
+// 把 query 拼成与 search 同口径的搜索文本（口语扩展 + 视觉词 + 部位）
+function buildVerifyText(query) {
+  query = query || {}
+  var visualFeatures = query.visualFeatures || []
+  var parts = [
+    expandQueryTerms(query.complaint || ''),
+    visualFeatures.join(' '),
+    query.lesionPattern || '',
+    query.lesionShape || '',
+    query.bodyPart || '',
+    query.breed || ''
+  ]
+  return parts.filter(Boolean).join(' ').toLowerCase()
+}
+
+// 判断 query 文本是否命中某组词（任一词命中即 true）
+function textHitsAny(text, terms) {
+  if (!Array.isArray(terms)) return false
+  for (var i = 0; i < terms.length; i++) {
+    if (terms[i] && text.indexOf(String(terms[i]).toLowerCase()) >= 0) return true
+  }
+  return false
+}
+
+// 按候选卡的反查名找知识卡（search 结果带 canonicalName）
+function findCardByCanonicalName(name) {
+  for (var i = 0; i < DISEASE_KB.length; i++) {
+    if (DISEASE_KB[i].name === name) return DISEASE_KB[i]
+  }
+  return null
+}
+
+/**
+ * 候选核验：只读候选卡局部负知识字段，输出内部核验结构。
+ * @param {Object} query - 与 search 同构的病例查询
+ * @param {Array} routedResults - search() 输出的候选数组
+ * @returns {Array<Object>} 与 routedResults 顺序一致的核验结果数组
+ */
+function verifyCandidates(query, routedResults) {
+  var results = Array.isArray(routedResults) ? routedResults : []
+  var text = buildVerifyText(query)
+  var species = (query && query.species) || ''
+  var out = []
+
+  for (var i = 0; i < results.length; i++) {
+    var result = results[i] || {}
+    var card = findCardByCanonicalName(result.canonicalName || result.name)
+    var v = {
+      name: result.name || '',
+      canonicalName: result.canonicalName || result.name || '',
+      supportCount: 0,
+      conflictCount: 0,
+      hardExclude: false,
+      needsOfflineTest: false,
+      verifiedEvidence: [],
+      missingEvidence: []
+    }
+    if (!card) {
+      out.push(v)
+      continue
+    }
+
+    // 1) 支持证据：非泛词视觉 + 病史 + 组合 + 别名（与 isPromptWorthyResult 同口径）
+    var matched = Array.isArray(result.matched) ? result.matched : []
+    for (var m = 0; m < matched.length; m++) {
+      var item = String(matched[m] || '')
+      if (item.indexOf('负信号:') === 0) continue
+      if (item.indexOf('视觉:') === 0) {
+        var term = item.slice('视觉:'.length)
+        if (isGenericSign(term)) continue
+        v.supportCount++
+        v.verifiedEvidence.push(item)
+      } else if (item.indexOf('病史:') === 0 || item.indexOf('组合:') === 0 || item.indexOf('别名:') === 0) {
+        v.supportCount++
+        v.verifiedEvidence.push(item)
+      }
+    }
+
+    // 2) 物种限制：与卡自带 species 不一致，或 speciesLimits 明确禁用 → 硬排除
+    var speciesLimit = card.speciesLimits
+    var speciesMismatch = species && card.species.indexOf(species) < 0
+    if (speciesLimit) {
+      if (Array.isArray(speciesLimit.forbid) && species && speciesLimit.forbid.indexOf(species) >= 0) {
+        speciesMismatch = true
+      }
+      if (!speciesMismatch && Array.isArray(speciesLimit.allow) && species &&
+          speciesLimit.allow.length && speciesLimit.allow.indexOf(species) < 0) {
+        speciesMismatch = true
+      }
+    }
+    if (speciesMismatch) {
+      v.hardExclude = true
+      v.missingEvidence.push('物种不适用：' + (species || '未知'))
+    }
+
+    // 3) 硬排除规则：命中任一排除词 → 硬排除
+    var exclusions = card.exclusionRules || []
+    for (var e = 0; e < exclusions.length; e++) {
+      var rule = exclusions[e] || {}
+      if (textHitsAny(text, rule.terms)) {
+        v.hardExclude = true
+        v.conflictCount++
+        v.missingEvidence.push((rule.reason || '排除规则命中') + '（' + String((rule.terms || []).join('/')) + '）')
+      }
+    }
+
+    // 4) 不可判读条件：存在必须线下/实验室才能判定的条件 → needsOfflineTest
+    var unreadable = card.unreadableConditions || []
+    if (unreadable.length) {
+      v.needsOfflineTest = true
+      for (var u = 0; u < unreadable.length; u++) {
+        var cond = unreadable[u] || {}
+        if (cond.offlineTest) v.missingEvidence.push('需' + cond.offlineTest)
+        else if (cond.condition) v.missingEvidence.push(cond.condition)
+      }
+    }
+
+    // 5) 禁止归因：命中禁归因表现且支持证据不足 → 冲突 + 缺失证据
+    var forbids = card.forbiddenAttributions || []
+    for (var f = 0; f < forbids.length; f++) {
+      var fb = forbids[f] || {}
+      if (fb.evidence && text.indexOf(String(fb.evidence).toLowerCase()) >= 0 && v.supportCount < 2) {
+        v.conflictCount++
+        v.missingEvidence.push(fb.statement || ('仅凭' + fb.evidence + '不得归因'))
+      }
+    }
+
+    // 6) 相邻候选冲突：命中 when 组（本卡证据）又命中 against 组（相邻候选证据）→ 冲突
+    var conflicts = card.conflictChecks || []
+    for (var c = 0; c < conflicts.length; c++) {
+      var chk = conflicts[c] || {}
+      if (textHitsAny(text, chk.when) && textHitsAny(text, chk.against)) {
+        v.conflictCount++
+        v.missingEvidence.push('与' + (chk.with || '相邻候选') + '冲突，需区分')
+      }
+    }
+
+    out.push(v)
+  }
+
+  return out
+}
+
 /**
  * K8：按品种取该品种统计高发的病种（品种先验）
  *
@@ -2690,6 +3088,8 @@ module.exports = {
   getSourcesForDiagnosisNames: getSourcesForDiagnosisNames,
   splitComplaintBySubject: splitComplaintBySubject,
   expandQueryTerms: expandQueryTerms,
+  // BUG-N1：两级证据门控
+  verifyCandidates: verifyCandidates,
   COMBO_GROUPS: COMBO_GROUPS,
   HIGH_RISK_COMBOS: HIGH_RISK_COMBOS,
   ZOONOSIS_DISEASES: ZOONOSIS_DISEASES,
