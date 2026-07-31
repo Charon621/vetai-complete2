@@ -1,4 +1,6 @@
 {
+  "name": "vetai-complete2",
+  "version": "3.0.0",
   "scripts": {
     "test": "node tests/structure.test.js && node tests/storage.test.js && node tests/kb.test.js && node tests/api.test.js && node tests/prompt-contract.test.js && node tests/api-integration.test.js && node tests/chatDoctor.test.js && node tests/chatPage.test.js && node tests/image.test.js && node tests/lesion.test.js && node tests/cloud-function.test.js && npm run audit:kb && npm run probe:recall",
     "audit:kb": "node evaluation/tools/kb_audit.js",
