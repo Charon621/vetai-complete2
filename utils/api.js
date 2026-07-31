@@ -1459,6 +1459,11 @@ function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, 
     ? top.homeCareSafe.slice(0, 4).join('；')
     : '保持患处清洁干燥，避免反复舔咬和抓挠；暂不自行使用人用药或不明药膏。'
   var vetAdvice = top.vetAdvice || '如皮损扩大、破溃流脓、明显疼痛、持续瘙痒或精神食欲异常，应线下就医。'
+  // BUG-G10：whenToSeeVet 原先三元两个分支都返回 vetAdvice（死代码），
+  // 导致非急诊病例也套用急诊的强烈就医措辞，与下方 vetWarning 的急诊/普通区分意图不一致。
+  // 这里按 urgency 分流：急诊用强烈就医建议，普通给条件性观察+就医提示。
+  var urgentCase = top.urgency === 'urgent' || top.urgency === 'emergency'
+  var nonUrgentAdvice = '多数皮肤问题在护理观察后常可缓解；若范围扩大、破溃流脓、明显瘙痒或精神食欲异常，请及时线下就医。'
   var uncertainty = (top.report && top.report.uncertainty) || '单靠照片不能确诊，需要结合病史、体检和必要的实验室检查。'
   var sourceList = collectSourcesFromResults([top])
 
@@ -1473,11 +1478,9 @@ function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, 
     possibleMeaning: '照片表现与“' + topDisplayName + '”的部分特征相似，建议作为候选鉴别方向之一；' + uncertainty,
     homeCare: safeHomeCare,
     whenToWatch: '若范围稳定、无明显疼痛渗出、精神食欲正常，可记录照片并持续观察变化。',
-    whenToSeeVet: top.urgency === 'urgent' || top.urgency === 'emergency'
-      ? vetAdvice
-      : vetAdvice,
+    whenToSeeVet: urgentCase ? vetAdvice : nonUrgentAdvice,
     careSuggestion: '该结果仅作初筛参考；下一步可结合线下检查确认：' + ((top.recommendedTests || []).slice(0, 3).join('、') || '皮肤/耳道基础检查') + '。',
-    vetWarning: top.urgency === 'urgent' || top.urgency === 'emergency'
+    vetWarning: urgentCase
       ? vetAdvice
       : '如症状加重、扩散、破溃、流脓、明显疼痛或精神食欲异常，请尽快线下就医。',
     urgency: top.urgency || 'moderate',
@@ -2131,5 +2134,7 @@ module.exports = {
   isStrongVisionRagHit: isStrongVisionRagHit,
   isMucosalOrOralCase: isMucosalOrOralCase,
   checkCoverageConsistency: checkCoverageConsistency,
+  // 导出供测试：验证快路径报告的就医建议在急诊/普通下分流正确（BUG-G10）
+  buildFastRagDiagnosis: buildFastRagDiagnosis,
   friendlyError: friendlyError
 }
