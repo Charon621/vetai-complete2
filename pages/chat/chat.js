@@ -2,6 +2,11 @@ var chatDoctor = require('../../utils/chatDoctor')
 var storage = require('../../utils/storage')
 var api = require('../../utils/api')
 var imageUtil = require('../../utils/image')
+var config = require('../../utils/config')
+var analytics = require('../../utils/analytics')
+
+// 聊天流与首页统一照片上限（BUG-C3）；真正送模型的张数由 MAX_MODEL_IMAGES 控制
+var MAX_CHAT_PHOTOS = config.MAX_IMAGES || 5
 
 function formatTime(ts) {
   if (!ts) return ''
@@ -38,6 +43,7 @@ Page({
     showProfilePicker: false, profiles: [],
     statusBarHeight: 20,
     isAnalyzing: false, draftPetName: '',
+    showProgress: false, progressText: '',
     showNewBtn: false, restoredNotice: false, scrollIntoView: '',
     uploadedPhotos: [], uploadedPhotoBoxes: [], showPhotoActions: false,
     selectorVisible: false, selectorImageIndex: -1, selectorImagePath: '',
@@ -127,7 +133,7 @@ Page({
     this._session = session
     var msgData = chatDoctor.getDoctorMessage(session.phase, session.draft)
     this.setData({
-      messages: session.messages.map(formatMessage),
+      messages: this._formatMessages(),
       quickReplies: msgData.quickReplies,
       inputType: msgData.inputType,
       placeholder: msgData.placeholder || '输入消息…',
@@ -136,11 +142,22 @@ Page({
       uploadedPhotos: [], uploadedPhotoBoxes: [], showPhotoActions: false,
       isAnalyzing: false
     })
+    this._updateProgress()
     this._isProcessing = false
     this._scrollToBottom()
   },
 
   dismissRestoredNotice: function () { this.setData({ restoredNotice: false }) },
+
+  // 自定义导航栏返回按钮（chat.json navigationStyle: custom，系统不渲染返回键）
+  onBackTap: function () {
+    var pages = getCurrentPages()
+    if (pages.length > 1) {
+      wx.navigateBack({ delta: 1 })
+    } else {
+      wx.switchTab({ url: '/pages/index/index' })
+    }
+  },
 
   // ── 输入处理 ──────────────────────────────
 
@@ -174,9 +191,9 @@ Page({
     var confirmedCount = self._session && self._session.draft && Array.isArray(self._session.draft.photoPaths)
       ? self._session.draft.photoPaths.length
       : 0
-    var remaining = 3 - confirmedCount - self.data.uploadedPhotos.length
+    var remaining = MAX_CHAT_PHOTOS - confirmedCount - self.data.uploadedPhotos.length
     if (remaining <= 0) {
-      wx.showToast({ title: '最多上传 3 张照片', icon: 'none' })
+      wx.showToast({ title: '最多上传 ' + MAX_CHAT_PHOTOS + ' 张照片', icon: 'none' })
       return
     }
     wx.chooseImage({
@@ -186,21 +203,23 @@ Page({
         var tempPaths = res.tempFilePaths || []
         if (tempPaths.length === 0) return
         wx.showLoading({ title: '处理图片中', mask: true })
-        tempPaths.reduce(function (chain, p) {
-          return chain.then(function (acc) {
-            return imageUtil.processImage(p, self).then(function (b64) {
-              acc.push({ path: b64, base64: b64 })
-              return acc
-            })
-          })
-        }, Promise.resolve([]))
+        // 逐张转码链路复用 prepareImages；聊天流选图阶段不落盘不质检，
+        // 确认发送时才在 onConfirmPhotos 里批量落盘（保持原行为）
+        imageUtil.prepareImages(tempPaths, {
+          existingCount: confirmedCount + self.data.uploadedPhotos.length,
+          maxCount: MAX_CHAT_PHOTOS,
+          pageContext: self,
+          savePermanent: false,
+          checkQuality: false
+        })
           .then(function (photoBatch) {
             wx.hideLoading()
-            var newPhotos = self.data.uploadedPhotos.concat(photoBatch.map(function (p) { return p.path }))
+            analytics.track('upload', { added: photoBatch.length, source: 'chat' })
+            var newPhotos = self.data.uploadedPhotos.concat(photoBatch.map(function (p) { return p.base64 }))
             var newBoxes = (self.data.uploadedPhotoBoxes || []).concat(photoBatch.map(function () { return null }))
             self.setData({
-              uploadedPhotos: newPhotos.slice(0, 3),
-              uploadedPhotoBoxes: newBoxes.slice(0, 3),
+              uploadedPhotos: newPhotos.slice(0, MAX_CHAT_PHOTOS),
+              uploadedPhotoBoxes: newBoxes.slice(0, MAX_CHAT_PHOTOS),
               showPhotoActions: true
             })
           })
@@ -251,7 +270,7 @@ Page({
       }
       appendSessionMessage(self._session, userMsg)
       self.setData({
-        messages: self.data.messages.concat([formatMessage(userMsg)])
+        messages: self._formatMessages()
       })
       self._scrollToBottom()
 
@@ -263,9 +282,10 @@ Page({
         }
         appendSessionMessage(self._session, receiveMsg)
         self.setData({
-          messages: self.data.messages.concat([formatMessage(receiveMsg)]),
+          messages: self._formatMessages(),
           inputType: 'analyzing'
         })
+        self._updateProgress()
         self._scrollToBottom()
 
         self._session.phase = chatDoctor.PHASE.ANALYZING
@@ -378,7 +398,7 @@ Page({
     }
     appendSessionMessage(self._session, userMsg)
     self.setData({
-      messages: self.data.messages.concat([formatMessage(userMsg)]),
+      messages: self._formatMessages(),
       inputText: '', quickReplies: []
     })
     self._scrollToBottom()
@@ -391,19 +411,22 @@ Page({
           if (result.action === 'new') { self._isProcessing = false; self.onNewChat(); return }
           if (result.action === 'report') { self._isProcessing = false; self.onViewReport(); return }
 
-          var newMessages = self.data.messages
           if (result.doctorMsg) {
             appendSessionMessage(self._session, result.doctorMsg)
-            newMessages = newMessages.concat([formatMessage(result.doctorMsg)])
           }
-          self.setData({ messages: newMessages })
+          self.setData({ messages: self._formatMessages() })
+          self._updateProgress()
           chatDoctor.saveDraft(self._session)
           self._scrollToBottom()
 
+          // 页面级快捷选项以 doctorMsg 为准：错误追问时 doctorMsg 携带的是
+          // “缺哪个字段问哪个”的选项，不能被阶段默认选项（如宠物种类）覆盖（BUG-C1）
           var msgData = chatDoctor.getDoctorMessage(result.session.phase, result.session.draft)
+          var uiSource = result.doctorMsg || msgData
           self.setData({
-            quickReplies: msgData.quickReplies, inputType: msgData.inputType,
-            placeholder: msgData.placeholder || '输入消息…',
+            quickReplies: uiSource.quickReplies || [],
+            inputType: uiSource.inputType || msgData.inputType,
+            placeholder: uiSource.placeholder || msgData.placeholder || '输入消息…',
             draftPetName: result.session.draft.petName || '', showNewBtn: false
           })
 
@@ -436,7 +459,25 @@ Page({
         self._handleDiagnosisError('没有收到照片，请重新上传')
         return
       }
-      api.diagnose(imgList, petInfo, {})
+      // 与首页链路对齐：圈选了患处就裁 ROI 放大图一起送模型（BUG-C4）
+      imageUtil.cropAllLesionRegions(draft.photoPaths || [], draft.lesionBoxes || [], self)
+        .catch(function () { return [] })
+        .then(function (roiImages) {
+          var bundle = imageUtil.buildModelImageBundle(imgList, petInfo.imageRoles || [], roiImages || [])
+          var requestPetInfo = Object.assign({}, petInfo, {
+            imageRoles: bundle.roles,
+            totalImageCount: imgList.length
+          })
+          if (bundle.droppedCount > 0) {
+            wx.showToast({
+              title: 'AI 本次分析 ' + bundle.images.length + ' 张关键照片',
+              icon: 'none',
+              duration: 2000
+            })
+          }
+          analytics.track('submit', { imageCount: imgList.length, source: 'chat' })
+          return api.diagnose(bundle.images, requestPetInfo, {})
+        })
         .then(function (result) {
           if (!result || !result.success) {
             self._handleDiagnosisError((result && result.error) || '分析失败，请重试')
@@ -453,9 +494,10 @@ Page({
             chatDoctor.saveDraft(self._session)
 
             self.setData({
-              messages: self.data.messages.concat([formatMessage(resultMsg)]),
+              messages: self._formatMessages(),
               isAnalyzing: false, inputType: 'result'
             })
+            self._updateProgress()
             self._scrollToBottom()
 
             setTimeout(function () {
@@ -465,10 +507,11 @@ Page({
               appendSessionMessage(self._session, followMsg)
               chatDoctor.saveDraft(self._session)
               self.setData({
-                messages: self.data.messages.concat([formatMessage(followMsg)]),
+                messages: self._formatMessages(),
                 quickReplies: followMsgData.quickReplies, inputType: 'text',
                 placeholder: followMsgData.placeholder, showNewBtn: true
               })
+              self._updateProgress()
               self._scrollToBottom()
               self._isProcessing = false
             }, 1500)
@@ -510,10 +553,11 @@ Page({
     appendSessionMessage(self._session, resultMsg)
     chatDoctor.saveDraft(self._session)
     self.setData({
-      messages: self.data.messages.concat([formatMessage(resultMsg)]),
+      messages: self._formatMessages(),
       isAnalyzing: false, inputType: 'text',
       quickReplies: [{ value: 'new', label: '开始新问诊', field: 'action', key: 'act_new' }]
     })
+    self._updateProgress()
     self._scrollToBottom()
     self._isProcessing = false
   },
@@ -558,6 +602,10 @@ Page({
   },
 
   _commitRecord: function (draft, d, imagePaths, callback) {
+    // 同一会话重新诊断（如追问阶段补图）时替换旧记录，避免一次问诊产生多条记录（BUG-C6）
+    if (typeof draft.recordId === 'string' && draft.recordId && storage.getRecordById(draft.recordId)) {
+      storage.deleteRecord(draft.recordId)
+    }
     var record = storage.addRecord({
       profileId: draft.profileId || '',
       petName: draft.petName, petType: draft.petType, petTypeLabel: draft.petTypeLabel,
@@ -622,6 +670,41 @@ Page({
         self.checkProfilesAndStart()
       }
     })
+  },
+
+  // 从会话消息重建渲染列表；同分钟只在分组首条显示居中时间戳（2b）
+  _formatMessages: function () {
+    var msgs = (this._session && this._session.messages) || []
+    var out = []
+    var lastTime = ''
+    for (var i = 0; i < msgs.length; i++) {
+      var f = formatMessage(msgs[i])
+      if (!f) continue
+      f.showTime = !!f.timeText && f.timeText !== lastTime
+      if (f.timeText) lastTime = f.timeText
+      out.push(f)
+    }
+    return out
+  },
+
+  // 问诊进度：仅在提问阶段展示「已问 N / 约 5 个问题」
+  _updateProgress: function () {
+    var phase = this._session && this._session.phase
+    var questioning = phase === chatDoctor.PHASE.GREETING || phase === chatDoctor.PHASE.COMPLAINT
+    var count = 0
+    var msgs = (this._session && this._session.messages) || []
+    for (var i = 0; i < msgs.length; i++) {
+      if (msgs[i] && msgs[i].role === 'doctor' && (msgs[i].text || '').length) count++
+    }
+    this.setData({
+      showProgress: questioning && count > 0,
+      progressText: '已问 ' + Math.min(count, 5) + ' / 约 5 个问题'
+    })
+  },
+
+  onSkipQuestion: function () {
+    if (this._isProcessing) return
+    this._sendUserMessage('这个不太清楚，先跳过', null, null)
   },
 
   _scrollToBottom: function () {

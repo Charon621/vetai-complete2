@@ -8,7 +8,9 @@ global.wx = {
   getStorageSync: function (key) { return stored[key] },
   setStorageSync: function (key, value) { stored[key] = value },
   removeStorageSync: function (key) { delete stored[key] },
-  showToast: function () {}
+  showToast: function () {},
+  navigateBack: function () {},
+  switchTab: function () {}
 }
 global.Page = function (definition) {
   pageDefinition = definition
@@ -80,10 +82,31 @@ async function run() {
 
   let chooseImageCalled = false
   wx.chooseImage = function () { chooseImageCalled = true }
-  page._session.draft.photoPaths = ['/user-data/a.jpg', '/user-data/b.jpg', '/user-data/c.jpg']
+  // 照片上限已随 BUG-C3 与首页统一为 config.MAX_IMAGES（当前 5），断言跟随配置而不是写死张数
+  const maxImages = require('../utils/config').MAX_IMAGES
+  page._session.draft.photoPaths = []
+  for (let i = 0; i < maxImages; i++) {
+    page._session.draft.photoPaths.push('/user-data/photo_' + i + '.jpg')
+  }
   page.onUploadPhoto()
   assert.strictEqual(chooseImageCalled, false,
-    'the chat page must enforce the three-photo limit across confirmed and pending batches')
+    'the chat page must enforce the config.MAX_IMAGES photo limit across confirmed and pending batches')
+
+  // 自定义导航栏返回按钮（chat.json navigationStyle: custom）：
+  // 有历史栈 → navigateBack；无历史栈（直接打开/分享进入）→ 回首页 tab
+  let navigateBackCalled = false
+  let switchTabCalled = false
+  global.getCurrentPages = function () { return [{}, {}] }
+  wx.navigateBack = function () { navigateBackCalled = true }
+  wx.switchTab = function () { switchTabCalled = true }
+  page.onBackTap()
+  assert.strictEqual(navigateBackCalled, true, 'back with history should navigateBack')
+  assert.strictEqual(switchTabCalled, false, 'back with history must not switchTab')
+  global.getCurrentPages = function () { return [{}] }
+  navigateBackCalled = false
+  page.onBackTap()
+  assert.strictEqual(switchTabCalled, true, 'back without history should switchTab to index')
+  assert.strictEqual(navigateBackCalled, false, 'back without history must not navigateBack')
 
   console.log('chat page tests passed')
 }

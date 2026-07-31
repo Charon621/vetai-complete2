@@ -2,7 +2,7 @@
 // utils/kb.js
 // 宠物皮肤病知识库 + 检索函数（RAG）
 // 纯本地 JS，无后端无数据库，检索 < 1ms
-// 当前收录：66 种疾病（含细分补充条目）
+// 当前收录：65 种疾病（含细分补充条目）
 // ============================================================
 
 /**
@@ -87,15 +87,17 @@ var DISEASE_KB = [
   {
     name: '浅表脓皮病',
     category: 'bacterial',
-    aliases: ['脓皮病', '细菌性毛囊炎', '浅表细菌感染', 'superficial pyoderma'],
+    // K7：原独立条目「毛囊炎」已并入本条（同一临床实体：犬浅表细菌性毛囊炎），
+    // 其别名、品种和鉴别点在下方合并保留。
+    aliases: ['脓皮病', '细菌性毛囊炎', '毛囊炎', '浅表细菌感染', 'superficial pyoderma', 'folliculitis'],
     species: ['犬'],
     keywords: {
-      breeds: ['法斗', '英斗', '巴哥', '沙皮', '金毛', '拉布拉多'],
+      breeds: ['法斗', '英斗', '巴哥', '沙皮', '金毛', '拉布拉多', '贵宾', '泰迪'],
       locations: ['腹部', '腋下', '腹股沟', '颈部', '躯干'],
-      symptoms: ['丘疹', '脓疱', '结痂', '脱毛', '红斑', '鳞屑', '环形', '领圈']
+      symptoms: ['丘疹', '脓疱', '结痂', '脱毛', '红斑', '鳞屑', '环形', '领圈', '毛囊']
     },
-    typicalFeatures: '丘疹→脓疱→环形表皮领圈+中央结痂+脱毛，常继发于过敏或内分泌疾病',
-    ddx: '与蠕形螨区分：脓皮病通常不伴广泛脱毛和皮肤增厚，蠕形螨多为对称性脱毛',
+    typicalFeatures: '丘疹→脓疱→环形表皮领圈+中央结痂+脱毛，毛囊性分布，腹部无毛区明显，常继发于过敏或内分泌疾病',
+    ddx: '与蠕形螨区分：脓皮病通常不伴广泛脱毛和皮肤增厚，蠕形螨多为对称性脱毛。与急性湿性皮炎（热点）区分：脓皮病为散在毛囊性丘疹脓疱，热点为大范围急性渗出性糜烂。',
     urgency: 'moderate',
     relatedDiseases: [
       { name: '特应性皮炎（环境过敏）', relation: '原发', desc: '过敏是浅表脓皮病最常见的潜在原因' },
@@ -311,21 +313,6 @@ var DISEASE_KB = [
     },
     typicalFeatures: '接触部位（腹部、爪部、无毛区）急性红斑、水疱或糜烂，去除接触源后好转',
     ddx: '与过敏区分：接触性皮炎有明确接触史，病变限于接触部位',
-    urgency: 'moderate'
-  },
-
-  {
-    name: '毛囊炎',
-    category: 'bacterial',
-    aliases: ['细菌性毛囊炎', 'folliculitis'],
-    species: ['犬'],
-    keywords: {
-      breeds: ['法斗', '英斗', '巴哥', '贵宾', '泰迪'],
-      locations: ['腹部', '腋下', '腹股沟', '颈部'],
-      symptoms: ['丘疹', '脓疱', '红斑', '脱毛', '结痂', '毛囊']
-    },
-    typicalFeatures: '毛囊性丘疹和脓疱，腹部无毛区明显，可发展为环形表皮领圈和结痂',
-    ddx: '与热点区分：毛囊炎为散在丘疹脓疱，热点为大范围急性渗出',
     urgency: 'moderate'
   },
 
@@ -887,7 +874,9 @@ var SUPPLEMENTAL_DISEASE_KB = [
   {
     targetName: '深部脓皮病',
     name: '深层细菌性脓皮病',
-    aliases: ['深层细菌性脓皮病', '深部毛囊炎', '疖病', '蜂窝织炎'],
+    // K6：移除别名「蜂窝织炎」——它与犬猫共患条目「脓肿/蜂窝织炎」冲突且两者同为犬，
+    // 物种过滤无法区分，会让一次主诉给两条同时加别名分。深部脓皮病本身也不等同蜂窝织炎。
+    aliases: ['深层细菌性脓皮病', '深部毛囊炎', '疖病'],
     keywords: {
       locations: ['压力承重皮肤', '大腿', '颈部'],
       symptoms: ['皮下硬块', '流脓血', '碰就疼', '厚痂', '深层溃疡', '淋巴结增大']
@@ -1240,14 +1229,90 @@ function mergeSupplementalDiseases(base, additions) {
 
 DISEASE_KB = mergeSupplementalDiseases(DISEASE_KB, SUPPLEMENTAL_DISEASE_KB)
 
+// 物种预索引：物种名 → 该物种适用的疾病卡下标数组。
+// 在 DISEASE_KB 合并定稿后一次性构建，供 search() 在带 species 的查询时
+// 预过滤遍历范围，替代全量线性扫描。下标按 DISEASE_KB 原始顺序 push，
+// 因此索引遍历与全量遍历的命中顺序完全一致。
+var KB_BY_SPECIES = {}
+DISEASE_KB.forEach(function (disease, idx) {
+  (disease.species || []).forEach(function (sp) {
+    if (!KB_BY_SPECIES[sp]) KB_BY_SPECIES[sp] = []
+    KB_BY_SPECIES[sp].push(idx)
+  })
+})
+
 // ============================================================
 // 检索函数
 // ============================================================
 
-var KB_VERSION = '2026-07-05'
+var KB_VERSION = '2026-07-26-v6'
+var KB_SEMVER = { major: 6, minor: 0, patch: 0 }
+var KB_VERSION_DATE = '2026-07-26'
+function getKbVersionInfo() {
+  return { version: KB_VERSION, semver: KB_SEMVER, date: KB_VERSION_DATE }
+}
 
 /**
  * CHANGELOG:
+ *
+ * 2026-07-26 (v6)：召回侧修复——"知识卡写得再详细也命中不了"的根因
+ *   背景：检索是字面子串匹配（matchedTerms 用 indexOf），而且只匹配四类字段：
+ *   keywords.symptoms（拆成 visualSigns/historySigns）、locations、breeds、aliases。
+ *   typicalFeatures 和 ddx **完全不参与打分**，只在命中之后作为素材注入 prompt。
+ *   实测把猫癣的 typicalFeatures 换成两千字精确临床描述，检索分数 15.6 → 15.6 一分不变。
+ *   所以召回的瓶颈从来不在知识卡内容，而在"主人的话能否接上知识库的术语"。
+ *
+ *   - 口语桥接表 26 组 → 53 组，KB 症状词的桥接覆盖 13.2% → 25.0%。
+ *     重点补的是**用户绝不可能原样打出来的合成病史词**：toClinicalCard 会按 category
+ *     给条目自动挂上「户外活动」「同住动物瘙痒」「驱虫不规律」（parasite 类 12 条共用）、
+ *     「既往过敏史」「季节性或全年性瘙痒」（allergy 类）、「频繁甩头或抓耳」「耳道分泌物增多」
+ *     （ear 类）、「幼年或新宠接触」「人也有皮损」（fungal 类）——没有任何主人会打出这些字，
+ *     在有桥接之前它们是完全不可达的死词。病史词权重 3 分且计入强证据，
+ *     是除视觉预检外唯一能把候选顶过 isPromptWorthyResult 阈值的通道。
+ *   - 另补形态类高差异词：糜烂←"烂了一块"、瘘管←"破了个洞一直流脓"、
+ *     对称脱毛←"两边都掉"、不痒←"不怎么痒/没见它挠"、粟粒←"小米粒"、
+ *     皮肤变薄←"一碰就破"、多饮多尿←"喝水特别多"、角化/硬皮←"硬邦邦/像老茧"等。
+ *   - 新增 evaluation/tools/recall_probe.js：24 条真实口语主诉的召回回归，
+ *     带下限护栏并接入 npm test。实测纯文字命中期望方向 70.8% → 79.2%，
+ *     叠加视觉预检 100%。
+ *
+ *   配套改动在 utils/api.js（视觉预检 prompt，不属于本文件）：
+ *     ① 受控词表不再按主诉关键词裁剪。旧实现只常给 4 组，其余按主诉是否出现
+ *        "肿/包/疙瘩""爪/趾/脚""耳"条件放行，等于 29% 的词表被主人的措辞卡住——
+ *        主人没提有包、照片里有包，模型也报不出来，而视觉通道的意义正是绕开主人措辞。
+ *     ② 显式警告 7 个泛词（脱毛/红斑/红肿/发红/鳞屑/皮屑/结痂）单独输出等于没有信息量。
+ *        实测同一张猫脸照片，预检输出 [脱毛,结痂,红斑] 直接弃权，
+ *        输出 [圆形脱毛,鳞屑,断毛] 命中猫癣——照片和知识库都没变，只差选词。
+ *
+ * 2026-07-26 (v5)：结构性债务清理（K3/K4/K6/K7），回归见 evaluation/tools/kb_audit.js
+ *   - K7 合并重复条目：「毛囊炎」并入「浅表脓皮病」（同一临床实体，别名、品种、
+ *     鉴别点全部保留）。此前一次典型脓皮病主诉会让两条同实体条目同时进 top3，
+ *     3 个 prompt 槽位被同一个方向占掉 2 个。条目数 66 → 65。
+ *   - K6 别名唯一性：移除「深部脓皮病」的别名「蜂窝织炎」（与犬猫共患条目
+ *     「脓肿/蜂窝织炎」同属犬，物种过滤无法隔离，会给两条同时加分）。
+ *     剩余「晒伤」「solar dermatitis」为跨物种同名，检索一开始即按 species 过滤，
+ *     两条永不同时参与打分，不构成冲突——审计已改为按物种判定。
+ *   - K3 高危条目组合门槛：新增 HIGH_RISK_COMBOS 声明式表，为此前完全没有 combo 的
+ *     9 条 autoimmune / endocrine / rare_warning 补上门槛，并把原先按病名硬编码的
+ *     甲减规则一并迁入。与常见病 combo 的区别是 requireAll 逐组全中才加分：
+ *     低频病宁可漏召回，也不能靠一两个泛词被推进 prompt。高危类 combo 覆盖 → 100%。
+ *   - K4 症状词表长度归一化：得分此前按命中词条数累加，词表越长越占便宜
+ *     （热点 19 词 vs 犬乳头状瘤病 5 词），是一层没设计过的隐性先验。
+ *     每张卡按词表长度相对中位数取 sqrt 折扣（夹取 0.65–1.2），只作用于症状命中分，
+ *     不动部位/品种/别名/组合分，也不动 baselinePriority——那才是想要保留的显式先验。
+ *     实测 12 组代表性主诉 Top-1 零翻转，残留长度偏置 3.33x → 1.88x。
+ *   - 检索行为探针 7 → 10 条，新增高危条目双向门槛和条目去重回归。
+ *
+ * 2026-07-26 (v4)：检索安全修复，回归见 evaluation/tools/kb_audit.js
+ *   - K1 隆起性皮损口语词分流：新增 family 互斥机制，"疙瘩"按修饰词分流为
+ *     丘疹/脓疱（小、红、多发）或肿块/结节（单发、硬、成块）。
+ *     此前裸词"疙瘩"无条件扩展为肿块，使"下巴上有小疙瘩"把肿瘤条目推成 Top-1。
+ *   - K2 主诉按描述对象分段：剥离描述主人自身症状的语句，不再当作宠物皮损匹配；
+ *     该信号改为人畜共患线索（疥螨/癣菌/姬螯螨/虱）加分。
+ *   - K5 组合规则改按 COMBO_GROUPS 分组判定，猫疥螨病、猫蠕形螨病等
+ *     物种细分条目自动继承母条目规则（combo 覆盖 15→17）。
+ *   - K8 新增 getBreedSusceptibility 品种先验访问器（按 baselinePriority 截断）。
+ *   - 补全瘙痒口语词（"痒得很厉害""很痒""奇痒"等）。
  *
  * 2026-07-05 (v3):
  *   - 合并“常见皮肤病诊断.docx”的清洗版结构化补充
@@ -1475,7 +1540,7 @@ function classifySign(sign) {
 var GENERIC_VISUAL_SIGNS = ['红肿', '脱毛', '瘙痒', '结痂', '红斑', '皮屑', '鳞屑', '抓挠', '舔舐', '发红']
 var RED_FLAG_TERMS = ['快速扩大', '大面积破溃', '流脓', '明显疼痛', '精神食欲异常', '不愈', '出血', '呼吸困难', '面部肿胀', '幼猫严重感染', '人也出现皮损']
 var RAG_PROMPT_MIN_SCORE = 6
-var MUCOSAL_TERMS = ['口腔', '口内', '嘴里', '嘴巴里面', '牙龈', '舌', '舌头', '口唇内侧', '黏膜', '粘膜', 'oral', 'mouth', 'gum', 'tongue', 'mucosa']
+var MUCOSAL_TERMS = ['口腔', '口内', '嘴里', '嘴巴里面', '牙龈', '舌头', '舌面', '舌苔', '口唇内侧', '黏膜', '粘膜', 'oral', 'mouth', 'gum', 'tongue', 'mucosa']
 
 /**
  * negativeSignals：如果搜索文本中包含这些词，对该疾病扣分
@@ -1580,7 +1645,6 @@ function inferBaselinePriority(entry, category) {
     '皮脂溢性皮炎',
     '皮肤褶皱皮炎',
     '接触性皮炎',
-    '毛囊炎',
     '猫痤疮',
     '嗜酸性肉芽肿复合体',
     '猫过敏性皮炎（非跳蚤非食物）',
@@ -1723,6 +1787,44 @@ function toClinicalCard(entry, index) {
 
 DISEASE_KB = DISEASE_KB.map(toClinicalCard)
 
+// ============================================================
+// K4：症状词表长度归一化
+//
+// 问题：得分按命中的症状词条数累加，所以词表越长的条目命中机会越多。
+// 实测同一句泛化主诉下，热点（19 词）10.5 分、浅表脓皮病（15 词）7.5 分、
+// 跳蚤过敏（8 词）5.5 分，而三者 baselinePriority 同为 5——
+// 这个差距完全来自词表长度，是一层没有设计过的隐性先验。
+//
+// 修法：给每张卡算一个权重，用词表长度相对中位数的平方根倒数（开方是为了阻尼，
+// 避免把长词表压得太狠），再夹到 [0.82, 1.18]。只作用于症状命中分，
+// 不动部位/品种/别名/组合分，也不动 baselinePriority——
+// 那个才是我们**想要**保留的、明确设计过的常见病先验。
+// ============================================================
+
+// 夹取范围要足够宽，否则长词表条目会全部撞到下限、退化成同一个权重，
+// 起不到"按长度分级"的作用（19 词和 12 词必须拿到不同的折扣）。
+var SIGN_WEIGHT_FLOOR = 0.65
+var SIGN_WEIGHT_CEIL = 1.2
+
+;(function applySignVocabWeights(cards) {
+  var sizes = cards.map(function (card) {
+    return (card.visualSigns || []).length + (card.historySigns || []).length
+  })
+  var sorted = sizes.slice().sort(function (a, b) { return a - b })
+  var mid = Math.floor(sorted.length / 2)
+  var median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+  if (!median) median = 1
+
+  cards.forEach(function (card, i) {
+    var size = sizes[i] || 1
+    var weight = Math.sqrt(median / size)
+    if (weight < SIGN_WEIGHT_FLOOR) weight = SIGN_WEIGHT_FLOOR
+    if (weight > SIGN_WEIGHT_CEIL) weight = SIGN_WEIGHT_CEIL
+    card.signVocabSize = size
+    card.signWeight = +weight.toFixed(3)
+  })
+})(DISEASE_KB)
+
 function expandQueryTerms(text) {
   var source = String(text || '').toLowerCase()
   if (!source) return ''
@@ -1737,7 +1839,14 @@ function expandQueryTerms(text) {
     { terms: ['毛断', '断裂毛', '毛发折断', '断毛发', '毛一截截', '毛齐齐断了'], add: ['断毛'] },
     { terms: ['泛红', '发红', '红色', '发炎', '红红的', '皮肤红', '一片红', '又红又肿'], add: ['红斑', '红肿'] },
     { terms: ['流液', '渗液', '渗水', '流水', '湿的', '湿润', '湿湿的', '黏糊糊', '总是湿的', '渗黄水'], add: ['渗出', '潮湿'] },
-    { terms: ['鼓包', '包块', '疙瘩', '肉疙瘩', '隆起', '摸着一个包', '长了个东西', '凸起来', '硬块', '软包', '皮下有东西'], add: ['肿块', '结节'] },
+    // ── 隆起性皮损：小丘疹 vs 大肿块（family 'bump' 互斥，具体词优先）──
+    // 主人说的"疙瘩"可指丘疹也可指肿块，语义相反：前者是常见炎症/感染，
+    // 后者会把肿瘤条目推进候选。必须靠修饰词分流，不能两边都注入。
+    // 多发小丘疹（"小""红""好多""密密麻麻"等修饰词）→ 感染/炎症方向
+    { family: 'bump', terms: ['小红疙瘩', '小疙瘩', '红疙瘩', '小红点', '一粒粒', '密密麻麻的点', '密密麻麻', '像痘痘', '起了好多小包', '小白点', '小包'], add: ['丘疹', '脓疱'] },
+    // 单发/明确成块的隆起（量词"一个""长了个"或质地词）→ 肿块方向。
+    // 单发 vs 多发是肿物与丘疹的关键鉴别，量词必须参与判断。
+    { family: 'bump', terms: ['硬疙瘩', '肉疙瘩', '大疙瘩', '鼓包', '包块', '隆起', '摸着一个包', '长了个东西', '凸起来', '硬块', '软包', '皮下有东西', '长了个疙瘩', '有个疙瘩', '一个疙瘩', '起了个疙瘩', '长了个包', '有个包', '一个包', '鼓了个包', '起了个包', '肿了个包', '摸到一个', '摸到个'], add: ['肿块', '结节'] },
     { terms: ['破了', '破皮', '烂了', '溃烂', '烂掉了', '皮肤破了', '有伤口', '开放性', '一直不好'], add: ['破溃', '溃疡'] },
     { terms: ['黄色分泌物', '脓液', '有脓', '化脓', '黄绿色', '挤出来', '流脓水', '脓包'], add: ['流脓', '脓', '脓疱'] },
     { terms: ['舔咬', '一直舔', '频繁舔', '不停舔', '舔红了', '疯狂舔', '啃咬'], add: ['舔舐', '舔爪'] },
@@ -1746,7 +1855,7 @@ function expandQueryTerms(text) {
     { terms: ['黑点', '黑色颗粒', '黑色小点', '像黑芝麻'], add: ['黑色颗粒'] },
     { terms: ['会传染', '人也长', '人也痒', '家人也开始', '小孩也有'], add: ['传染人'] },
     // ── 瘙痒口语 ──
-    { terms: ['好痒', '痒死了', '老挠', '一直挠', '使劲挠', '蹭墙', '蹭地板', '烦躁抓', '抓个不停', '停不下来挠', '痒得不行', '整天在挠', '睡不着挠', '挠得厉害'], add: ['剧烈瘙痒', '搔抓', '瘙痒'] },
+    { terms: ['好痒', '痒死了', '老挠', '一直挠', '使劲挠', '蹭墙', '蹭地板', '烦躁抓', '抓个不停', '停不下来挠', '痒得不行', '整天在挠', '睡不着挠', '挠得厉害', '痒得很厉害', '痒得厉害', '痒得受不了', '痒得睡不着', '奇痒', '很痒', '特别痒'], add: ['剧烈瘙痒', '搔抓', '瘙痒'] },
     // ── 耳朵相关 ──
     { terms: ['耳朵臭', '耳朵里有东西', '耳朵痒', '甩头', '抓耳朵', '耳垢多', '耳朵分泌物', '耳道堵', '耳朵黑', '耳朵脏', '耳朵里面脏脏的', '耳朵有味', '耳朵红', '耳朵肿', '挠耳朵', '歪头'], add: ['耳垢', '异味', '搔抓'] },
     // ── 皮肤增厚/变色 ──
@@ -1758,8 +1867,7 @@ function expandQueryTerms(text) {
     { terms: ['肿了', '肿起来', '鼓起来', '胀', '浮肿', '水肿', '又肿又红'], add: ['肿胀', '红肿'] },
     // ── 新增：出血 ──
     { terms: ['出血', '流血', '血', '有血', '带血', '血淋淋'], add: ['出血', '破溃'] },
-    // ── 新增：脓疱/丘疹 ──
-    { terms: ['小红点', '小红疙瘩', '一粒粒', '密密麻麻的点', '像痘痘', '起了好多小包', '小白点'], add: ['丘疹', '脓疱'] },
+    // 注：丘疹/脓疱口语词已并入上方 family 'bump' 的第一组，避免与肿块组同时生效
     // ── 新增：油腻 ──
     { terms: ['油油的', '很油', '毛发油腻', '总是油', '油光', '腻腻的'], add: ['油腻'] },
     // ── 新增：对称性 ──
@@ -1767,19 +1875,109 @@ function expandQueryTerms(text) {
     // ── 新增：跛行/疼痛 ──
     { terms: ['不让碰', '一碰就叫', '疼', '痛', '跛', '瘸了', '抬脚', '走路一瘸一拐'], add: ['疼痛', '跛行'] },
     // ── 新增：食欲/精神 ──
-    { terms: ['不吃饭', '没精神', '蔫了', '不活泼', '嗜睡', '没食欲', '吃得少'], add: ['精神食欲异常'] }
+    { terms: ['不吃饭', '没精神', '蔫了', '不活泼', '嗜睡', '没食欲', '吃得少'], add: ['精神食欲异常'] },
+
+    // ════════════════════════════════════════════════════════════════
+    // 病史类桥接：把"主人会说的话"接到"知识库里的合成病史词"上
+    //
+    // 下面这些目标词大多由 toClinicalCard 按 category 自动挂到条目上
+    //（如 parasite 类统一挂「户外活动/同住动物瘙痒/驱虫不规律」），
+    // 但没有任何主人会原样打出"户外活动"四个字——检索是字面子串匹配，
+    // 所以这批词在有桥接之前是**完全不可达**的，白白挂在 12 条寄生虫条目上。
+    //
+    // 病史词权重 3 分且计入 isPromptWorthyResult 的强证据，
+    // 是除视觉预检外唯一能把候选顶过阈值的通道。
+    // ════════════════════════════════════════════════════════════════
+
+    // 寄生虫方向的病史（parasite 类 12 条共用）
+    { terms: ['草地', '草丛', '遛弯', '遛狗', '出门玩', '野外', '户外', '经常出去', '在外面跑', '爬山', '院子里'], add: ['户外活动'] },
+    { terms: ['另一只也', '其他猫也', '其他狗也', '同窝', '一起养的也', '别的宠物也', '两只都', '猫狗都痒', '家里养了好几只', '多只'], add: ['同住动物瘙痒', '多宠家庭', '多宠'] },
+    { terms: ['没驱虫', '没做驱虫', '没打驱虫', '驱虫忘了', '好久没驱虫', '很久没驱虫', '没做过体外', '驱虫过期'], add: ['驱虫不规律'] },
+
+    // 过敏方向的病史（allergy 类 6 条共用）
+    { terms: ['以前也过敏', '过敏体质', '一直过敏', '过敏史', '之前过敏过', '对什么过敏'], add: ['既往过敏史'] },
+    { terms: ['每年都犯', '每年春天', '一到夏天', '换季就犯', '天热就', '季节交替'], add: ['季节性或全年性瘙痒', '季节性', '反复发作'] },
+    { terms: ['老是犯', '反反复复', '治了又犯', '好了又来', '总是好不了', '一直反复'], add: ['反复发作'] },
+
+    // 耳道方向的病史（ear 类共用；与上方「耳朵相关」组互补，各加各的词）
+    { terms: ['甩头', '摇头', '甩耳朵', '晃脑袋'], add: ['甩头', '频繁甩头或抓耳'] },
+    { terms: ['抓耳', '挠耳朵', '抓耳朵', '蹭耳朵', '掏耳朵'], add: ['抓耳', '频繁甩头或抓耳'] },
+    { terms: ['耳屎多', '耳垢多', '耳朵里有东西', '耳朵分泌物', '耳朵里脏', '耳朵好多东西'], add: ['耳道分泌物增多', '分泌物'] },
+    { terms: ['油耳', '黏糊糊的耳垢', '耳朵黏', '蜡一样', '蜡状'], add: ['蜡样'] },
+
+    // 真菌/人畜共患方向（fungal 类共用）
+    { terms: ['刚接回来', '新来的', '刚领养', '救助回来', '刚捡的', '刚抱回家', '新养的'], add: ['幼年或新宠接触'] },
+    { terms: ['人也有', '我也长', '家人也起', '我身上也', '孩子也长'], add: ['人也有', '人也有皮损', '传染人', '传染'] },
+
+    // 形态类：主人说法与知识库术语差距大的
+    { terms: ['烂了一块', '烂开了', '皮肉外翻', '一片烂', '溃烂一片'], add: ['糜烂'] },
+    { terms: ['破了个洞', '一直流脓的洞', '小洞流脓', '有个窟窿'], add: ['瘘管', '流脓'] },
+    { terms: ['两边都掉', '两边一样', '左右对称', '两侧都掉毛', '对称掉毛', '两边都秃'], add: ['对称脱毛', '对称'] },
+    { terms: ['不怎么痒', '不太痒', '没见它挠', '没怎么挠', '不抓也不挠', '一点都不痒', '也不痒'], add: ['不痒', '轻痒'] },
+    { terms: ['小米粒', '像小米', '一粒粒结痂', '摸着像沙子', '砂纸感'], add: ['粟粒'] },
+    { terms: ['皮很薄', '皮肤很薄', '一碰就破', '一撕就破', '皮特别脆'], add: ['皮肤变薄', '脆弱'] },
+    { terms: ['喝水特别多', '喝水多', '一直喝水', '尿特别多', '尿多', '总想喝水'], add: ['多饮多尿'] },
+    { terms: ['毛没光泽', '毛很乱', '毛粗糙', '毛糙', '毛发干枯', '毛不顺'], add: ['毛发粗乱'] },
+    { terms: ['硬邦邦', '像老茧', '厚厚一层硬', '摸着像角质', '起茧'], add: ['角化', '硬皮'] },
+    { terms: ['干裂', '裂口', '开裂', '皲裂', '裂了缝'], add: ['裂纹', '干裂'] },
+    { terms: ['蹭墙', '蹭地', '蹭家具', '蹭沙发', '蹭下巴', '来回蹭'], add: ['摩擦'] },
+    { terms: ['一直不愈合', '总也好不了', '老不见好', '好不了', '不结疤'], add: ['不愈'] },
+    { terms: ['碰也不叫', '不疼', '没有痛感', '按着不躲'], add: ['无痛'] }
   ]
 
+  // 同一 family 内只采纳最先命中的一组：组的排列顺序即"具体词优先于泛化词"。
+  // 无 family 的组互不影响，全部照常累加。
+  var familyTaken = {}
   for (var i = 0; i < groups.length; i++) {
-    for (var j = 0; j < groups[i].terms.length; j++) {
-      if (source.indexOf(groups[i].terms[j]) >= 0) {
-        extra = extra.concat(groups[i].add)
+    var group = groups[i]
+    if (group.family && familyTaken[group.family]) continue
+    for (var j = 0; j < group.terms.length; j++) {
+      if (source.indexOf(group.terms[j]) >= 0) {
+        extra = extra.concat(group.add)
+        if (group.family) familyTaken[group.family] = true
         break
       }
     }
   }
 
   return [source].concat(extra).join(' ')
+}
+
+// ── K2：主诉按描述对象分段 ──
+// 主人自己身上的症状不是宠物皮损，但它是人畜共患病（疥螨/癣菌/姬螯螨/虱）的强线索。
+// 把这类语句从皮损检索文本中剥离，另作 zoonosisHint 信号使用。
+var OWNER_SUBJECT_RE = /(我|主人|家人|家里人|小孩|孩子|老人|大人)(的)?(手|手臂|胳膊|腿|脚|身上|皮肤|脖子|肚子|后背)/
+
+var ZOONOSIS_DISEASES = [
+  '疥螨病',
+  '猫疥螨病',
+  '皮肤癣菌病（犬猫）',
+  '姬螯螨病（行走的皮屑）',
+  '虱感染'
+]
+
+function splitComplaintBySubject(complaint) {
+  var text = String(complaint || '')
+  if (!text) return { petComplaint: '', zoonosisHint: false }
+
+  var sentences = text.split(/[，,。；;、\n]/)
+  var petParts = []
+  var ownerHit = false
+  for (var i = 0; i < sentences.length; i++) {
+    var sentence = sentences[i]
+    if (!sentence) continue
+    if (OWNER_SUBJECT_RE.test(sentence)) {
+      ownerHit = true
+      continue
+    }
+    petParts.push(sentence)
+  }
+
+  return {
+    // 整句都在描述主人时不留空文本，避免丢掉全部检索信号
+    petComplaint: petParts.length ? petParts.join('，') : (ownerHit ? '' : text),
+    zoonosisHint: ownerHit
+  }
 }
 
 function hasAny(text, terms) {
@@ -1822,6 +2020,8 @@ function addMatches(state, label, terms, weight, options) {
     var term = terms[i]
     if (!term || state.seen[label + term]) continue
     state.score += weight
+    // K4：症状词表命中分单独累计，供词表长度归一化使用（见 applySignNormalization）
+    if (label === '视觉' || label === '病史') state.signScore += weight
     state.seen[label + term] = true
     state.matched.push(label + ':' + term)
     if (options.strong) state.strongVisualCount++
@@ -1833,9 +2033,162 @@ function addMatches(state, label, terms, weight, options) {
   }
 }
 
+// ── K5：组合规则按"病种组"判定，物种细分条目自动继承母条目的组合规则 ──
+// 此前规则硬编码病名，导致「猫疥螨病」「猫蠕形螨病」拿不到对应加分，
+// 同一句主诉在犬猫两侧召回差距悬殊。
+var COMBO_GROUPS = {
+  scabies: ['疥螨病', '猫疥螨病'],
+  demodex: ['蠕形螨病（局灶型）', '猫蠕形螨病'],
+  superficialPyoderma: ['浅表脓皮病', '猫浅表脓皮病'],
+  fleaAllergy: ['跳蚤过敏性皮炎', '猫粟粒性皮炎（跳蚤过敏）'],
+  malassezia: ['马拉色菌皮炎', '马拉色菌性外耳炎']
+}
+
+function inComboGroup(name, groupKey) {
+  var list = COMBO_GROUPS[groupKey] || []
+  return list.indexOf(name) >= 0
+}
+
+// ── K3：高危/低频条目的组合规则 ──
+//
+// 修复的是"该敏感的不敏感"：autoimmune / endocrine / rare_warning 类此前完全没有
+// 组合规则，只能靠泛词逐个累加进入结果，方向与"常见病优先"的设计意图相反。
+//
+// 与常见病 combo 的关键差别：这里每条都要求 requireAll 的**每一组**都命中，
+// 即必须同时具备该病的特征性证据组合才加分。低频病宁可漏召回，
+// 也不能靠一两个泛词（"脱毛""结痂"）被推进 prompt。
+var HIGH_RISK_COMBOS = [
+  {
+    // 原为 applyCombinationRules 里按病名硬编码的规则，迁到此表统一管理：
+    // 高危类的门槛集中在一处才能被审计和单测覆盖到。
+    name: '甲状腺功能减退相关皮肤改变',
+    label: '组合:双侧对称脱毛+不痒',
+    score: 5,
+    requireAll: [
+      ['对称', '两侧', '双侧', '两边'],
+      ['脱毛', '掉毛'],
+      ['不痒', '没痒', '不怎么痒']
+    ]
+  },
+  {
+    name: '落叶型天疱疮',
+    label: '组合:面部/鼻部起始+脓疱结痂+对称扩散',
+    score: 6,
+    requireAll: [
+      ['面部', '鼻部', '鼻镜', '耳部', '口鼻'],
+      ['脓疱', '结痂', '脓疱结痂', '厚痂', '鳞屑'],
+      ['对称', '两侧', '双侧', '扩散', '全身', '蔓延']
+    ]
+  },
+  {
+    name: '红斑型天疱疮',
+    label: '组合:面部/鼻部+脓疱鳞屑+日晒加重/对称',
+    score: 6,
+    requireAll: [
+      ['面部', '鼻部', '鼻镜', '眼周', '耳部'],
+      ['脓疱', '结痂', '鳞屑', '面部结痂'],
+      ['日晒', '晒', '对称', '两侧', '双侧', '鼻部脱色', '色素脱失']
+    ]
+  },
+  {
+    name: '盘状红斑狼疮',
+    label: '组合:鼻镜+色素脱失+结痂溃疡',
+    score: 6,
+    requireAll: [
+      ['鼻镜', '鼻部', '鼻头', '鼻子'],
+      ['色素脱失', '褪色', '鼻镜褪色', '鼻部脱色', '变浅', '发白'],
+      ['结痂', '溃疡', '破溃', '糜烂', '鼻部溃疡']
+    ]
+  },
+  {
+    name: '库兴综合征相关皮肤改变',
+    label: '组合:对称脱毛+皮肤变薄+全身内分泌线索',
+    score: 6,
+    requireAll: [
+      ['对称', '两侧', '双侧', '躯干'],
+      ['脱毛', '掉毛', '皮肤变薄', '毛发稀疏'],
+      ['多饮多尿', '喝水多', '尿多', '腹部膨大', '肚子变大', '钙化', '黑头']
+    ]
+  },
+  {
+    name: '猫甲状腺功能亢进相关皮肤改变',
+    label: '组合:老年猫+对称脱毛+体重下降/多饮多尿',
+    score: 6,
+    requireAll: [
+      ['老年', '高龄', '年纪大', '十几岁', '老猫'],
+      ['对称脱毛', '对称', '脱毛', '掉毛', '毛发粗乱', '皮肤变薄'],
+      ['体重下降', '变瘦', '瘦了', '多饮多尿', '喝水多', '尿多', '食欲亢进', '特别能吃']
+    ]
+  },
+  {
+    name: '猫皮肤脆弱症',
+    label: '组合:皮肤菲薄+轻触即撕裂',
+    score: 6,
+    requireAll: [
+      ['撕裂', '裂开', '破损', '伤口', '薄', '脆弱'],
+      ['轻轻', '一碰', '轻微', '抱一下', '没外伤', '自己裂', '很薄', '一抓就破']
+    ]
+  },
+  {
+    name: '幼犬蜂窝织炎',
+    label: '组合:幼犬+面部/眼周肿胀+淋巴结肿大',
+    score: 7,
+    requireAll: [
+      ['幼犬', '小狗', '几个月', '月龄', '未成年'],
+      ['脸肿', '幼犬脸肿', '面部', '眼周肿胀', '肿胀', '耳廓结痂'],
+      ['淋巴结肿大', '淋巴结增大', '下颌肿', '脓疱结痂', '发热', '精神差']
+    ]
+  },
+  {
+    name: '雪纳瑞粉刺综合征',
+    label: '组合:雪纳瑞+背部+黑头粉刺',
+    score: 6,
+    requireAll: [
+      ['雪纳瑞'],
+      ['背部', '躯干背侧', '背上', '后背'],
+      ['黑头', '粉刺', '背部黑头', '小丘疹', '黑点']
+    ]
+  },
+  {
+    name: '睑炎',
+    label: '组合:眼睑+红肿结痂+眯眼/流泪',
+    score: 6,
+    requireAll: [
+      ['眼睑', '眼皮', '眼周', '眼睛周围'],
+      ['红肿', '结痂', '眼睑红肿', '眼周结痂', '脱毛', '分泌物'],
+      ['眯眼', '流泪', '揉眼', '睁不开', '蹭眼睛']
+    ]
+  }
+]
+
+function applyHighRiskCombos(disease, searchText, bodyPart, state) {
+  var haystack = searchText + ' ' + String(bodyPart || '').toLowerCase()
+  for (var i = 0; i < HIGH_RISK_COMBOS.length; i++) {
+    var rule = HIGH_RISK_COMBOS[i]
+    if (rule.name !== disease.name) continue
+    var allHit = true
+    for (var g = 0; g < rule.requireAll.length; g++) {
+      if (!hasAny(haystack, rule.requireAll[g])) { allHit = false; break }
+    }
+    if (allHit) {
+      state.score += rule.score
+      state.comboCount++
+      state.matched.push(rule.label)
+    }
+    return
+  }
+}
+
 function applyCombinationRules(disease, searchText, bodyPart, state) {
   var name = disease.name
   var locationText = String(bodyPart || '').toLowerCase()
+
+  // ── K2：主人自身出现症状 → 人畜共患方向加分（不是皮损证据，单列为组合线索）──
+  if (state.zoonosisHint && ZOONOSIS_DISEASES.indexOf(name) >= 0) {
+    state.score += 5
+    state.comboCount++
+    state.matched.push('组合:主人也出现症状')
+  }
 
   if (name === '皮肤癣菌病（犬猫）') {
     var hasHairLoss = hasAny(searchText, ['脱毛', '圆形脱毛', '断毛'])
@@ -1848,7 +2201,7 @@ function applyCombinationRules(disease, searchText, bodyPart, state) {
     }
   }
 
-  if (name === '跳蚤过敏性皮炎' || name === '猫粟粒性皮炎（跳蚤过敏）') {
+  if (inComboGroup(name, 'fleaAllergy')) {
     var hasTailBack = hasAny(searchText + ' ' + locationText, ['尾根', '腰背', '背部', '后躯', '头颈'])
     var hasItch = hasAny(searchText, ['剧烈瘙痒', '瘙痒', '抓挠', '舔咬'])
     var hasFleaDirt = hasAny(searchText, ['黑色颗粒', '跳蚤', '粟粒', '小米粒'])
@@ -1876,7 +2229,7 @@ function applyCombinationRules(disease, searchText, bodyPart, state) {
     }
   }
 
-  if (name === '马拉色菌皮炎' || name === '马拉色菌性外耳炎') {
+  if (inComboGroup(name, 'malassezia')) {
     var hasOily = hasAny(searchText, ['油腻', '油', '蜡质油腻', '油腻皮屑'])
     var hasOdor = hasAny(searchText, ['异味', '臭味', '酸臭', '霉味'])
     var hasFoldEarPaw = hasAny(searchText + ' ' + locationText, ['褶皱', '耳部', '耳道', '爪部', '腋下', '腹股沟'])
@@ -1887,7 +2240,7 @@ function applyCombinationRules(disease, searchText, bodyPart, state) {
     }
   }
 
-  if (name === '浅表脓皮病' || name === '毛囊炎' || name === '猫浅表脓皮病') {
+  if (inComboGroup(name, 'superficialPyoderma')) {
     if (hasAny(searchText, ['丘疹', '脓疱']) && hasAny(searchText, ['表皮领圈', '环形', '结痂'])) {
       state.score += 5
       state.comboCount++
@@ -1903,15 +2256,20 @@ function applyCombinationRules(disease, searchText, bodyPart, state) {
     }
   }
 
-  // ── 疥螨病：剧痒 + 传人 + 耳缘/肘部 ──
-  if (name === '疥螨病') {
+  // ── 疥螨病：剧痒 + 传人 + 好发部位（犬猫好发部位不同，分别取用）──
+  if (inComboGroup(name, 'scabies')) {
     var hasSevereItch = hasAny(searchText, ['剧烈瘙痒', '剧痒', '特别痒', '超级痒'])
-    var hasHumanSpread = hasAny(searchText, ['传染人', '人也痒', '人也长'])
-    var hasSiteLoc = hasAny(searchText + ' ' + locationText, ['耳缘', '肘部', '腹部', '耳部'])
+    var hasHumanSpread = state.zoonosisHint ||
+      hasAny(searchText, ['传染人', '人也痒', '人也长'])
+    // 猫（背肛疥螨）以耳缘、头面、颈部为主；犬疥螨以耳缘、肘部、腹侧为主
+    var scabiesSites = name === '猫疥螨病'
+      ? ['耳缘', '耳部', '头颈', '面部', '颈部', '头部']
+      : ['耳缘', '肘部', '腹部', '耳部']
+    var hasSiteLoc = hasAny(searchText + ' ' + locationText, scabiesSites)
     if (hasSevereItch && (hasHumanSpread || hasSiteLoc)) {
       state.score += 6
       state.comboCount++
-      state.matched.push('组合:剧痒+传人/耳缘肘部')
+      state.matched.push('组合:剧痒+传人/好发部位')
     }
   }
 
@@ -1930,8 +2288,8 @@ function applyCombinationRules(disease, searchText, bodyPart, state) {
     }
   }
 
-  // ── 蠕形螨（局灶型）：面部/眼周脱毛 + 不痒 + 幼犬 ──
-  if (name === '蠕形螨病（局灶型）') {
+  // ── 蠕形螨（局灶型/猫）：面部/眼周脱毛 + 不痒 ──
+  if (inComboGroup(name, 'demodex')) {
     var hasFace = hasAny(searchText + ' ' + locationText, ['面部', '眼周', '眼睛周围', '鼻梁', '前肢'])
     var hasHairLossD = hasAny(searchText, ['脱毛', '掉毛', '秃'])
     var noItch = hasAny(searchText, ['不痒', '轻痒', '没有痒'])
@@ -1939,18 +2297,6 @@ function applyCombinationRules(disease, searchText, bodyPart, state) {
       state.score += 6
       state.comboCount++
       state.matched.push('组合:面部/眼周脱毛+不痒')
-    }
-  }
-
-  // ── 甲减皮肤改变：双侧对称脱毛 + 无瘙痒 + 慢性 ──
-  if (name === '甲状腺功能减退相关皮肤改变') {
-    var hasSymmetric = hasAny(searchText, ['对称', '两侧', '双侧', '两边'])
-    var hasChrHair = hasAny(searchText, ['脱毛', '掉毛'])
-    var noItchH = hasAny(searchText, ['不痒', '没痒', '不怎么痒'])
-    if (hasSymmetric && hasChrHair && noItchH) {
-      state.score += 5
-      state.comboCount++
-      state.matched.push('组合:双侧对称脱毛+不痒')
     }
   }
 
@@ -1989,6 +2335,9 @@ function applyCombinationRules(disease, searchText, bodyPart, state) {
       state.matched.push('组合:耳道+脓性分泌物+疼痛/红肿')
     }
   }
+
+  // ── K3：高危/低频条目的严格组合门槛（每组证据都必须命中）──
+  applyHighRiskCombos(disease, searchText, bodyPart, state)
 }
 
 function buildSearchResult(disease, state) {
@@ -2067,7 +2416,11 @@ function search(query) {
   var species = query.species || ''
   var breed = query.breed || ''
   var bodyPart = query.bodyPart || ''
-  var complaint = expandQueryTerms(query.complaint || '')
+  // K2：先剥离描述主人自身症状的语句，再做口语扩展；
+  // 主人身上的疹子不能当宠物皮损匹配，但要留作人畜共患线索。
+  var subjectSplit = splitComplaintBySubject(query.complaint || '')
+  var complaint = expandQueryTerms(subjectSplit.petComplaint)
+  var zoonosisHint = subjectSplit.zoonosisHint
   // 视觉预检标准词：直接拼入搜索文本（它们和知识库用同一套词表）
   var visualFeatures = query.visualFeatures || []
   var lesionPattern = query.lesionPattern || ''
@@ -2079,10 +2432,19 @@ function search(query) {
 
   var results = []
 
-  for (var i = 0; i < DISEASE_KB.length; i++) {
-    var disease = DISEASE_KB[i]
+  // species 已知时用预索引把遍历范围缩到该物种的疾病卡；
+  // species 缺省或不认识（KB_BY_SPECIES 无此键）时退回全量扫描。
+  // 注意：循环内的 L“species && disease.species.indexOf(species) < 0” 跳过分支
+  // 保持不变——索引命中的条目均含该 species，此分支对预过滤路径为恒不触发，
+  // 与原全量扫描行为完全等价。
+  var scanIndices = (species && KB_BY_SPECIES[species]) ? KB_BY_SPECIES[species] : null
+  var scanLen = scanIndices ? scanIndices.length : DISEASE_KB.length
+
+  for (var i = 0; i < scanLen; i++) {
+    var disease = DISEASE_KB[scanIndices ? scanIndices[i] : i]
     var state = {
       score: 0,
+      signScore: 0,
       matched: [],
       seen: {},
       strongVisualCount: 0,
@@ -2093,7 +2455,8 @@ function search(query) {
       breedCount: 0,
       comboCount: 0,
       searchText: searchText,
-      species: species
+      species: species,
+      zoonosisHint: zoonosisHint
     }
 
     // 物种过滤：species 不匹配且不是共患的，跳过
@@ -2155,6 +2518,11 @@ function search(query) {
     applyCombinationRules(disease, searchText, bodyPart, state)
 
     if (state.score > 0) {
+      // ── K4：症状词表长度归一化，只重算症状命中那部分分 ──
+      if (state.signScore > 0 && disease.signWeight && disease.signWeight !== 1) {
+        state.score += state.signScore * (disease.signWeight - 1)
+      }
+
       // ── negativeSignals 扣分：如果搜索文本中有该病的排除信号，降权 ──
       var negatives = NEGATIVE_SIGNALS[disease.name]
       if (negatives) {
@@ -2163,7 +2531,7 @@ function search(query) {
           if (searchText.indexOf(negatives[n]) >= 0) negCount++
         }
         if (negCount > 0) {
-          // 每命中一个 negative 扣 3 分，最多扣到原始分的 70%
+          // 每命中一个 negative 扣 3 分，最少保留原始分的 30%（BUG-E5：修正旧注释与实现相反的问题）
           state.score = Math.max(state.score * 0.3, state.score - negCount * 3)
           state.matched.push('负信号:-' + negCount)
         }
@@ -2186,6 +2554,101 @@ function search(query) {
   // 按分数降序，取 Top 3
   results.sort(function (a, b) { return b.score - a.score })
   return results.slice(0, 3)
+}
+
+/**
+ * K8：按品种取该品种统计高发的病种（品种先验）
+ *
+ * 只作核对提示，不是本病例结论：品种易感度是群体统计量，
+ * 单个病例仍必须由照片与病史证据决定排序。
+ *
+ * 品种数据本身不均衡（热门品种关联十余条，冷门品种可能只有一条），
+ * 因此按 baselinePriority 排序后截断，避免热门品种注入一长串而冷门品种为空。
+ *
+ * @param {string} species - '犬' / '猫'
+ * @param {string} breed - 品种名
+ * @param {number} [limit] - 最多返回条数，默认 5
+ * @returns {Array<string>} 病种名数组
+ */
+function getBreedSusceptibility(species, breed, limit) {
+  if (!breed) return []
+  var max = typeof limit === 'number' && limit > 0 ? limit : 5
+  var hits = []
+
+  for (var i = 0; i < DISEASE_KB.length; i++) {
+    var disease = DISEASE_KB[i]
+    if (species && (disease.species || []).indexOf(species) < 0) continue
+    var breeds = disease.breeds || (disease.keywords && disease.keywords.breeds) || []
+    for (var j = 0; j < breeds.length; j++) {
+      var keyword = breeds[j]
+      if (!keyword) continue
+      // 「犬不分品种」「幼犬」这类泛化词不构成品种先验
+      if (keyword.indexOf('不分品种') >= 0) continue
+      if (breed.indexOf(keyword) >= 0 || keyword.indexOf(breed) >= 0) {
+        hits.push({ name: disease.name, priority: disease.baselinePriority || 0 })
+        break
+      }
+    }
+  }
+
+  hits.sort(function (a, b) { return b.priority - a.priority })
+  return hits.slice(0, max).map(function (item) { return item.name })
+}
+
+/**
+ * 按诊断名反查知识卡来源
+ *
+ * 用途：报告里已经写出了诊断方向，但 KB 检索未达强命中阈值时，
+ * 仍应给出这些方向对应的权威参考来源，否则"临床参考来源"整块消失。
+ *
+ * 来源全部取自代码内的 SOURCE_LIBRARY / 条目 sources 字段，
+ * 不接受模型自报的标题或 URL（模型会编造链接）。
+ *
+ * 匹配按名称与别名双向包含，命中即取该卡的 sources。
+ *
+ * @param {Array<string>} names - 诊断名数组（primaryDiagnosis + 候选名）
+ * @param {string} [species] - '犬' / '猫'，用于过滤不适用物种的条目
+ * @returns {Array<Object>} 去重后的来源数组
+ */
+function getSourcesForDiagnosisNames(names, species) {
+  var list = Array.isArray(names) ? names : (names ? [names] : [])
+  var out = []
+  var seen = {}
+
+  for (var i = 0; i < list.length; i++) {
+    var query = String(list[i] || '').trim()
+    if (!query) continue
+
+    for (var j = 0; j < DISEASE_KB.length; j++) {
+      var disease = DISEASE_KB[j]
+      if (species && (disease.species || []).indexOf(species) < 0) continue
+
+      var candidates = [disease.name].concat(disease.aliases || [])
+      var matched = false
+      for (var k = 0; k < candidates.length; k++) {
+        var candidate = String(candidates[k] || '')
+        // 别名过短（如单字）容易误匹配，要求至少 2 字
+        if (candidate.length < 2) continue
+        if (query.indexOf(candidate) >= 0 || candidate.indexOf(query) >= 0) {
+          matched = true
+          break
+        }
+      }
+      if (!matched) continue
+
+      var sources = disease.sources || []
+      for (var s = 0; s < sources.length; s++) {
+        var source = sources[s]
+        if (!source || !source.title) continue
+        var key = source.url || source.title
+        if (seen[key]) continue
+        seen[key] = true
+        out.push(source)
+      }
+    }
+  }
+
+  return out.slice(0, 6)
 }
 
 /**
@@ -2223,9 +2686,21 @@ module.exports = {
   search: search,
   isPromptWorthyResult: isPromptWorthyResult,
   buildRagPrompt: buildRagPrompt,
+  getBreedSusceptibility: getBreedSusceptibility,
+  getSourcesForDiagnosisNames: getSourcesForDiagnosisNames,
+  splitComplaintBySubject: splitComplaintBySubject,
+  expandQueryTerms: expandQueryTerms,
+  COMBO_GROUPS: COMBO_GROUPS,
+  HIGH_RISK_COMBOS: HIGH_RISK_COMBOS,
+  ZOONOSIS_DISEASES: ZOONOSIS_DISEASES,
   // 受控词表（供视觉提取 prompt 复用，确保两端对齐）
   VISUAL_VOCAB: VISUAL_VOCAB,
   VISUAL_VOCAB_GROUPS: VISUAL_VOCAB_GROUPS,
   HISTORY_VOCAB: HISTORY_VOCAB,
+  KB_VERSION: KB_VERSION,
+  KB_SEMVER: KB_SEMVER,
+  KB_VERSION_DATE: KB_VERSION_DATE,
+  getKbVersionInfo: getKbVersionInfo,
+  isGenericVisualSign: isGenericSign,
   classifySign: classifySign
 }

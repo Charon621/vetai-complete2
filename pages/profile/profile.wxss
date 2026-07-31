@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   Profile Page — VetAI Design System v2
+   Profile Page — VetAI DS v5
    ═══════════════════════════════════════════ */
 
 .profile-page {
@@ -45,7 +45,6 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: var(--shadow-md);
   margin-top: 4rpx;
 }
 
@@ -55,7 +54,7 @@
 }
 
 .head-add-icon {
-  color: #ffffff;
+  color: var(--on-brand);
   font-size: var(--fs-title);
   font-weight: 300;
   line-height: 1;
@@ -65,10 +64,9 @@
 .empty-panel {
   margin-top: var(--sp-3);
   padding: var(--sp-8) var(--sp-4);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-md);
   background: var(--card);
   border: 1rpx solid var(--line-light);
-  box-shadow: var(--shadow-sm);
   text-align: center;
 }
 
@@ -157,7 +155,7 @@
 .empty-title {
   color: var(--text);
   font-family: var(--font-serif);
-  font-size: 31rpx;
+  font-size: var(--fs-title);
   font-weight: 700;
 }
 
@@ -165,7 +163,7 @@
   max-width: 520rpx;
   margin: var(--sp-2) auto var(--sp-4);
   color: var(--muted);
-  font-size: 25rpx;
+  font-size: var(--fs-caption);
   line-height: 1.6;
 }
 
@@ -187,14 +185,12 @@
   border-radius: var(--r-md);
   background: var(--card);
   border: 1rpx solid var(--line-light);
-  box-shadow: var(--shadow-sm);
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  transition: border-color 200ms ease;
 }
 
 .pet-card-active {
-  border-color: rgba(91, 130, 232, 0.45);
+  border-color: var(--brand);
   background: var(--card);
-  box-shadow: 0 8rpx 24rpx rgba(91, 130, 232, 0.12);
 }
 
 .pet-body {
@@ -238,7 +234,7 @@
   height: 36rpx;
   border-radius: 50%;
   background: var(--brand);
-  color: #ffffff;
+  color: var(--on-brand);
   border: 3rpx solid var(--card);
   display: flex;
   align-items: center;
@@ -278,7 +274,7 @@
   padding: 0 var(--sp-2);
   border-radius: var(--r-sm);
   background: var(--brand);
-  color: #ffffff;
+  color: var(--on-brand);
   font-size: var(--fs-mini);
   font-weight: 600;
   display: flex;
@@ -326,7 +322,7 @@
 
 .last-value {
   color: var(--muted);
-  font-size: 23rpx;
+  font-size: var(--fs-caption);
   line-height: 1.45;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -421,14 +417,14 @@
 .add-title {
   color: var(--text);
   font-family: var(--font-serif);
-  font-size: 29rpx;
+  font-size: var(--fs-title);
   font-weight: 700;
 }
 
 .add-desc {
   margin-top: 6rpx;
   color: var(--faint);
-  font-size: 23rpx;
+  font-size: var(--fs-caption);
   line-height: 1.5;
 }
 
@@ -517,7 +513,6 @@
   border-radius: var(--r-md);
   background: var(--card);
   border: 1rpx solid var(--line-light);
-  box-shadow: var(--shadow-sm);
 }
 
 .avatar-upload,
@@ -582,7 +577,6 @@
   border-radius: var(--r-md);
   background: var(--card);
   border: 1rpx solid var(--line-light);
-  box-shadow: var(--shadow-sm);
   box-sizing: border-box;
 }
 
@@ -608,20 +602,12 @@
   color: var(--muted);
 }
 
-/* 输入框聚焦态 */
+/* 输入框聚焦态（页面样式后加载，特异性天然优先） */
 .vet-input:focus,
 .vet-textarea:focus {
-  border-color: var(--brand) !important;
-  background: var(--card) !important;
-  box-shadow: 0 0 0 4rpx rgba(91, 130, 232, 0.08);
-}
-
-/* chip 选中态 */
-.vet-chip-active {
-  background: var(--brand) !important;
-  border-color: var(--brand) !important;
-  color: #ffffff !important;
-  box-shadow: none;
+  border-color: var(--brand);
+  background: var(--card);
+  box-shadow: 0 0 0 4rpx rgba(17, 59, 49, 0.08);
 }
 
 /* ── 底部按钮区 ──────────────────────────── */
@@ -635,6 +621,22 @@
   background: var(--card);
 }
 
-.form-actions .vet-btn-primary {
-  box-shadow: var(--shadow-sm);
+/* v3 二级页返回控件 */
+.profile-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+  color: var(--muted);
+  font-size: var(--fs-caption);
+}
+
+.profile-back:active { opacity: 0.6; }
+
+.profile-back-arrow {
+  width: 16rpx;
+  height: 16rpx;
+  border-left: 3rpx solid var(--muted);
+  border-bottom: 3rpx solid var(--muted);
+  transform: rotate(45deg);
 }

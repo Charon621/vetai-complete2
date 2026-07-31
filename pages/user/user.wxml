@@ -1,231 +1,158 @@
 <view class="vet-page user-page">
-  <!-- 账户面板：白底卡片 -->
-  <view class="account-panel vet-fade-up" style="animation-delay:0ms">
-    <view class="account-inner">
-      <view class="user-avatar-wrap">
-        <image wx:if="{{user && user.avatarUrl}}" class="user-avatar-img" src="{{user.avatarUrl}}" mode="aspectFill" />
-        <view wx:else class="user-avatar-placeholder">{{user ? user.avatarText : '本'}}</view>
+  <!-- 账户区 -->
+  <view class="account-flat vet-fade-up">
+    <view class="account-avatar" bindtap="onEditAvatar" aria-label="更换头像">
+      <image wx:if="{{user && user.avatarUrl}}" class="account-avatar-img" src="{{user.avatarUrl}}" mode="aspectFill" />
+      <text wx:else>{{user ? user.avatarText : '用'}}</text>
+      <view class="account-avatar-badge" wx:if="{{user}}"><text>换</text></view>
+    </view>
+    <view class="account-copy">
+      <view class="account-name-row">
+        <text class="account-name">{{currentSpaceName}}</text>
+        <view class="account-rename" wx:if="{{user}}" bindtap="onRenameSpace">改名</view>
       </view>
-      <view class="user-copy">
-        <view class="user-name">{{currentSpaceName}}</view>
-        <view class="user-desc">你的问诊记录会保存在本机，注意保护隐私。</view>
-        <view class="space-id" bindtap="showStorageHelp">
-          <text class="space-id-label">空间 ID</text>
-          <text class="space-id-value">{{currentSpaceId}}</text>
-        </view>
-      </view>
+      <view class="account-desc">数据只保存在这台手机上，不上传</view>
     </view>
   </view>
 
-  <!-- 数据概览：三格统计 -->
-  <view class="data-summary vet-fade-up" style="animation-delay:60ms">
-    <view class="summary-cell" bindtap="goRecords">
-      <view class="summary-value text-numeric">{{recordsCount}}</view>
-      <view class="summary-label">累计问诊</view>
-    </view>
-    <view class="summary-cell" bindtap="goProfiles">
-      <view class="summary-value text-numeric">{{profilesCount}}</view>
-      <view class="summary-label">宠物档案</view>
-    </view>
-    <view class="summary-cell">
-      <view class="summary-value recent text-numeric">{{recentText}}</view>
-      <view class="summary-label">最近一次</view>
-    </view>
+  <!-- 统计一行细线 -->
+  <view class="stat-line vet-fade-up">
+    <text class="stat-line-item"><text class="stat-line-num text-numeric">{{recordsCount}}</text> 次检查</text>
+    <text class="stat-line-item"><text class="stat-line-num text-numeric">{{profilesCount}}</text> 个宠物档案</text>
+    <text class="stat-line-recent">最近 {{recentText}}</text>
   </view>
 
-  <!-- 产品说明 -->
-  <view class="settings-section vet-fade-up" style="animation-delay:120ms">
-    <view class="section-heading">
-      <view class="section-title">产品说明</view>
-      <view class="section-note">{{storageModeText}}</view>
+  <!-- 设置（细线组） -->
+  <view class="settings-flat vet-fade-up">
+    <view class="section-eyebrow">设置 / SETTINGS</view>
+
+    <!-- 数据与隐私 -->
+    <view class="flat-item" bindtap="toggleSection" data-key="privacy">
+      <text class="flat-title">数据与隐私</text>
+      <text class="flat-note">只存本机</text>
+      <view class="flat-chevron {{expandedSection === 'privacy' ? 'open' : ''}}"></view>
     </view>
-    <view class="settings-list">
-      <view class="setting-item {{expandedSection === 'model' ? 'expanded' : ''}}" bindtap="toggleSection" data-key="model">
-        <view class="setting-row">
-          <view class="setting-title">默认模型</view>
-          <view class="setting-chevron {{expandedSection === 'model' ? 'open' : ''}}">›</view>
-        </view>
-        <view class="setting-detail" wx:if="{{expandedSection === 'model'}}">
-          <text>当前初筛报告使用 Qwen3.7-Plus。模型 provider、请求地址和 API 配置由项目配置决定，本页面不修改业务调用。</text>
-        </view>
-      </view>
-      <view class="setting-item {{expandedSection === 'quality' ? 'expanded' : ''}}" bindtap="toggleSection" data-key="quality">
-        <view class="setting-row">
-          <view class="setting-title">图片质量</view>
-          <view class="setting-chevron {{expandedSection === 'quality' ? 'open' : ''}}">›</view>
-        </view>
-        <view class="setting-detail" wx:if="{{expandedSection === 'quality'}}">
-          <text>上传图片会先进行压缩和基础质量检查。建议使用光线充足、对焦清晰、能看到整体部位和近景细节的照片。</text>
-        </view>
-      </view>
-      <view class="setting-item {{expandedSection === 'privacy' ? 'expanded' : ''}}" bindtap="toggleSection" data-key="privacy">
-        <view class="setting-row">
-          <view class="setting-title">隐私与数据</view>
-          <view class="setting-chevron {{expandedSection === 'privacy' ? 'open' : ''}}">›</view>
-        </view>
-        <view class="setting-detail" wx:if="{{expandedSection === 'privacy'}}">
-          <text>当前空间：{{currentSpaceName}}
+    <view class="flat-detail" wx:if="{{expandedSection === 'privacy'}}">
+      <view class="flat-detail-text">当前空间：{{currentSpaceName}}
 空间 ID：{{currentSpaceId}}
-记录和档案只按本机空间分开保存，换手机或重装后不会同步。</text>
-        </view>
+记录和档案只按本机空间分开保存，换手机或重装后不会同步。</view>
+      <view class="flat-detail-actions">
+        <view class="flat-action" bindtap="clearRecords">清空所有记录</view>
+        <view class="flat-action danger" bindtap="clearData">清除全部数据</view>
       </view>
-      <view class="setting-item {{expandedSection === 'disclaimer' ? 'expanded' : ''}}" bindtap="toggleSection" data-key="disclaimer">
-        <view class="setting-row">
-          <view class="setting-title">免责声明</view>
-          <view class="setting-chevron {{expandedSection === 'disclaimer' ? 'open' : ''}}">›</view>
-        </view>
-        <view class="setting-detail" wx:if="{{expandedSection === 'disclaimer'}}">
-          <text>1. 本工具结果仅供参考，不构成医疗诊断。
+    </view>
+
+    <!-- 备份与导出 -->
+    <view class="flat-item" bindtap="toggleSection" data-key="backup">
+      <text class="flat-title">备份与导出</text>
+      <view class="flat-chevron {{expandedSection === 'backup' ? 'open' : ''}}"></view>
+    </view>
+    <view class="flat-detail" wx:if="{{expandedSection === 'backup'}}">
+      <view class="flat-detail-text">把宠物档案和问诊记录复制成文本，便于自行备份或发给兽医。</view>
+      <view class="flat-detail-actions">
+        <view class="flat-action" bindtap="exportData">导出数据</view>
+      </view>
+    </view>
+
+    <!-- 拍照小技巧 -->
+    <view class="flat-item" bindtap="toggleSection" data-key="quality">
+      <text class="flat-title">拍照小技巧</text>
+      <text class="flat-note">照片越清楚，判断越准</text>
+      <view class="flat-chevron {{expandedSection === 'quality' ? 'open' : ''}}"></view>
+    </view>
+    <view class="flat-detail" wx:if="{{expandedSection === 'quality'}}">
+      <view class="flat-detail-text">光线充足、对焦清晰，尽量拍到整体部位和近景细节，必要时圈选患处，AI 判断会更准。</view>
+    </view>
+
+    <!-- 免责声明 -->
+    <view class="flat-item" bindtap="toggleSection" data-key="disclaimer">
+      <text class="flat-title">免责声明</text>
+      <view class="flat-chevron {{expandedSection === 'disclaimer' ? 'open' : ''}}"></view>
+    </view>
+    <view class="flat-detail" wx:if="{{expandedSection === 'disclaimer'}}">
+      <view class="flat-detail-text">1. 本工具结果仅供参考，不构成医疗诊断。
 2. 请在兽医指导下进行宠物疾病治疗。
 3. 紧急情况请立即前往宠物医院。
-4. 本工具不对使用结果承担任何诊疗责任。</text>
-        </view>
-      </view>
-      <view class="setting-item {{expandedSection === 'feedback' ? 'expanded' : ''}}" bindtap="toggleSection" data-key="feedback">
-        <view class="setting-row">
-          <view class="setting-title">反馈建议</view>
-          <view class="setting-chevron {{expandedSection === 'feedback' ? 'open' : ''}}">›</view>
-        </view>
-        <view class="setting-detail" wx:if="{{expandedSection === 'feedback'}}">
-          <text>你可以在结果页提交报告是否有帮助，也可以导出数据后整理问题反馈给开发者。</text>
-        </view>
-      </view>
-      <view class="setting-item {{expandedSection === 'about' ? 'expanded' : ''}}" bindtap="toggleSection" data-key="about">
-        <view class="setting-row">
-          <view class="setting-title">关于 VetAI</view>
-          <view class="setting-chevron {{expandedSection === 'about' ? 'open' : ''}}">›</view>
-        </view>
-        <view class="setting-detail" wx:if="{{expandedSection === 'about'}}">
-          <text>VetAI 宠物皮肤初筛 v{{appVersion}}
+4. 本工具不对使用结果承担任何诊疗责任。</view>
+    </view>
 
-用于整理宠物皮肤照片、症状描述和就医沟通参考。
+    <!-- 关于 VetAI -->
+    <view class="flat-item" bindtap="toggleSection" data-key="about">
+      <text class="flat-title">关于 VetAI</text>
+      <text class="flat-note text-numeric">v{{appVersion}}</text>
+      <view class="flat-chevron {{expandedSection === 'about' ? 'open' : ''}}"></view>
+    </view>
+    <view class="flat-detail" wx:if="{{expandedSection === 'about'}}">
+      <view class="flat-detail-text">VetAI 宠物皮肤初筛 v{{appVersion}}
 
-结果仅供初步观察，不能替代线下兽医诊断。</text>
-        </view>
-      </view>
+用于整理宠物皮肤照片、症状描述和就医沟通参考。结果仅供初步观察，不能替代线下兽医诊断。</view>
     </view>
-  </view>
 
-  <!-- 数据管理 -->
-  <view class="settings-section vet-fade-up" style="animation-delay:180ms">
-    <view class="section-heading">
-      <view class="section-title">数据管理</view>
-      <view class="section-note">仅作用于当前本机空间</view>
+    <!-- 开发者选项 -->
+    <view class="flat-item flat-item-dev" bindtap="toggleSection" data-key="dev">
+      <text class="flat-title dev">开发者选项</text>
+      <text class="flat-note">反馈分析<text class="mid-dot"></text>埋点导出</text>
+      <view class="flat-chevron {{expandedSection === 'dev' ? 'open' : ''}}"></view>
     </view>
-    <view class="settings-list">
-      <view class="setting-item" bindtap="goProfiles">
-        <view class="setting-copy">
-          <view class="setting-title">宠物档案</view>
-        </view>
-        <view class="setting-arrow"></view>
+    <view class="flat-detail" wx:if="{{expandedSection === 'dev'}}">
+      <view class="flat-detail-actions">
+        <view class="flat-action" bindtap="exportFeedbackData">导出反馈日志</view>
+        <view class="flat-action" bindtap="exportAnalyticsEvents">导出埋点日志</view>
+        <view class="flat-action" bindtap="switchSpace">切换 / 新建本机空间</view>
+        <view wx:if="{{user}}" class="flat-action" bindtap="logout">切回本机访客</view>
       </view>
-      <view class="setting-item" bindtap="goRecords">
-        <view class="setting-copy">
-          <view class="setting-title">历史记录</view>
-        </view>
-        <view class="setting-arrow"></view>
-      </view>
-      <view class="setting-item" bindtap="exportData">
-        <view class="setting-copy">
-          <view class="setting-title">导出数据</view>
-        </view>
-        <view class="setting-arrow"></view>
-      </view>
-      <view class="setting-item" bindtap="exportFeedbackData">
-        <view class="setting-copy">
-          <view class="setting-title">导出反馈日志</view>
-        </view>
-        <view class="setting-arrow"></view>
-      </view>
-      <view class="setting-item" bindtap="exportAnalyticsEvents">
-        <view class="setting-copy">
-          <view class="setting-title">导出埋点日志</view>
-        </view>
-        <view class="setting-arrow"></view>
-      </view>
-      <view class="setting-item danger" bindtap="clearData">
-        <view class="setting-copy">
-          <view class="setting-title">清除数据</view>
-        </view>
-        <view class="setting-arrow"></view>
-      </view>
-    </view>
-  </view>
 
-  <!-- 反馈分析 -->
-  <view class="settings-section vet-fade-up" style="animation-delay:210ms" wx:if="{{feedbackSummary}}">
-    <view class="section-heading">
-      <view class="section-title">反馈分析</view>
-      <view class="section-note">基于 {{feedbackSummary.total}} 条反馈</view>
-    </view>
-    <view class="settings-list">
-      <view class="setting-item">
-        <view class="setting-copy">
-          <view class="setting-title">有帮助率</view>
-        </view>
-        <view class="feedback-stat-value text-numeric">{{feedbackSummary.helpfulRate}}%</view>
-      </view>
-      <view class="setting-item">
-        <view class="setting-copy">
-          <view class="setting-title">有帮助 / 无帮助</view>
-        </view>
-        <view class="feedback-stat-value text-numeric">{{feedbackSummary.helpful}} / {{feedbackSummary.notHelpful}}</view>
-      </view>
-      <view class="setting-item">
-        <view class="setting-copy">
-          <view class="setting-title">已就医 / 未就医</view>
-        </view>
-        <view class="feedback-stat-value text-numeric">{{feedbackSummary.wentVet}} / {{feedbackSummary.notVet}}</view>
-      </view>
-      <view class="setting-item">
-        <view class="setting-copy">
-          <view class="setting-title">问题反馈率</view>
-        </view>
-        <view class="feedback-stat-value text-numeric">{{feedbackSummary.issueRate}}%</view>
-      </view>
-      <view class="setting-item">
-        <view class="setting-copy">
-          <view class="setting-title">兽医方向一致率</view>
-        </view>
-        <view class="feedback-stat-value text-numeric">{{feedbackSummary.vetAlignedRate}}%</view>
-      </view>
-    </view>
-    <view class="kb-accuracy-section" wx:if="{{upgradeSignals && upgradeSignals.topIssues.length > 0}}">
-      <view class="kb-accuracy-title">主要问题类型</view>
-      <view class="feedback-pill-list">
-        <view class="feedback-pill" wx:for="{{upgradeSignals.topIssues}}" wx:key="key">
-          <text>{{item.label}}</text>
-          <text class="text-numeric">{{item.count}}</text>
-        </view>
-      </view>
-    </view>
-    <view class="kb-accuracy-section" wx:if="{{upgradeSignals && upgradeSignals.weakSegments.length > 0}}">
-      <view class="kb-accuracy-title">优先复盘方向</view>
-      <view class="settings-list">
-        <view class="setting-item" wx:for="{{upgradeSignals.weakSegments}}" wx:key="name">
-          <view class="setting-copy">
-            <view class="setting-title">{{item.name}}</view>
-            <view class="kb-detail-text">{{item.bodyPart}}，无帮助 {{item.notHelpful}}，兽医不一致 {{item.vetDifferent}}，{{item.mainIssueLabel}}</view>
+      <!-- 反馈分析（仅开发者可见） -->
+      <view class="dev-analysis" wx:if="{{feedbackSummary}}">
+        <view class="dev-analysis-title">反馈分析<text class="mid-dot"></text>基于 {{feedbackSummary.total}} 条</view>
+        <view class="dev-stat-row"><text>有帮助率</text><text class="text-numeric">{{feedbackSummary.helpfulRate}}%</text></view>
+        <view class="dev-stat-row"><text>有帮助 / 无帮助</text><text class="text-numeric">{{feedbackSummary.helpful}} / {{feedbackSummary.notHelpful}}</text></view>
+        <view class="dev-stat-row"><text>已就医 / 未就医</text><text class="text-numeric">{{feedbackSummary.wentVet}} / {{feedbackSummary.notVet}}</text></view>
+        <view class="dev-stat-row"><text>问题反馈率</text><text class="text-numeric">{{feedbackSummary.issueRate}}%</text></view>
+        <view class="dev-stat-row"><text>兽医方向一致率</text><text class="text-numeric">{{feedbackSummary.vetAlignedRate}}%</text></view>
+
+        <block wx:if="{{upgradeSignals && upgradeSignals.topIssues.length > 0}}">
+          <view class="dev-analysis-sub">主要问题类型</view>
+          <view class="feedback-pill-list">
+            <view class="feedback-pill" wx:for="{{upgradeSignals.topIssues}}" wx:key="key">
+              <text>{{item.label}}</text><text class="text-numeric">{{item.count}}</text>
+            </view>
           </view>
-        </view>
-      </view>
-    </view>
-    <view class="kb-accuracy-section" wx:if="{{kbAccuracyList.length > 0}}">
-      <view class="kb-accuracy-title">知识库匹配反馈（按次数排序）</view>
-      <view class="settings-list">
-        <view class="setting-item" wx:for="{{kbAccuracyList}}" wx:key="name">
-          <view class="setting-copy">
-            <view class="setting-title">{{item.name}}</view>
-            <view class="kb-detail-text">有帮助率 {{item.helpfulRate}}%，无帮助 {{item.notHelpful}}，兽医不一致 {{item.vetDifferent}}，{{item.mainIssueLabel}}</view>
+        </block>
+
+        <block wx:if="{{upgradeSignals && upgradeSignals.weakSegments.length > 0}}">
+          <view class="dev-analysis-sub">优先复盘方向</view>
+          <view class="dev-stat-row" wx:for="{{upgradeSignals.weakSegments}}" wx:key="name">
+            <text>{{item.name}}</text>
+            <text class="kb-detail-text">{{item.bodyPart}}，无帮助 {{item.notHelpful}}，兽医不一致 {{item.vetDifferent}}</text>
           </view>
-        </view>
+        </block>
+
+        <block wx:if="{{kbAccuracyList.length > 0}}">
+          <view class="dev-analysis-sub">知识库匹配反馈</view>
+          <view class="dev-stat-row" wx:for="{{kbAccuracyList}}" wx:key="name">
+            <text>{{item.name}}</text>
+            <text class="kb-detail-text">有帮助率 {{item.helpfulRate}}%，无帮助 {{item.notHelpful}}</text>
+          </view>
+        </block>
       </view>
     </view>
   </view>
 
-  <!-- 空间操作 -->
-  <view class="space-actions vet-fade-up" style="animation-delay:240ms">
-    <button class="vet-btn vet-btn-secondary space-btn" bindtap="switchSpace">切换 / 新建本机空间</button>
-    <view wx:if="{{user}}" class="switch-guest-link" bindtap="logout">切回本机访客</view>
+  <!-- 底部紧急提示条 -->
+  <view class="emergency-strip vet-fade-up" bindtap="findHospital">
+    <text class="emergency-strong">紧急情况？</text>
+    <text>严重外伤、误食、呼吸困难请不要等 AI —— </text>
+    <text class="emergency-link">立刻查找附近宠物医院 →</text>
+  </view>
+
+  <!-- 鎏金印章收尾 -->
+  <view class="user-seal-wrap vet-fade-up">
+    <view class="vet-seal">
+      <view class="seal-stack">
+        <text>兽医级</text>
+        <text class="vet-seal-sub">VETAI</text>
+      </view>
+    </view>
   </view>
 </view>

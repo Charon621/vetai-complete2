@@ -11,10 +11,41 @@ var IMAGE_ROLES = [
   { value: 'reference', label: '参照' }
 ]
 
+// 上传照片上限统一读配置，与聊天页保持一致（BUG-C3）
+var MAX_IMAGES = config.MAX_IMAGES || 5
+
+var URGENCY_STATUS = {
+  low: '居家观察',
+  moderate: '建议尽快复查',
+  urgent: '建议尽快就诊',
+  emergency: '需立即就医'
+}
+
+var WEEKDAYS = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+
+var WEEKDAYS_EN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+
+var URGENCY_CARE = {
+  low: '按报告建议居家护理，症状有变化随时再拍一张对比',
+  moderate: '按报告建议护理患处，观察症状有没有减轻',
+  urgent: '尽快安排就诊，就诊前保持患处清洁干燥',
+  emergency: '请立即就医，途中避免让TA抓挠患处'
+}
+
 Page({
   data: {
+    step: 'home',
+    todayText: '',
+    todayMono: '',
+    profiles: [],
+    displayProfiles: [],
+    hasSelectedPet: false,
+    selectedPetName: '',
+    selectedPetInitial: '',
+    selectedProfileId: '',
+    selectedBreed: '',
+    lastCheck: null,
     imagePaths: [],
-    imageBase64List: [],
     imageRoles: [],
     imageQualityFlags: [],
     lesionBoxes: [],
@@ -79,10 +110,153 @@ Page({
   },
 
   onLoad: function () {
+    // base64 只存实例变量，不进 setData：5 张 MB 级字符串进 data 会卡渲染（BUG-B2）
+    this._imageBase64List = []
+    this.setData({
+      todayText: this._buildTodayText(),
+      todayMono: this._buildTodayMono()
+    })
     this.checkNetwork()
   },
 
-  onShow: function () {},
+  onShow: function () {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 0 })
+    }
+    this.loadProfiles()
+    this.loadLastCheck()
+  },
+
+  _buildTodayText: function () {
+    var d = new Date()
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日 · ' + WEEKDAYS[d.getDay()]
+  },
+
+  _buildTodayMono: function () {
+    var d = new Date()
+    function pad (n) { return ('0' + n).slice(-2) }
+    return pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + WEEKDAYS_EN[d.getDay()]
+  },
+
+  loadProfiles: function () {
+    var profiles = storage.getPetProfiles() || []
+    var activeId = storage.getActiveProfileId ? storage.getActiveProfileId() : ''
+    var displayProfiles = profiles.slice(0, 3).map(function (p) {
+      return { id: p.id || '', initial: (p.petName || '宠').charAt(0) }
+    })
+    this.setData({ profiles: profiles, displayProfiles: displayProfiles })
+    // 首次进入且用户未手动选过宠物时，自动带入当前档案
+    if (!this._petTouched && !this.data.selectedProfileId && activeId) {
+      var active = profiles.filter(function (p) { return p.id === activeId })[0]
+      if (active) this._applyProfile(active)
+    }
+  },
+
+  loadLastCheck: function () {
+    var hist = storage.getHistory() || []
+    if (!hist.length) {
+      this.setData({ lastCheck: null })
+      return
+    }
+    var r = hist[0]
+    var urgency = r.urgency || 'moderate'
+    this.setData({
+      lastCheck: {
+        dateShort: this._formatShortDate(r.createdAt || r.timestamp),
+        disease: r.disease || r.lesionNameCn || r.primaryDiagnosis || '初筛结果',
+        urgency: urgency,
+        statusText: URGENCY_STATUS[urgency] || '已完成',
+        careTip: URGENCY_CARE[urgency] || '',
+        imagePath: r.imagePath || (r.imagePaths && r.imagePaths[0]) || ''
+      }
+    })
+  },
+
+  _formatShortDate: function (v) {
+    var d = v ? new Date(v) : new Date()
+    if (isNaN(d.getTime())) return '--'
+    function pad (n) { return ('0' + n).slice(-2) }
+    return pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+  },
+
+  startCapture: function () {
+    this.setData({ step: 'capture' }, this.refreshUiState.bind(this))
+  },
+
+  backHome: function () {
+    this.setData({ step: 'home' })
+  },
+
+  goRecords: function () {
+    wx.switchTab({ url: '/pages/detail/detail' })
+  },
+
+  goLastRecord: function () {
+    var hist = storage.getHistory() || []
+    if (!hist.length) return
+    wx.navigateTo({ url: '/pages/result/result?id=' + hist[0].id })
+  },
+
+  addPet: function () {
+    wx.navigateTo({ url: '/pages/profile/profile' })
+  },
+
+  onSelectPet: function () {
+    var self = this
+    this._petTouched = true
+    var profiles = this.data.profiles || []
+    if (!profiles.length) {
+      wx.showModal({
+        title: '还没有宠物档案',
+        content: '去创建一个宠物档案，检查记录就能归到TA名下。',
+        confirmText: '去创建',
+        success: function (res) {
+          if (res.confirm) wx.navigateTo({ url: '/pages/profile/profile' })
+        }
+      })
+      return
+    }
+    var names = profiles.map(function (p) { return p.petName || '未命名' })
+    names.push('临时问诊（不选宠物）')
+    wx.showActionSheet({
+      itemList: names,
+      success: function (res) {
+        if (res.tapIndex === profiles.length) {
+          self._clearSelectedProfile()
+        } else {
+          self._applyProfile(profiles[res.tapIndex])
+        }
+      }
+    })
+  },
+
+  _applyProfile: function (p) {
+    if (!p) return
+    var name = p.petName || '未命名'
+    this.setData({
+      hasSelectedPet: true,
+      selectedPetName: name,
+      selectedPetInitial: name.charAt(0),
+      selectedProfileId: p.id || '',
+      selectedBreed: p.breed || '',
+      quickPetType: p.petType || '',
+      quickPetTypeLabel: p.petTypeLabel || '',
+      quickGender: p.gender || '',
+      quickGenderLabel: p.genderLabel || '',
+      quickAge: p.age || '',
+      quickAgeLabel: p.ageLabel || ''
+    }, this.refreshUiState.bind(this))
+  },
+
+  _clearSelectedProfile: function () {
+    this.setData({
+      hasSelectedPet: false,
+      selectedPetName: '',
+      selectedPetInitial: '',
+      selectedProfileId: '',
+      selectedBreed: ''
+    })
+  },
 
   checkNetwork: function () {
     wx.getNetworkType({
@@ -95,45 +269,45 @@ Page({
   },
 
   goChat: function () {
-    wx.switchTab({ url: '/pages/chat/chat' })
+    wx.navigateTo({ url: '/pages/chat/chat' })
   },
 
   chooseImage: function () {
     var self = this
-    if (self.data.imagePaths.length >= 5) {
-      wx.showToast({ title: '最多 5 张', icon: 'none' })
+    if (self.data.imagePaths.length >= MAX_IMAGES) {
+      wx.showToast({ title: '最多 ' + MAX_IMAGES + ' 张', icon: 'none' })
       return
     }
-    var count = Math.max(1, 5 - self.data.imagePaths.length)
+    var count = Math.max(1, MAX_IMAGES - self.data.imagePaths.length)
 
     function processTempFiles(tempFiles) {
       var tempPaths = (tempFiles || []).map(function (f) { return f.tempFilePath }).filter(Boolean)
       if (tempPaths.length === 0) return
       wx.showLoading({ title: '处理图片中', mask: true })
-      // 直接用临时路径处理，不再 stabilizeTempFile（它会在 DevTools 制造 vetai_tmp 假路径）
-      tempPaths.reduce(function (chain, p) {
-        return chain.then(function (acc) {
-          return imageUtil.processImage(p, self).then(function (b64) {
-            acc.push(b64)
-            return acc
+      // 直接用临时路径处理，不再 stabilizeTempFile（它会在 DevTools 制造 vetai_tmp 假路径）；
+      // 逐张转码→选图时落盘（BUG-B2）→批量质检（BUG-B3）公共链路已提取到 prepareImages
+      imageUtil.prepareImages(tempPaths, {
+        existingCount: self.data.imagePaths.length,
+        maxCount: MAX_IMAGES,
+        pageContext: self
+      })
+        .then(function (newItems) {
+          wx.hideLoading()
+          var displayPaths = newItems.map(function (item) { return item.displayPath })
+          var qualityFlags = newItems.map(function (item) { return item.quality })
+          self._imageBase64List = self._imageBase64List
+            .concat(newItems.map(function (item) { return item.base64 }))
+            .slice(0, MAX_IMAGES)
+          analytics.track('upload', {
+            added: displayPaths.length,
+            total: Math.min(MAX_IMAGES, self.data.imagePaths.length + displayPaths.length)
           })
-        })
-      }, Promise.resolve([]))
-        .then(function (newB64s) {
-          // processImage 始终返回 base64 data URL，直接用作显示路径
-          var displayPaths = newB64s.filter(Boolean)
-          return Promise.all(displayPaths.map(function (path) {
-            return imageUtil.checkImageQuality(path, self)
-          })).then(function (qualityFlags) {
-            wx.hideLoading()
-            self.setData({
-              imagePaths: self.data.imagePaths.concat(displayPaths).slice(0, 5),
-              imageBase64List: self.data.imageBase64List.concat(newB64s).slice(0, 5),
-              imageRoles: self.data.imageRoles.concat(displayPaths.map(function () { return '' })).slice(0, 5),
-              imageQualityFlags: self.data.imageQualityFlags.concat(qualityFlags).slice(0, 5),
-              lesionBoxes: self.data.lesionBoxes.concat(displayPaths.map(function () { return null })).slice(0, 5)
-            }, self.refreshUiState.bind(self))
-          })
+          self.setData({
+            imagePaths: self.data.imagePaths.concat(displayPaths).slice(0, MAX_IMAGES),
+            imageRoles: self.data.imageRoles.concat(displayPaths.map(function () { return '' })).slice(0, MAX_IMAGES),
+            imageQualityFlags: self.data.imageQualityFlags.concat(qualityFlags).slice(0, MAX_IMAGES),
+            lesionBoxes: self.data.lesionBoxes.concat(displayPaths.map(function () { return null })).slice(0, MAX_IMAGES)
+          }, self.refreshUiState.bind(self))
         })
         .catch(function (err) {
           wx.hideLoading()
@@ -178,9 +352,9 @@ Page({
 
   removeImage: function (e) {
     var idx = parseInt(e.currentTarget.dataset.index)
+    this._imageBase64List = (this._imageBase64List || []).filter(function (_, i) { return i !== idx })
     this.setData({
       imagePaths: this.data.imagePaths.filter(function (_, i) { return i !== idx }),
-      imageBase64List: this.data.imageBase64List.filter(function (_, i) { return i !== idx }),
       imageRoles: this.data.imageRoles.filter(function (_, i) { return i !== idx }),
       imageQualityFlags: this.data.imageQualityFlags.filter(function (_, i) { return i !== idx }),
       lesionBoxes: this.data.lesionBoxes.filter(function (_, i) { return i !== idx })
@@ -294,9 +468,12 @@ Page({
   },
 
   buildPetInfo: function () {
+    var hasProfile = !!this.data.selectedProfileId
     return {
-      isTemporary: true,
-      petName: '临时问诊',
+      isTemporary: !hasProfile,
+      profileId: this.data.selectedProfileId || '',
+      petName: hasProfile ? this.data.selectedPetName : '临时问诊',
+      breed: this.data.selectedBreed || '',
       petType: this.data.quickPetType,
       petTypeLabel: this.data.quickPetTypeLabel,
       gender: this.data.quickGender,
@@ -330,7 +507,7 @@ Page({
       ? '可以生成初筛报告'
       : (!hasImages ? '先拍照或上传皮肤照片' : (!hasPatient ? '补充宠物基础信息' : '选择患处部位'))
     this.setData({
-      canAddMore: this.data.imagePaths.length < 5,
+      canAddMore: this.data.imagePaths.length < MAX_IMAGES,
       canSubmitActive: this.canSubmit(),
       lesionCount: lesionCount,
       formProgress: Math.round((completed / 3) * 100),
@@ -356,22 +533,24 @@ Page({
   },
 
   _startAnalyzingTimer: function () {
+    // at 为累计时间阈值：到达即切换文案；1s 检查一次，避免旧实现里
+    // “累计 vs 单阶段时长”语义混用导致的切换延迟（BUG-B4）
     var phases = [
-      { text: '正在识别皮损特征...', duration: 6000 },
-      { text: '正在检索临床特征库...', duration: 6000 },
-      { text: '正在综合分析中...', duration: 12000 },
-      { text: '报告即将完成，请耐心等待...', duration: 0 }
+      { text: '正在识别皮损特征...', at: 0 },
+      { text: '正在检索临床特征库...', at: 6000 },
+      { text: '正在综合分析中...', at: 12000 },
+      { text: '报告即将完成，请耐心等待...', at: 24000 }
     ]
     var self = this
     var i = 0
     var elapsed = 0
     this._analyzingTimer = setInterval(function () {
-      elapsed += 4000
-      if (i < phases.length - 1 && elapsed >= phases[i].duration) {
+      elapsed += 1000
+      while (i < phases.length - 1 && elapsed >= phases[i + 1].at) {
         i++
         self.setData({ analyzingStep: i, analyzingStepText: phases[i].text })
       }
-    }, 4000)
+    }, 1000)
   },
 
   _stopAnalyzingTimer: function () {
@@ -389,6 +568,11 @@ Page({
     }
     var self = this
     var petInfo = self.buildPetInfo()
+    analytics.track('submit', {
+      imageCount: self.data.imagePaths.length,
+      lesionCount: self.data.lesionBoxes.filter(Boolean).length,
+      hasComplaint: !!self.data.complaint
+    })
     self.setData({ isAnalyzing: true, analyzingStep: 0, analyzingStepText: '正在识别皮损特征...' })
     self._startAnalyzingTimer()
 
@@ -401,7 +585,7 @@ Page({
         var roiImages = bundle[1]
         analytics.track('roiCrop', { total: self.data.lesionBoxes.filter(Boolean).length, cropped: roiImages.length })
         var imageBundle = imageUtil.buildModelImageBundle(
-          self.data.imageBase64List,
+          self._imageBase64List || [],
           self.data.imageRoles,
           roiImages || []
         )
@@ -430,8 +614,17 @@ Page({
           return Promise.reject(new Error('__handled__'))
         }
         var requestPetInfo = Object.assign({}, petInfo, {
-          imageRoles: imageBundle.roles
+          imageRoles: imageBundle.roles,
+          totalImageCount: self.data.imagePaths.length
         })
+        // 超出模型上限的图片不再静默丢弃，明确告知用户（BUG-B1）
+        if (imageBundle.droppedCount > 0) {
+          wx.showToast({
+            title: 'AI 本次分析 ' + imageBundle.images.length + ' 张关键照片，其余仅存档',
+            icon: 'none',
+            duration: 2500
+          })
+        }
         return api.diagnose(requestImages, requestPetInfo)
           .then(function (res) {
             if (res.success) {

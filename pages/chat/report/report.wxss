@@ -11,13 +11,13 @@
   justify-content: space-between;
   padding: var(--sp-3);
   background: var(--card);
+  border: 1rpx solid var(--line-light);
   border-radius: var(--r-md);
-  box-shadow: var(--shadow-sm);
   margin-bottom: var(--sp-2);
 }
 
 .report-pet-name {
-  font-size: 36rpx;
+  font-size: var(--fs-title);
   font-weight: 700;
   font-family: var(--font-serif);
   color: var(--text);
@@ -43,17 +43,17 @@
   text-align: center;
 }
 
-.urgency-low { background: var(--sev-low-bg, #f0fdf4); }
-.urgency-low .urgency-label { color: #16a34a; }
+.urgency-low { background: var(--sev-low-bg); }
+.urgency-low .urgency-label { color: var(--sev-low); }
 
-.urgency-moderate { background: #fffbeb; }
-.urgency-moderate .urgency-label { color: #d97706; }
+.urgency-moderate { background: var(--sev-mid-bg); }
+.urgency-moderate .urgency-label { color: var(--sev-mid-text); }
 
-.urgency-urgent { background: #fef2f2; }
-.urgency-urgent .urgency-label { color: #dc2626; }
+.urgency-urgent { background: var(--sev-urgent-bg); }
+.urgency-urgent .urgency-label { color: var(--sev-urgent); }
 
-.urgency-emergency { background: #fef2f2; }
-.urgency-emergency .urgency-label { color: #dc2626; }
+.urgency-emergency { background: var(--sev-emergency-bg); }
+.urgency-emergency .urgency-label { color: var(--sev-emergency); }
 
 .urgency-label {
   font-size: var(--fs-body);
@@ -81,8 +81,8 @@
 /* ── 诊断信息 ─────────────────────────────── */
 .report-sections {
   background: var(--card);
+  border: 1rpx solid var(--line-light);
   border-radius: var(--r-md);
-  box-shadow: var(--shadow-sm);
   overflow: hidden;
   margin-bottom: var(--sp-3);
 }
@@ -132,10 +132,9 @@
   padding: var(--sp-3) 0;
   border-radius: var(--r-md);
   background: var(--brand);
-  color: #ffffff;
+  color: var(--on-brand);
   font-size: var(--fs-body);
-  font-weight: 650;
-  box-shadow: var(--shadow-sm);
+  font-weight: 700;
 }
 
 .report-btn-primary:active { opacity: 0.85; }

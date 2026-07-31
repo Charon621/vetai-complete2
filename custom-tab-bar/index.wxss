@@ -1,0 +1,54 @@
+/* v5 底栏 — 白底细线，选中墨字加粗 + 青柠短横线
+   组件不继承 page 上的 CSS 变量，这里按 v5 令牌落值（与 app.wxss 同步维护） */
+.tab-bar {
+  display: flex;
+  background: #FFFFFF;
+  border-top: 1rpx solid #ECE8DC;
+  box-shadow: 0 -16rpx 40rpx rgba(15, 31, 26, 0.06);
+  padding: 20rpx 0 calc(20rpx + env(safe-area-inset-bottom));
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.tab-item:active { opacity: 0.75; }
+
+.tab-text {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #9AA69F;
+  line-height: 1.2;
+}
+
+.tab-text.on {
+  color: #0F1F1A;
+  font-weight: 700;
+}
+
+.tab-underline {
+  width: 48rpx;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background: transparent;
+}
+
+.tab-underline.show {
+  background: #D6F25F;
+}
+
+@media (prefers-color-scheme: dark) {
+  .tab-bar {
+    background: #182620;
+    border-top-color: #2A3A33;
+    box-shadow: 0 -16rpx 40rpx rgba(0, 0, 0, 0.3);
+  }
+
+  .tab-text { color: #5D6862; }
+
+  .tab-text.on { color: #F0F4EE; }
+}

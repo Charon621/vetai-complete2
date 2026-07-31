@@ -1,79 +1,50 @@
-/* ========================================
-   Detail Page — v2 品质重设计
-   温暖专业 · 去 AI 感 · 排版优先
-   ======================================== */
+/* ═══════════════════════════════════════════════════════
+   Detail Page — VetAI DS v5
+   健康档案 / 宠物切换 / 时间轴
+   ═══════════════════════════════════════════════════════ */
 
 .history-page {
   padding-bottom: calc(var(--sp-8) + env(safe-area-inset-bottom));
 }
 
-/* ---- Page Header ---- */
+/* ── 页头 ── */
 .archive-head {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--sp-3);
-  padding: var(--sp-1) 0 var(--sp-3);
 }
 
-.head-left {
-  flex: 1;
-  min-width: 0;
+.archive-title-lg {
+  font-family: var(--font-serif);
+  font-size: var(--fs-display);
+  font-weight: 900;
+  color: var(--text);
 }
 
 .archive-eyebrow {
-  color: var(--brand);
+  margin-left: auto;
+  margin-right: var(--sp-2);
+  color: var(--gold);
+  font-family: var(--font-mono);
   font-size: var(--fs-mini);
   font-weight: 600;
-  letter-spacing: 2rpx;
-  opacity: 0.6;
+  letter-spacing: 4rpx;
 }
 
-.archive-title {
-  margin-top: var(--sp-1);
-  color: var(--text);
-  font-family: var(--font-serif);
-  font-size: var(--fs-display);
-  font-weight: 700;
-  line-height: 1.22;
-}
-
-.archive-desc {
-  margin-top: var(--sp-1);
-  color: var(--muted);
-  font-size: var(--fs-caption);
-  line-height: 1.5;
-}
-
-.archive-month {
-  width: 108rpx;
-  min-height: 108rpx;
-  border-radius: var(--r-lg);
+.archive-search-toggle {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
   background: var(--card);
   border: 1rpx solid var(--line);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  box-shadow: var(--shadow-sm);
 }
 
-.archive-month text:first-child {
-  color: var(--brand);
-  font-size: var(--fs-title);
-  font-weight: 700;
-  line-height: 1.1;
-}
+.archive-search-toggle:active { opacity: 0.85; }
 
-.archive-month text:last-child {
-  margin-top: 4rpx;
-  color: var(--muted);
-  font-size: var(--fs-mini);
-  font-weight: 500;
-}
-
-/* ---- Search Bar ---- */
+/* ── 搜索栏 ── */
 .search-bar {
   display: flex;
   align-items: center;
@@ -153,109 +124,121 @@
   line-height: 1;
 }
 
-/* ---- Stats Bar ---- */
-.archive-stats {
-  display: flex;
-  align-items: stretch;
-  margin-top: var(--sp-3);
-  border-radius: var(--r-md);
+/* ── 宠物切换行 ── */
+.pet-switch {
+  margin-top: var(--sp-4);
+  white-space: nowrap;
+}
+
+.pet-switch-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding-right: var(--sp-3);
+}
+
+.pet-chip-sw {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 8rpx 20rpx 8rpx 8rpx;
+  border-radius: 999rpx;
   background: var(--card);
-  border: 1rpx solid var(--line-light);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
+  border: 1rpx solid var(--line);
+  flex-shrink: 0;
 }
 
-.stat-cell {
-  flex: 1;
-  min-width: 0;
-  padding: var(--sp-3) var(--sp-2);
-  text-align: center;
+.pet-chip-sw.on {
+  background: var(--brand);
+  border-color: var(--brand);
 }
 
-.stat-divider {
-  flex: 0;
-  width: 1rpx;
-  padding: 0;
-  background: var(--line-light);
-}
-
-.stat-value {
-  color: var(--brand);
-  font-family: var(--font-mono);
-  font-size: var(--fs-display);
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.stat-cell.attention .stat-value {
-  color: var(--sev-urgent);
-}
-
-.stat-value.recent {
-  font-size: var(--fs-title);
-}
-
-.stat-name {
-  margin-top: var(--sp-1);
+.pet-chip-avatar {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  background: var(--surface);
   color: var(--muted);
-  font-size: var(--fs-mini);
-  font-weight: 500;
-}
-
-/* ---- Sort Toolbar ---- */
-.archive-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-2);
-  margin: var(--sp-4) 0 var(--sp-2);
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 26rpx;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
-.toolbar-title {
-  color: var(--body);
-  font-size: 25rpx;
-  font-weight: 650;
-}
-
-.sort-tabs {
-  display: flex;
-  padding: 4rpx;
-  border-radius: var(--r-sm);
-  background: var(--surface);
-  border: 1rpx solid var(--line-light);
-}
-
-.sort-tab {
-  min-width: 88rpx;
-  padding: 10rpx 20rpx;
-  border-radius: var(--r-sm);
-  text-align: center;
-  font-size: var(--fs-caption);
-  font-weight: 600;
-  color: var(--muted);
-  box-sizing: border-box;
-  transition: all 0.2s;
-}
-
-.sort-tab text {
-  position: relative;
-  z-index: 1;
-}
-
-.sort-tab-on {
+.pet-chip-sw.on .pet-chip-avatar {
   background: var(--card);
   color: var(--text);
-  box-shadow: var(--shadow-sm);
 }
 
-/* ---- Empty State ---- */
+.pet-chip-name {
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.pet-chip-meta {
+  font-size: 18rpx;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.pet-chip-sw.on .pet-chip-name { color: var(--on-brand); }
+.pet-chip-sw.on .pet-chip-meta { color: rgba(242, 247, 239, 0.7); font-family: var(--font-mono); }
+
+.pet-chip-add {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  border: 1rpx dashed var(--faint);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: 300;
+  flex-shrink: 0;
+}
+
+/* ── 统计一行细线 ── */
+.stat-line {
+  margin-top: var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-top: 4rpx solid var(--text);
+  border-bottom: 1rpx solid var(--line);
+  font-size: var(--fs-caption);
+  color: var(--body);
+}
+
+.stat-line-num {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stat-line-num.attention { color: var(--sev-urgent); }
+
+.stat-line-edit {
+  margin-left: auto;
+  color: var(--brand);
+  font-weight: 700;
+  border-bottom: 2rpx solid var(--lime);
+  padding-bottom: 2rpx;
+}
+
+/* ── 空状态 ── */
 .empty-panel {
   margin-top: var(--sp-4);
   padding: var(--sp-8) var(--sp-4);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-md);
   background: var(--card);
   border: 1rpx solid var(--line-light);
-  box-shadow: var(--shadow-sm);
   text-align: center;
 }
 
@@ -271,7 +254,7 @@
   justify-content: center;
 }
 
-/* ── 空状态插画：病历夹 ── */
+/* 空状态插画：病历夹 */
 .illus-clip {
   position: relative;
   width: 54rpx;
@@ -330,7 +313,7 @@
   transform: rotate(-28deg);
 }
 
-/* Search empty icon */
+/* 搜索无结果插画 */
 .empty-icon-search {
   position: relative;
   width: 60rpx;
@@ -374,7 +357,7 @@
 .empty-title {
   color: var(--text);
   font-family: var(--font-serif);
-  font-size: 31rpx;
+  font-size: var(--fs-title);
   font-weight: 700;
 }
 
@@ -382,253 +365,126 @@
   max-width: 520rpx;
   margin: var(--sp-2) auto var(--sp-4);
   color: var(--muted);
-  font-size: 25rpx;
+  font-size: var(--fs-caption);
   line-height: 1.55;
 }
 
-/* ---- Case List ---- */
-.case-list {
+/* ── 时间轴 ── */
+.timeline { margin-top: var(--sp-4); }
+
+.tl-month {
+  margin-top: var(--sp-4);
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mini);
+  font-weight: 600;
+  letter-spacing: 4rpx;
+}
+
+.tl-item {
   display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  margin-top: var(--sp-2);
-}
-
-/* ---- Case Card ---- */
-.case-card {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-  gap: var(--sp-2);
-  min-height: 160rpx;
-  padding: var(--sp-3) var(--sp-6) var(--sp-3) 0;
-  border-radius: var(--r-md);
-  background: var(--card);
-  border: 1rpx solid var(--line-light);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  box-sizing: border-box;
-  transition: box-shadow 0.15s;
-}
-
-.case-card:active {
-  box-shadow: var(--shadow-md);
-}
-
-/* Severity is communicated through the card tint and text, without decorative color rails. */
-.sev-low { background: var(--sev-low-bg) !important; }
-.sev-moderate { background: var(--sev-mid-bg) !important; }
-.sev-urgent { background: var(--sev-urgent-bg) !important; }
-.sev-emergency { background: var(--sev-emergency-bg) !important; }
-
-/* Keep old class-based severity for backward compat */
-.sev-low::before { background: transparent; }
-.sev-urgent::before { background: transparent; }
-.sev-emergency::before { background: transparent; }
-
-.case-card::before {
-  display: none;
-}
-
-/* ---- Date Column ---- */
-.case-date {
-  width: 112rpx;
-  padding-left: var(--sp-2);
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  flex-shrink: 0;
-  box-sizing: border-box;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 1rpx solid var(--line);
 }
 
-.date-tag {
+.tl-item:active { opacity: 0.75; }
+
+.tl-del {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  border: 2rpx solid var(--line);
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
-.date-main {
-  min-width: 72rpx;
-  padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--r-sm);
-  background: var(--surface);
-  color: var(--text);
-  text-align: center;
-  font-size: var(--fs-caption);
+.tl-del:active {
+  background: var(--brand-light);
+}
+
+.tl-del-icon {
+  font-size: 34rpx;
+  line-height: 1;
+  color: var(--ghost);
   font-weight: 700;
 }
 
-.date-line {
-  flex: 1;
-  width: 2rpx;
-  margin-top: var(--sp-2);
-  background: linear-gradient(to bottom, var(--line), transparent);
-}
-
-/* ---- Content Area ---- */
-.case-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.case-row {
+.tl-date {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-2);
-}
-
-.pet-name {
-  min-width: 0;
-  color: var(--text);
-  font-size: var(--fs-body);
-  font-weight: 650;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* ---- Confidence Pill ---- */
-.confidence-pill {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-  min-width: 96rpx;
-  padding: 4rpx 12rpx;
-  border-radius: var(--r-sm);
-  background: var(--surface);
+  width: 56rpx;
   flex-shrink: 0;
 }
 
-.confidence-bar {
-  width: 48rpx;
-  height: 6rpx;
-  border-radius: 3rpx;
-  background: var(--line-light);
-  overflow: hidden;
-}
-
-.confidence-fill {
-  height: 100%;
-  border-radius: 3rpx;
-  background: var(--brand);
-}
-
-.confidence-text {
-  color: var(--muted);
-  font-size: var(--fs-mini);
-  font-weight: 600;
-}
-
-/* ---- Disease Name ---- */
-.disease-name {
-  margin-top: 6rpx;
-  color: var(--text);
-  font-family: var(--font-serif);
+.tl-day {
   font-size: 30rpx;
   font-weight: 700;
-  line-height: 1.34;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  color: var(--text);
 }
 
-/* ---- Meta ---- */
-.case-meta {
-  margin-top: 6rpx;
-  display: flex;
-  align-items: center;
-  gap: 6rpx;
-  flex-wrap: wrap;
-}
-
-.meta-tag {
-  display: inline-block;
-  padding: 2rpx 10rpx;
-  border-radius: var(--r-sm);
-  background: var(--surface);
-  color: var(--body);
-  font-size: var(--fs-mini);
-  font-weight: 500;
-}
-
-.meta-urgency {
-  color: var(--muted);
-  font-size: var(--fs-mini);
-  font-weight: 500;
-}
-
-/* ---- Trend Tag ---- */
-.meta-trend {
-  display: inline-block;
-  padding: 2rpx 10rpx;
-  border-radius: var(--r-sm);
-  font-size: var(--fs-mini);
-  font-weight: 600;
-}
-
-.trend-improved {
-  background: rgba(99, 166, 124, 0.14);
-  color: #4E8563;
-}
-
-.trend-worsened {
-  background: rgba(217, 107, 94, 0.14);
-  color: #B25444;
-}
-
-.trend-same {
-  background: var(--surface);
-  color: var(--muted);
-}
-
-/* ---- Summary ---- */
-.case-summary {
-  margin-top: 6rpx;
-  color: var(--muted);
-  font-size: var(--fs-caption);
-  line-height: 1.5;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-}
-
-/* ---- Thumbnail ---- */
-.case-thumb {
-  width: 96rpx;
-  height: 96rpx;
-  margin: 4rpx 0;
-  border-radius: var(--r-md);
-  background: var(--surface);
-  flex-shrink: 0;
-}
-
-/* ---- Arrow ---- */
-.case-arrow {
-  position: absolute;
-  right: var(--sp-3);
-  top: 50%;
-  transform: translateY(-50%);
-  width: 28rpx;
-  height: 28rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.arrow-chevron {
+.tl-dot {
   width: 14rpx;
   height: 14rpx;
-  border-top: 3rpx solid var(--faint);
-  border-right: 3rpx solid var(--faint);
-  transform: rotate(45deg);
+  border-radius: 50%;
+  margin-top: 8rpx;
+  background: var(--sev-mid);
 }
 
-/* ---- Load More ---- */
+.tl-dot.sev-low { background: var(--sev-low); }
+.tl-dot.sev-moderate { background: var(--sev-mid); }
+.tl-dot.sev-urgent { background: var(--sev-urgent); }
+.tl-dot.sev-emergency { background: var(--sev-emergency); }
+
+.tl-body { flex: 1; min-width: 0; }
+
+.tl-disease {
+  font-family: var(--font-serif);
+  font-size: var(--fs-title);
+  font-weight: 900;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tl-meta {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: var(--muted);
+}
+
+/* 状态文字：仅着色，不再被全局 sev-* 规则误加底色块 */
+.tl-status {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.tl-status.sev-low { color: var(--sev-low); }
+.tl-status.sev-moderate { color: var(--sev-mid-text); }
+.tl-status.sev-urgent { color: var(--sev-urgent); }
+.tl-status.sev-emergency { color: var(--sev-emergency); }
+
+.tl-thumb {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: var(--r-sm);
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+.tl-thumb-empty {
+  border: 1rpx solid var(--line);
+}
+
+/* ── 加载更多 ── */
 .load-more {
   padding: var(--sp-2) 0;
 }
@@ -646,31 +502,4 @@
 
 .load-more-inner:active {
   background: var(--surface);
-}
-
-/* ---- Clear Section ---- */
-.clear-section {
-  padding: var(--sp-3) 0 var(--sp-1);
-}
-
-.clear-section .vet-btn {
-  width: 100%;
-}
-
-/* ---- Dark Mode Overrides ---- */
-@media (prefers-color-scheme: dark) {
-  .trend-improved {
-    background: rgba(124, 184, 148, 0.18);
-    color: #8FC7A6;
-  }
-
-  .trend-worsened {
-    background: rgba(222, 131, 119, 0.18);
-    color: #E39A90;
-  }
-
-  .trend-same {
-    background: var(--surface);
-    color: var(--muted);
-  }
 }

@@ -1,9 +1,13 @@
+var config = require('./utils/config')
+var imageUtil = require('./utils/image')
+
 App({
   onLaunch: function () {
     // 初始化微信云开发，用云函数代理模型请求，避免 API Key 暴露在前端包里。
+    // 环境 id 统一从 config.CLOUD_ENV 读取，避免两处硬编码失同步（BUG-A3）
     if (wx.cloud) {
       wx.cloud.init({
-        env: 'cloud1-d0gc4m26t135ca759',
+        env: config.CLOUD_ENV,
         traceUser: true
       })
     } else {
@@ -12,6 +16,15 @@ App({
 
     // 检测暗色模式
     this.initDarkMode()
+
+    // 异步回收未被任何记录/档案/草稿引用且超期的本地图片（BUG-H3）
+    setTimeout(function () {
+      try {
+        imageUtil.cleanupStaleImages()
+      } catch (e) {
+        console.warn('[VetAI] 图片清理失败', e)
+      }
+    }, 3000)
   },
 
   globalData: {
@@ -22,7 +35,9 @@ App({
 
   initDarkMode: function () {
     try {
-      var sysInfo = wx.getSystemInfoSync()
+      // wx.getSystemInfoSync 已废弃，优先用拆分后的新 API（BUG-A1）
+      var appBase = wx.getAppBaseInfo ? wx.getAppBaseInfo() : null
+      var sysInfo = appBase || wx.getSystemInfoSync()
       this.globalData.systemInfo = sysInfo
       var theme = sysInfo.theme || 'light'
       this.globalData.isDarkMode = theme === 'dark'

@@ -1,384 +1,237 @@
-/* ═══ Result Page — v2 品质重设计 ═══ */
+/* ═══════════════════════════════════════════════════════
+   Result Page — VetAI DS v5
+   结论前置 / 处方笺式墨线分层 / 匹配 chip / checklist
+   ═══════════════════════════════════════════════════════ */
 
 .report-page {
-  padding-bottom: calc(280rpx + env(safe-area-inset-bottom));
-}
-
-/* ── Shared card style ── */
-.report-sheet,
-.report-block {
-  background: var(--card);
-  border: 1rpx solid var(--line-light);
-  box-shadow: var(--shadow-sm);
-  box-sizing: border-box;
+  padding-bottom: calc(240rpx + env(safe-area-inset-bottom));
 }
 
 /* ═══════════════════════════════════════
-   1. Report Header — 白底 + 品牌色文字
+   1. 顶部结论区（结论前置）
    ═══════════════════════════════════════ */
-.report-sheet {
-  padding: 0;
-  border-radius: var(--r-lg);
-  overflow: hidden;
-}
-
-.report-header {
-  background: var(--card);
-  padding: var(--sp-4) var(--sp-4) var(--sp-3);
-  position: relative;
-  border-bottom: 2rpx dashed var(--line);
-}
-
-/* ── History Compare ── */
-.prev-compare {
+.conclusion {
   display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  margin-bottom: var(--sp-3);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  border: 1rpx solid var(--line-light);
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-top: var(--sp-1);
 }
 
-.prev-compare-label {
-  flex-shrink: 0;
-  color: var(--muted);
+.conclusion-main { flex: 1; min-width: 0; }
+
+.conclusion-meta {
+  display: block;
+  color: var(--gold);
+  font-family: var(--font-mono);
   font-size: var(--fs-mini);
-  font-weight: 600;
+  letter-spacing: 4rpx;
 }
 
-.prev-compare-body {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: baseline;
-  gap: var(--sp-1);
-}
-
-.prev-compare-disease {
-  color: var(--body);
-  font-size: var(--fs-caption);
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.prev-compare-time {
-  color: var(--faint);
-  font-size: var(--fs-mini);
-  flex-shrink: 0;
-}
-
-.prev-compare-trend {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 4rpx;
-  padding: 4rpx 12rpx;
-  border-radius: var(--r-sm);
-  font-size: var(--fs-mini);
-  font-weight: 700;
-}
-
-.trend-icon {
-  font-size: var(--fs-caption);
-}
-
-.trend-improved {
-  background: rgba(99, 166, 124, 0.14);
-  color: var(--sev-low);
-}
-
-.trend-worsened {
-  background: rgba(217, 107, 94, 0.14);
-  color: var(--sev-urgent);
-}
-
-.trend-same {
-  background: rgba(224, 150, 74, 0.14);
-  color: var(--sev-mid);
-}
-
-.report-badge-row {
-  margin-bottom: var(--sp-3);
-}
-
-.report-badge {
+.sev-chip {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-1);
-  padding: 6rpx var(--sp-2);
-  border-radius: var(--r-sm);
-  background: var(--brand-light);
-  border: 1rpx solid var(--line);
-}
-
-.report-badge-icon {
-  font-size: var(--fs-mini);
-  color: var(--brand);
-}
-
-.report-badge-text {
+  gap: 6rpx;
+  margin-top: var(--sp-2);
+  padding: 6rpx 20rpx;
+  border-radius: 999rpx;
   font-size: var(--fs-caption);
   font-weight: 700;
-  color: var(--brand);
-  letter-spacing: 1rpx;
 }
 
-.report-meta-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
+.sev-chip-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
 }
 
-.report-meta-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
-}
+.sev-chip-low { background: var(--sev-low-bg); color: var(--sev-low); }
+.sev-chip-moderate { background: var(--sev-mid-bg); color: var(--sev-mid-text); }
+.sev-chip-urgent { background: var(--sev-urgent-bg); color: var(--sev-urgent); }
+.sev-chip-emergency { background: var(--sev-emergency-bg); color: var(--sev-emergency); }
 
-.meta-label {
-  font-size: var(--fs-mini);
-  color: var(--muted);
-  font-weight: 500;
-}
-
-.meta-value {
-  font-size: var(--fs-body);
-  color: var(--text);
-  font-weight: 600;
-}
-
-.meta-no {
-  letter-spacing: 2rpx;
-}
-
-.report-meta-divider {
-  width: 1rpx;
-  height: var(--sp-5);
-  background: var(--line);
-}
-
-/* ═══════════════════════════════════════
-   2. Triage Banner — 左色块 + 右文字
-   ═══════════════════════════════════════ */
-.triage-banner {
-  display: flex;
-  gap: var(--sp-2);
-  align-items: center;
-  margin: var(--sp-3) var(--sp-4) 0;
-  padding: var(--sp-3);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  border: 1rpx solid var(--line-light);
-}
-
-.sev-low .triage-banner { background: var(--brand-light); }
-.sev-urgent .triage-banner { background: var(--vet-vet-bg); }
-.sev-emergency .triage-banner { background: var(--vet-emg-bg); }
-
-.triage-copy {
-  flex: 1;
-  min-width: 0;
-}
-
-.triage-title {
+.conclusion-title {
+  margin-top: var(--sp-2);
   color: var(--text);
   font-family: var(--font-serif);
-  font-size: var(--fs-title);
-  font-weight: 700;
+  font-size: var(--fs-display);
+  font-weight: 900;
   line-height: 1.35;
 }
 
-.triage-desc {
-  margin-top: 4rpx;
+.conclusion-note {
+  margin-top: 8rpx;
   color: var(--body);
   font-size: var(--fs-caption);
-  line-height: 1.5;
-}
-
-.triage-arrow {
-  font-size: var(--fs-title);
-  color: var(--muted);
-  font-weight: 300;
-  flex-shrink: 0;
-}
-
-/* ═══════════════════════════════════════
-   3. Primary Diagnosis
-   ═══════════════════════════════════════ */
-.primary-summary {
-  padding: var(--sp-4) var(--sp-4) var(--sp-3);
-}
-
-.summary-label {
-  color: var(--muted);
-  font-size: var(--fs-caption);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 2rpx;
-}
-
-.summary-name {
-  margin-top: var(--sp-1);
-  color: var(--text);
-  font-family: var(--font-serif);
-  font-size: 44rpx;
-  font-weight: 700;
-  line-height: 1.28;
-}
-
-.summary-desc {
-  margin-top: var(--sp-2);
-  color: var(--body);
-  font-size: var(--fs-body);
   line-height: 1.65;
 }
 
-/* ── Confidence ── */
-.confidence-row {
+.conclusion-seal {
+  flex-shrink: 0;
+  margin-top: var(--sp-4);
+}
+
+.conclusion-rule { margin: var(--sp-4) 0 0; }
+
+/* ═══════════════════════════════════════
+   2. 可能是什么
+   ═══════════════════════════════════════ */
+.dx-block { margin-top: var(--sp-4); }
+
+.dx-head {
   display: flex;
-  align-items: flex-end;
+  align-items: baseline;
   justify-content: space-between;
-  gap: var(--sp-3);
-  padding: 0 var(--sp-4) var(--sp-3);
+  gap: var(--sp-2);
 }
 
-.confidence-left {
-  flex: 1;
-  min-width: 0;
-}
-
-.confidence-label {
-  color: var(--muted);
-  font-size: var(--fs-caption);
-  font-weight: 600;
-}
-
-.confidence-note {
-  margin-top: 4rpx;
-  color: var(--faint);
-  font-size: var(--fs-mini);
-  line-height: 1.45;
-}
-
-.confidence-value {
-  color: var(--brand);
+.dx-eyebrow {
+  color: var(--gold);
   font-family: var(--font-mono);
-  font-size: var(--fs-display);
+  font-size: var(--fs-mini);
+  font-weight: 600;
+  letter-spacing: 4rpx;
+}
+
+/* 匹配度徽标：非动作元素，用淡金雾而非青柠 */
+.match-chip {
+  padding: 4rpx 18rpx;
+  border-radius: 999rpx;
+  background: var(--gold-mist);
+  border: 1rpx solid var(--gold-line);
+  color: var(--gold);
+  font-size: var(--fs-mini);
   font-weight: 700;
-  line-height: 1;
+}
+
+.dx-name {
+  margin-top: var(--sp-2);
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-size: var(--fs-title);
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.dx-sub {
+  margin-left: var(--sp-2);
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: var(--fs-caption);
+  font-weight: 400;
+}
+
+.dx-desc {
+  margin-top: 8rpx;
+  color: var(--body);
+  font-size: var(--fs-caption);
+  line-height: 1.65;
+}
+
+.dx-thumbs {
+  margin-top: var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.dx-thumb {
+  position: relative;
+  width: 152rpx;
+  height: 152rpx;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1rpx solid var(--line);
   flex-shrink: 0;
 }
 
-.confidence-na {
-  font-size: var(--fs-caption);
-  font-weight: 500;
-  color: var(--muted);
-  max-width: 220rpx;
-  text-align: right;
-  line-height: 1.35;
-}
+.dx-thumb image { width: 100%; height: 100%; }
 
-.confidence-empty .confidence-value {
-  max-width: 220rpx;
-  font-size: var(--fs-caption);
-  line-height: 1.35;
-  text-align: right;
-}
-
-.score-track {
-  height: 10rpx;
-  margin: 0 var(--sp-4) var(--sp-3);
-  border-radius: var(--r-sm);
-  background: var(--line-light);
-  overflow: hidden;
-}
-
-.score-track view {
-  height: 100%;
-  border-radius: var(--r-sm);
-  background: var(--brand);
-}
-
-.score-track.small {
-  height: 8rpx;
-  margin: var(--sp-1) 0 0;
-}
-
-/* ── 分段置信度刻度 ── */
-.score-segments {
-  margin: 0 var(--sp-4) var(--sp-3);
-}
-
-.score-seg-track {
-  position: relative;
-  display: flex;
-  height: 12rpx;
-  border-radius: 999rpx;
-  overflow: hidden;
-  gap: 4rpx;
-}
-
-.score-seg-zone {
-  height: 100%;
-  border-radius: 999rpx;
-}
-
-.zone-low {
-  flex: 0 0 40%;
-  background: var(--line);
-}
-
-.zone-mid {
-  flex: 0 0 calc(30% - 8rpx);
-  background: var(--brand-mid);
-  opacity: 0.5;
-}
-
-.zone-high {
-  flex: 1;
-  background: var(--brand);
-  opacity: 0.55;
-}
-
-.score-marker {
+.dx-thumb-lesion {
   position: absolute;
-  top: -6rpx;
-  width: 6rpx;
-  height: 24rpx;
-  border-radius: 999rpx;
-  background: var(--text);
-  transform: translateX(-50%);
-  box-shadow: 0 0 0 3rpx var(--card);
+  border: 2rpx dashed var(--accent);
+  background: rgba(201, 85, 62, 0.1);
+  border-radius: 4rpx;
+  box-sizing: border-box;
 }
 
-.score-seg-labels {
-  display: flex;
-  margin-top: var(--sp-1);
-}
-
-.score-seg-label {
+.dx-thumb-note {
   flex: 1;
-  text-align: center;
-  font-size: var(--fs-mini);
-  color: var(--faint);
-  font-weight: 600;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 22rpx;
+  line-height: 1.6;
 }
 
-.score-seg-label.on {
-  color: var(--brand);
+.dx-thumb-link { color: var(--brand); font-weight: 700; border-bottom: 2rpx solid var(--lime); padding-bottom: 2rpx; }
+
+.dx-secondary {
+  margin-top: var(--sp-3);
+  color: var(--muted);
+  font-size: 22rpx;
+  line-height: 1.6;
 }
 
 /* ═══════════════════════════════════════
-   4. Report Blocks (shared)
+   3. 接下来怎么做 checklist
+   ═══════════════════════════════════════ */
+.care-block {
+  margin-top: var(--sp-5);
+  border-top: 1rpx solid var(--line);
+  padding-top: var(--sp-3);
+}
+
+.checklist {
+  margin-top: var(--sp-2);
+  display: flex;
+  flex-direction: column;
+}
+
+.check-item {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 0;
+  border-bottom: 1rpx dashed var(--line);
+}
+
+.check-item:last-child { border-bottom: none; }
+
+.check-box {
+  width: 30rpx;
+  height: 30rpx;
+  border-radius: 6rpx;
+  flex-shrink: 0;
+  margin-top: 4rpx;
+  box-sizing: border-box;
+}
+
+.check-box-now { border: 2rpx solid var(--brand); }
+.check-box-watch { border: 2rpx solid var(--sev-mid); }
+.check-box-vet { border: 2rpx solid var(--accent); }
+
+.check-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+  font-size: var(--fs-caption);
+  line-height: 1.6;
+}
+
+.check-tag { font-weight: 900; font-family: var(--font-serif); }
+
+/* ═══════════════════════════════════════
+   4. Report Blocks（判断依据 / 参考来源）
    ═══════════════════════════════════════ */
 .report-block {
   margin-top: var(--sp-3);
   padding: var(--sp-3);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  box-sizing: border-box;
 }
 
 .block-head {
@@ -410,69 +263,6 @@
   line-height: 1.5;
 }
 
-/* ═══════════════════════════════════════
-   5. Image Evidence
-   ═══════════════════════════════════════ */
-.image-rail {
-  white-space: nowrap;
-  margin: 0 -6rpx;
-}
-
-.image-rail-inner {
-  display: inline-flex;
-  gap: var(--sp-2);
-  padding: 0 6rpx 6rpx;
-}
-
-.image-proof {
-  position: relative;
-  width: 256rpx;
-  height: 256rpx;
-  border-radius: var(--r-md);
-  overflow: hidden;
-  border: 1rpx solid var(--line);
-  background: var(--surface);
-  flex-shrink: 0;
-}
-
-.image-proof image {
-  width: 100%;
-  height: 100%;
-}
-
-.proof-lesion {
-  position: absolute;
-  border: 3rpx dashed #F5C15B;
-  border-radius: 6rpx;
-  background: rgba(245, 193, 91, 0.16);
-  box-sizing: border-box;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.proof-status {
-  position: absolute;
-  left: var(--sp-1);
-  bottom: var(--sp-1);
-  padding: 6rpx var(--sp-2);
-  border-radius: var(--r-sm);
-  background: rgba(0, 0, 0, 0.56);
-  color: #ffffff;
-  font-size: var(--fs-mini);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6rpx;
-  z-index: 3;
-}
-
-.proof-status.on {
-  background: var(--brand);
-}
-
-/* ═══════════════════════════════════════
-   6. Evidence Summary
-   ═══════════════════════════════════════ */
 .evidence-list {
   display: flex;
   flex-direction: column;
@@ -538,220 +328,123 @@
 }
 
 /* ═══════════════════════════════════════
-   7. Differential Diagnosis
+   5. 反馈（收成一行，点“没有”再展开）
    ═══════════════════════════════════════ */
-.ddx-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
+.feedback-inline {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-3);
+  border-top: 1rpx solid var(--line);
 }
 
-.ddx-item {
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  border: 1rpx solid var(--line-light);
-}
-
-.ddx-line {
+.feedback-inline-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--sp-2);
 }
 
-.ddx-rank {
-  width: var(--sp-5);
-  height: var(--sp-5);
-  border-radius: var(--r-sm);
-  background: var(--brand);
-  color: #ffffff;
-  font-size: var(--fs-mini);
-  font-weight: 700;
-  display: flex;
+.feedback-inline-q {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+}
+
+.feedback-inline-opts { display: flex; gap: var(--sp-1); }
+
+.fb-chip {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.ddx-name {
-  flex: 1;
-  color: var(--text);
-  font-size: var(--fs-body);
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.ddx-score {
-  color: var(--brand);
-  font-family: var(--font-mono);
-  font-size: var(--fs-title);
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.ddx-reason {
-  margin-top: var(--sp-1);
-  color: var(--body);
-  font-size: var(--fs-caption);
-  line-height: 1.55;
-}
-
-/* ═══════════════════════════════════════
-   8. Care Advice — 柔和三色卡片
-   ═══════════════════════════════════════ */
-.advice-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-}
-
-.advice-card {
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
-  border: 1rpx solid var(--line-light);
-}
-
-.advice-green {
-  background: var(--vet-low-bg);
-}
-
-.advice-amber {
-  background: var(--vet-mid-bg);
-}
-
-.advice-red {
-  background: var(--vet-vet-bg);
-}
-
-.advice-header {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-  margin-bottom: var(--sp-1);
-}
-
-.advice-title {
-  font-size: var(--fs-body);
-  font-weight: 700;
-  line-height: 1.4;
-}
-
-.advice-green .advice-title { color: var(--sev-low); }
-.advice-amber .advice-title { color: var(--sev-mid); }
-.advice-red .advice-title { color: var(--sev-emergency); }
-
-.advice-line {
-  color: var(--body);
-  font-size: var(--fs-body);
-  line-height: 1.65;
-  margin-top: 4rpx;
-}
-
-/* ═══════════════════════════════════════
-   9. Disclaimer
-   ═══════════════════════════════════════ */
-.disclaimer-box {
-  margin: var(--sp-3) var(--sp-4);
-  padding: var(--sp-3);
-  border-radius: var(--r-md);
-  background: var(--accent-soft);
-  border: 1rpx solid rgba(224, 122, 79, 0.25);
-  color: var(--accent);
-  font-size: var(--fs-caption);
-  font-weight: 600;
-  line-height: 1.6;
-}
-
-.disclaimer-link {
-  margin-top: var(--sp-2);
-  color: var(--brand);
-  font-size: var(--fs-caption);
-  font-weight: 600;
-}
-
-/* ═══════════════════════════════════════
-   9.5 Feedback Card
-   ═══════════════════════════════════════ */
-.feedback-card {
-  margin-top: var(--sp-3);
-}
-
-.feedback-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-}
-
-.feedback-question {
-  color: var(--body);
-  font-size: var(--fs-body);
-  font-weight: 600;
-  line-height: 1.5;
-}
-
-.feedback-options {
-  display: flex;
-  gap: var(--sp-2);
-}
-
-.feedback-options-wrap {
-  flex-wrap: wrap;
-}
-
-.feedback-chip {
-  flex: 1;
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
-  background: var(--surface);
+  min-height: 52rpx;
+  padding: 0 var(--sp-3);
+  border-radius: 999rpx;
   border: 1rpx solid var(--line);
-  color: var(--body);
-  font-size: var(--fs-body);
-  font-weight: 600;
-  text-align: center;
-  transition: all 0.15s ease;
-}
-
-.feedback-chip-small {
-  flex: 0 0 calc(50% - var(--sp-1));
-  box-sizing: border-box;
+  background: var(--card);
+  color: var(--text);
   font-size: var(--fs-caption);
+  font-weight: 600;
 }
 
-.feedback-chip:active {
-  opacity: 0.8;
-}
-
-.feedback-chip-on {
+.fb-chip.on {
   background: var(--brand);
   border-color: var(--brand);
-  color: #ffffff;
+  color: var(--on-brand);
 }
 
-.feedback-done {
+.fb-chip-sm { min-height: 48rpx; font-size: var(--fs-mini); }
+
+.fb-followup-q {
+  margin-top: var(--sp-3);
+  color: var(--body);
+  font-size: var(--fs-caption);
+}
+
+.fb-wrap {
+  margin-top: var(--sp-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.feedback-done-inline {
   display: flex;
   align-items: center;
   gap: var(--sp-1);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
-  background: var(--brand-light);
   color: var(--brand);
-  font-size: var(--fs-body);
-  font-weight: 600;
+  font-size: var(--fs-caption);
 }
 
 .feedback-done-icon {
-  font-size: var(--fs-title);
-  font-weight: 700;
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--card);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-mini);
 }
 
-.feedback-hint {
-  color: var(--muted);
-  font-size: var(--fs-caption);
-  line-height: 1.5;
+.feedback-done-text { color: var(--body); }
+
+.feedback-edit-link {
+  margin-left: auto;
+  color: var(--brand);
+  font-weight: 600;
 }
 
 /* ═══════════════════════════════════════
-   10. Bottom Actions
+   6. 页脚 / 次级操作
+   ═══════════════════════════════════════ */
+.report-footer {
+  margin-top: var(--sp-4);
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mini);
+  line-height: 1.6;
+}
+
+.report-more {
+  margin-top: var(--sp-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+}
+
+.report-more-link {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+}
+
+.report-more-sep {
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+/* ═══════════════════════════════════════
+   7. 底部操作栏 — 浮起面板（与 index/chat 底栏统一）
    ═══════════════════════════════════════ */
 .bottom-actions {
   position: fixed;
@@ -763,140 +456,33 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom));
-  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  border-radius: var(--r-md) var(--r-md) 0 0;
   border-top: 1rpx solid var(--line);
   background: var(--card);
-  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-bar);
   box-sizing: border-box;
 }
 
 .bottom-actions .vet-btn {
-  min-height: 80rpx;
-  border-radius: var(--r-md);
+  min-height: 96rpx;
+  border-radius: 999rpx;
   font-size: var(--fs-body);
   font-weight: 700;
 }
 
-.bottom-actions .vet-btn-primary {
-  background: var(--accent);
-  color: #ffffff;
-  box-shadow: var(--shadow-md);
+/* 紧急时「找医院」按钮转珊瑚红 */
+.report-page.sev-urgent .find-hospital-btn,
+.report-page.sev-emergency .find-hospital-btn {
+  color: var(--sev-emergency);
+  border-color: var(--sev-emergency);
 }
-
-.bottom-actions .vet-btn-secondary {
-  background: var(--brand-light);
-  color: var(--brand-dark);
-  border: 1rpx solid var(--line);
-}
-
-.text-action {
-  min-height: 54rpx;
-  color: var(--brand);
-  font-size: var(--fs-body);
-  font-weight: 600;
-}
-
-.text-action:active {
-  opacity: 0.7;
-}
-
-/* ═══════════════════════════════════════
-   11. Emergency FAB
-   ═══════════════════════════════════════ */
-.urgent-fab {
-  position: fixed;
-  right: var(--sp-3);
-  bottom: calc(270rpx + env(safe-area-inset-bottom));
-  z-index: 30;
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
-  background: var(--sev-emergency);
-  color: #ffffff;
-  font-size: var(--fs-body);
-  font-weight: 700;
-  box-shadow: var(--shadow-lg);
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-}
-
-.fab-icon {
-  font-size: var(--fs-body);
-}
-
-.urgent-fab:active {
-  transform: scale(0.96);
-  opacity: 0.9;
-}
-
-
 
 /* ═══════════════════════════════════════
    Dark Mode
    ═══════════════════════════════════════ */
 @media (prefers-color-scheme: dark) {
-  .report-header {
-    background: var(--card);
-    border-bottom-color: var(--line);
-  }
-
-  .triage-banner {
-    background: var(--surface);
-    border-color: var(--line);
-  }
-
-  .sev-low .triage-banner {
-    background: var(--brand-light);
-    border-color: var(--line);
-  }
-
-  .sev-urgent .triage-banner {
-    background: var(--sev-urgent-bg);
-    border-color: rgba(222, 131, 119, 0.3);
-  }
-
-  .sev-emergency .triage-banner {
-    background: var(--sev-emergency-bg);
-    border-color: rgba(192, 92, 78, 0.35);
-  }
-
-  .ddx-item {
-    background: var(--surface);
-    border-color: var(--line);
-  }
-
-  .advice-green {
-    background: var(--sev-low-bg);
-  }
-
-  .advice-amber {
-    background: var(--sev-mid-bg);
-  }
-
-  .advice-red {
-    background: var(--sev-urgent-bg);
-  }
-
   .bottom-actions {
     background: var(--card);
     border-top-color: var(--line);
-    box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.24);
   }
-
-  .bottom-actions .vet-btn-primary {
-    background: var(--accent);
-    color: #ffffff;
-    box-shadow: none;
-  }
-
-  .bottom-actions .vet-btn-secondary {
-    background: var(--brand-light);
-    color: var(--brand-mid);
-    border-color: var(--line);
-  }
-
-  .text-action {
-    color: var(--brand-mid);
-  }
-
 }

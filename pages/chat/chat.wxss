@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   Chat Page — VetAI Design System v2
+   Chat Page — VetAI DS v5
    对话式问诊页面
    ═══════════════════════════════════════════ */
 
@@ -40,7 +40,7 @@ page {
 }
 
 .profile-picker-title {
-  font-size: 34rpx;
+  font-size: var(--fs-title);
   font-weight: 700;
   font-family: var(--font-serif);
   color: var(--text);
@@ -147,7 +147,7 @@ page {
   justify-content: space-between;
   padding: var(--sp-2) var(--sp-3);
   background: var(--card);
-  border-bottom: 1rpx solid var(--line-light);
+  border-bottom: 4rpx solid var(--text);
   flex-shrink: 0;
 }
 
@@ -157,55 +157,89 @@ page {
   gap: var(--sp-2);
 }
 
+.chat-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  border: 3rpx solid var(--text);
+  background: var(--card);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.chat-back-btn:active {
+  background: var(--brand-light);
+}
+
+.chat-back-arrow {
+  font-size: 44rpx;
+  line-height: 1;
+  color: var(--text);
+  margin-top: -4rpx;
+  font-weight: 700;
+}
+
 .chat-doctor-avatar {
   width: 72rpx;
   height: 72rpx;
   border-radius: 50%;
   background: var(--brand);
-  color: #FFFFFF;
+  color: var(--lime);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
 }
 
 .chat-header-title {
   color: var(--text);
   font-family: var(--font-serif);
-  font-size: 30rpx;
-  font-weight: 700;
+  font-size: var(--fs-title);
+  font-weight: 900;
   line-height: 1.3;
 }
 
 .chat-header-sub {
-  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  margin-top: 2rpx;
+  color: var(--gold);
+  font-family: var(--font-mono);
   font-size: var(--fs-mini);
+  letter-spacing: 2rpx;
   line-height: 1.4;
+}
+
+.chat-status-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: var(--lime);
+  border: 1rpx solid rgba(17, 59, 49, 0.35);
+  flex-shrink: 0;
 }
 
 .chat-new-btn {
   display: flex;
   align-items: center;
-  gap: 6rpx;
-  padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--r-sm);
-  background: var(--brand-light);
   flex-shrink: 0;
+  padding: var(--sp-1) 0;
 }
 
-.chat-new-btn:active { opacity: 0.8; }
-
-.chat-new-icon {
-  color: var(--brand);
-  font-size: var(--fs-caption);
-  font-weight: 700;
-}
+.chat-new-btn:active { opacity: 0.6; }
 
 .chat-new-text {
   color: var(--brand);
-  font-size: var(--fs-mini);
-  font-weight: 600;
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  border-bottom: 2rpx solid var(--lime);
+  padding-bottom: 2rpx;
+  line-height: 1.2;
 }
 
 /* ── 恢复草稿提示 ───────────────────────────── */
@@ -240,11 +274,12 @@ page {
   height: 64rpx;
   border-radius: 50%;
   background: var(--brand);
-  color: #FFFFFF;
+  color: var(--lime);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .msg-avatar .vic-cross {
@@ -268,22 +303,20 @@ page {
 /* ── 消息气泡 ─────────────────────────────────── */
 .msg-bubble {
   padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
+  border-radius: 28rpx;
   word-break: break-all;
   box-sizing: border-box;
 }
 
 .msg-bubble-doctor {
   background: var(--card);
-  border: 1rpx solid var(--line-light);
-  border-top-left-radius: var(--r-sm);
-  box-shadow: var(--shadow-sm);
+  border: 2rpx solid var(--brand);
+  border-top-left-radius: 8rpx;
 }
 
 .msg-bubble-user {
   background: var(--brand);
-  border-top-right-radius: var(--r-sm);
-  box-shadow: var(--shadow-sm);
+  border-top-right-radius: 8rpx;
 }
 
 .msg-text {
@@ -293,7 +326,7 @@ page {
 }
 
 .msg-bubble-doctor .msg-text { color: var(--text); }
-.msg-bubble-user .msg-text { color: #ffffff; }
+.msg-bubble-user .msg-text { color: var(--on-brand); }
 
 /* ── 图片消息 ─────────────────────────────────── */
 .msg-images {
@@ -316,22 +349,45 @@ page {
   border-radius: var(--r-md);
 }
 
-/* ── 时间 ─────────────────────────────────────── */
-.msg-time {
-  margin-top: 6rpx;
+/* ── 分组时间戳（居中） ───────────────────────── */
+.msg-time-divider {
+  text-align: center;
+  margin: var(--sp-2) 0;
   color: var(--faint);
+  font-family: var(--font-mono);
   font-size: var(--fs-mini);
-  font-weight: 600;
+  letter-spacing: 4rpx;
+}
+
+/* ── 问诊进度：非动作提示，用淡金雾而非青柠 ────── */
+.chat-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  margin: 0 0 var(--sp-2) 76rpx;
+  padding: 14rpx 22rpx;
+  border-radius: 20rpx;
+  background: var(--gold-mist);
+  border: 1rpx dashed var(--gold-line);
+  color: var(--body);
+  font-size: var(--fs-mini);
+  line-height: 1.6;
+}
+
+.chat-progress-dot {
+  display: none;
 }
 
 /* ── 底部锚点 ─────────────────────────────────── */
 .msg-bottom-anchor { height: 1rpx; }
 
-/* ── 底部输入区 ─────────────────────────────────── */
+/* ── 底部输入区（浮起面板，与 index/result 底栏统一） ── */
 .chat-input-area {
   flex-shrink: 0;
   background: var(--card);
   border-top: 1rpx solid var(--line-light);
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  box-shadow: var(--shadow-bar);
   padding: var(--sp-2) var(--sp-3) calc(var(--sp-2) + env(safe-area-inset-bottom));
 }
 
@@ -352,20 +408,31 @@ page {
   align-items: center;
   min-height: 60rpx;
   padding: 0 var(--sp-3);
-  border-radius: var(--r-sm);
-  background: var(--brand-light);
-  border: 1rpx solid var(--line);
+  border-radius: 999rpx;
+  background: var(--card);
+  border: 2rpx solid var(--brand);
   color: var(--brand);
   font-size: var(--fs-caption);
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .qr-chip:active {
   background: var(--brand);
-  color: #ffffff;
+  color: var(--on-brand);
   border-color: var(--brand);
+}
+
+.qr-chip.qr-skip {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.qr-chip.qr-skip:active {
+  background: var(--surface);
+  color: var(--body);
+  border-color: var(--line);
 }
 
 /* ── 文本输入 ─────────────────────────────────── */
@@ -379,8 +446,9 @@ page {
   width: 76rpx;
   height: 76rpx;
   border-radius: 50%;
-  background: var(--surface);
-  border: 1rpx solid var(--line);
+  background: var(--card);
+  border: 2rpx solid var(--brand);
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -394,7 +462,7 @@ page {
 }
 
 .input-plus-icon {
-  color: var(--text);
+  color: var(--brand);
   font-size: 44rpx;
   font-weight: 400;
   line-height: 1;
@@ -404,24 +472,24 @@ page {
   flex: 1;
   min-height: 76rpx;
   padding: 0 var(--sp-3);
-  border-radius: var(--r-md);
+  border-radius: 999rpx;
   background: var(--surface);
-  border: 1rpx solid var(--line);
+  border: 1rpx solid transparent;
   font-size: var(--fs-body);
   box-sizing: border-box;
 }
 
 .chat-input:focus {
   border-color: var(--brand);
-  background: var(--card);
 }
 
+/* 发送按钮常态即青柠实心（动作色只给可点的动作） */
 .send-btn {
   width: 76rpx;
   height: 76rpx;
   border-radius: 50%;
-  background: var(--surface);
-  border: 1rpx solid var(--line);
+  background: var(--lime);
+  border: 1rpx solid var(--lime);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -429,17 +497,11 @@ page {
   transition: all 200ms ease;
 }
 
-.send-btn-active {
-  background: var(--brand);
-  border-color: var(--brand);
-}
-
-.send-btn-active .send-icon { color: #ffffff; }
-.send-btn:active { transform: scale(0.94); }
+.send-btn:active { transform: scale(0.94); opacity: 0.9; }
 
 .send-icon {
-  color: var(--faint);
-  font-size: var(--fs-body);
+  color: var(--on-lime);
+  font-size: 30rpx;
   font-weight: 700;
   line-height: 1;
 }
@@ -505,7 +567,7 @@ page {
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(91, 130, 232, 0.85);
+  background: rgba(17, 59, 49, 0.85);
   color: #ffffff;
   font-size: 20rpx;
   font-weight: 600;
@@ -547,10 +609,9 @@ page {
   padding: var(--sp-2) 0;
   border-radius: var(--r-md);
   background: var(--brand);
-  color: #ffffff;
+  color: var(--on-brand);
   font-size: var(--fs-body);
-  font-weight: 650;
-  box-shadow: var(--shadow-sm);
+  font-weight: 700;
 }
 
 .photo-preview-btn-primary:active,

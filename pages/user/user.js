@@ -1,5 +1,7 @@
 var storage = require('../../utils/storage')
 var analytics = require('../../utils/analytics')
+var chatDoctor = require('../../utils/chatDoctor')
+var imageUtil = require('../../utils/image')
 
 var ISSUE_LABELS = {
   diagnosis_wrong: '诊断方向不准',
@@ -76,6 +78,9 @@ Page({
   },
 
   onShow: function () {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 2 })
+    }
     if (this._loaded) this.loadUserData()
     var app = getApp()
     this.setData({ isDarkMode: app.isDarkMode() })
@@ -136,6 +141,80 @@ Page({
     this.switchSpace()
   },
 
+  // ── 空间资料编辑（BUG-C9：建好空间后改名/换头像）──────────────
+
+  // 更换本机空间头像：选图 → 压缩落盘（本地文件，不占 storage 配额）→ 更新
+  onEditAvatar: function () {
+    var self = this
+    if (!storage.getCurrentUser()) {
+      wx.showToast({ title: '请先新建本机空间', icon: 'none' })
+      return
+    }
+    wx.chooseImage({
+      count: 1,
+      sizeType: ['compressed'], sourceType: ['album', 'camera'],
+      success: function (res) {
+        var tempPath = (res.tempFilePaths || [])[0]
+        if (!tempPath) return
+        wx.showLoading({ title: '处理中', mask: true })
+        imageUtil.prepareImages([tempPath], {
+          existingCount: 0, maxCount: 1,
+          pageContext: self, savePermanent: true, checkQuality: false
+        }).then(function (batch) {
+          wx.hideLoading()
+          if (!batch || !batch.length) {
+            wx.showToast({ title: '图片处理失败，请重试', icon: 'none' })
+            return
+          }
+          var item = batch[0]
+          storage.updateUser({ avatarUrl: item.displayPath || item.base64 || '' })
+          self.loadUserData()
+          wx.showToast({ title: '已更新头像', icon: 'success' })
+        }).catch(function () {
+          wx.hideLoading()
+          wx.showToast({ title: '图片处理失败，请重试', icon: 'none' })
+        })
+      }
+    })
+  },
+
+  // 修改本机空间昵称：空间 ID 不变，记录数据不受影响
+  onRenameSpace: function () {
+    var self = this
+    var user = storage.getCurrentUser()
+    if (!user) {
+      wx.showToast({ title: '请先新建本机空间', icon: 'none' })
+      return
+    }
+    wx.showModal({
+      title: '修改空间昵称',
+      content: '输入新的昵称（仅本机显示，不影响已有记录数据）',
+      editable: true,
+      placeholderText: user.nickName || '本机空间',
+      confirmText: '保存',
+      success: function (res) {
+        if (!res.confirm) return
+        var nickName = (res.content || '').trim()
+        if (!nickName) {
+          wx.showToast({ title: '昵称不能为空', icon: 'none' })
+          return
+        }
+        if (nickName === user.nickName) return
+        // 重名检查（排除自己），延续 BUG-K2 的空间可区分原则
+        var dup = storage.getKnownUsers().filter(function (u) {
+          return u.id !== user.id && (u.nickName || '') === nickName
+        })[0]
+        if (dup) {
+          wx.showToast({ title: '该昵称已被其他空间使用', icon: 'none' })
+          return
+        }
+        storage.updateUser({ nickName: nickName })
+        self.loadUserData()
+        wx.showToast({ title: '已更新', icon: 'success' })
+      }
+    })
+  },
+
   showNicknameInput: function () {
     var self = this
     wx.showModal({
@@ -147,6 +226,29 @@ Page({
       success: function (res) {
         if (!res.confirm) return
         var nickName = (res.content || '').trim() || '本机用户'
+        // 同名空间处理（BUG-K2）：已存在同名时提供“切换到已有”选项，
+        // 避免 knownUsers 里出现无法区分的重名条目
+        var dup = storage.getKnownUsers().filter(function (u) {
+          return (u.nickName || '') === nickName
+        })[0]
+        if (dup) {
+          wx.showModal({
+            title: '已有同名空间',
+            content: '本机已存在名为“' + nickName + '”的空间。切换到它，还是新建一个？',
+            confirmText: '切换到它',
+            cancelText: '新建',
+            success: function (choice) {
+              if (choice.confirm) {
+                storage.loginUser({ nickName: nickName, id: dup.id, avatarUrl: dup.avatarUrl || '' })
+              } else {
+                storage.loginUser({ nickName: nickName + '(新)' })
+              }
+              self.loadUserData()
+              wx.showToast({ title: '已保存', icon: 'success' })
+            }
+          })
+          return
+        }
         storage.loginUser({ nickName: nickName })
         self.loadUserData()
         wx.showToast({ title: '已保存', icon: 'success' })
@@ -189,15 +291,66 @@ Page({
     })
   },
 
+  // 承接原档案页的「清空所有记录」，收进「数据与隐私」
+  clearRecords: function () {
+    var self = this
+    wx.showModal({
+      title: '清空记录',
+      content: '将删除当前本机空间下的全部问诊记录，宠物档案保留。',
+      confirmText: '清空',
+      confirmColor: '#c76f5a',
+      success: function (res) {
+        if (!res.confirm) return
+        storage.clearHistory()
+        self.loadUserData()
+        wx.showToast({ title: '已清空记录', icon: 'none' })
+      }
+    })
+  },
+
+  // 底部紧急提示条：查找附近宠物医院（与 result 页等价实现）
+  findHospital: function () {
+    wx.chooseLocation({
+      success: function (res) {
+        if (res && res.latitude) {
+          wx.openLocation({ latitude: res.latitude, longitude: res.longitude, name: res.name || '宠物医院', address: res.address || '', scale: 15 })
+        }
+      },
+      fail: function () {
+        wx.getLocation({
+          type: 'gcj02',
+          success: function (loc) {
+            wx.openLocation({ latitude: loc.latitude, longitude: loc.longitude, name: '附近宠物医院', scale: 14 })
+          },
+          fail: function () {
+            wx.showToast({ title: '需要定位权限才能查找医院', icon: 'none' })
+          }
+        })
+      }
+    })
+  },
+
   exportData: function () {
-    var records = storage.getHistory()
+    var records = storage.getHistory().map(function (r) {
+      // rawResponse 体积大且属调试数据，导出时剔除，降低剪贴板截断风险（BUG-K6）
+      var copy = Object.assign({}, r)
+      delete copy.rawResponse
+      return copy
+    })
     var profiles = storage.getPetProfiles()
     var data = JSON.stringify({ profiles: profiles, records: records, exportedAt: new Date().toISOString() }, null, 2)
+    if (data.length > 800 * 1024) {
+      // 进一步瘦身：去掉缩进
+      data = JSON.stringify({ profiles: profiles, records: records, exportedAt: new Date().toISOString() })
+    }
     wx.setClipboardData({
       data: data,
       success: function () {
         wx.showToast({ title: '已复制到剪贴板', icon: 'success' })
         analytics.track('export', { records: records.length, profiles: profiles.length })
+      },
+      fail: function () {
+        wx.showToast({ title: '导出失败，数据量过大', icon: 'none' })
       }
     })
   },
@@ -206,14 +359,15 @@ Page({
     var self = this
     wx.showModal({
       title: '清除数据',
-      content: '将删除当前本机空间的全部记录、档案和反馈数据。此操作不可恢复。',
+      content: '将删除当前本机空间的全部记录、档案、聊天草稿和反馈数据。此操作不可恢复。',
       confirmText: '清除',
       confirmColor: '#b3261e',
       success: function (res) {
         if (!res.confirm) return
         storage.clearHistory()
-        var profiles = storage.getPetProfiles()
-        profiles.forEach(function (p) { storage.deletePetProfile(p.id) })
+        // 整 key 移除，避免逐个删除的 O(n²) 读写；同时清掉聊天草稿（BUG-K5）
+        storage.clearProfiles()
+        chatDoctor.clearDraft()
         analytics.clearEvents()
         self.loadUserData()
         wx.showToast({ title: '已清除', icon: 'success' })
@@ -222,7 +376,7 @@ Page({
   },
 
   goProfiles: function () {
-    wx.switchTab({ url: '/pages/profile/profile' })
+    wx.navigateTo({ url: '/pages/profile/profile' })
   },
 
   goRecords: function () {

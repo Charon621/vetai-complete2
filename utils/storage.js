@@ -1,11 +1,14 @@
+var config = require('./config')
+
 var RECORDS_KEY = 'pet_diagnosis_history'
 var PROFILES_KEY = 'pet_profiles'
 var ACTIVE_PROFILE_KEY = 'active_pet_profile_id'
 var USER_KEY = 'vetai_current_user'
 var KNOWN_USERS_KEY = 'vetai_known_users'
 
-var MAX_RECORDS = 80
-var MAX_PROFILES = 20
+// 条数上限统一收口到 utils/config.js，兜底值与原定义保持一致
+var MAX_RECORDS = config.MAX_RECORDS || 80
+var MAX_PROFILES = config.MAX_PROFILES || 20
 
 function safeGet(key, fallback) {
   try {
@@ -126,6 +129,34 @@ function logoutUser() {
   wx.removeStorageSync(USER_KEY)
 }
 
+// 更新当前本机空间用户的昵称/头像（BUG-C9：此前建好空间后无法改名换头像）。
+// 空间 ID 保持不变，记录/档案数据不受影响；knownUsers 列表同步更新。
+function updateUser(profile) {
+  profile = profile || {}
+  var user = getCurrentUser()
+  if (!user) return null
+  var next = {}
+  for (var k in user) {
+    if (Object.prototype.hasOwnProperty.call(user, k)) next[k] = user[k]
+  }
+  if (profile.nickName !== undefined) {
+    next.nickName = String(profile.nickName).trim() || user.nickName
+  }
+  if (profile.avatarUrl !== undefined) next.avatarUrl = profile.avatarUrl
+  next.loginAt = nowText()
+  var knownUsers = getKnownUsers()
+  for (var i = 0; i < knownUsers.length; i++) {
+    if (knownUsers[i].id === next.id) {
+      knownUsers[i].nickName = next.nickName
+      knownUsers[i].avatarUrl = next.avatarUrl
+      break
+    }
+  }
+  saveKnownUsers(knownUsers)
+  safeSet(USER_KEY, next)
+  return next
+}
+
 // ============================================================
 // 问诊记录
 // ============================================================
@@ -155,6 +186,10 @@ function addRecord(data) {
   for (var i = 0; i < keys.length; i++) {
     record[keys[i]] = data[keys[i]]
   }
+  // 系统字段不允许被调用方数据覆盖（BUG-K4）
+  record.id = record.id && data.id === undefined ? record.id : createId()
+  record.ownerId = getUserScope()
+  record.createdAt = createdAt
 
   records.unshift(record)
   // 超出上限丢弃最旧的
@@ -184,6 +219,14 @@ function deleteRecord(id) {
 
 function clearHistory() {
   wx.removeStorageSync(scopedKey(RECORDS_KEY))
+}
+
+/**
+ * 清空当前空间全部档案（一次性移除 key，避免逐个删除的 O(n²) 读写，BUG-K5）
+ */
+function clearProfiles() {
+  wx.removeStorageSync(scopedKey(PROFILES_KEY))
+  wx.removeStorageSync(scopedKey(ACTIVE_PROFILE_KEY))
 }
 
 // ============================================================
@@ -325,6 +368,8 @@ module.exports = {
   getHistory: getHistory,
   deleteRecord: deleteRecord,
   clearHistory: clearHistory,
+  updateUser: updateUser,
+  clearProfiles: clearProfiles,
   addFeedback: addFeedback,
   getRecordsWithFeedback: getRecordsWithFeedback,
   getPetProfiles: getPetProfiles,

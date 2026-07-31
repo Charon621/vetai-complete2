@@ -22,7 +22,6 @@ Component({
   data: {
     mode: 'freehand',
     modeLabel: '自由圈选',
-    pathPoints: [],
     pointCount: 0,
     canSave: false,
     stageRect: null,
@@ -40,6 +39,7 @@ Component({
     detached: function () {
       this._canvasData = null
       this._isDrawing = false
+      this._points = []
     }
   },
 
@@ -62,10 +62,11 @@ Component({
       var init = function (info) {
         self._canvasData = null
         self._isDrawing = false
+        // 路径点只存实例变量，不进 setData（高频 touchmove 下避免大数组传输，BUG-I3）
+        self._points = points
         self.setData({
           mode: mode,
           modeLabel: mode === 'rectangle' ? '矩形框选' : '自由圈选',
-          pathPoints: points,
           pointCount: points.length,
           canSave: self._canSave(points, mode),
           stageRect: null,
@@ -113,7 +114,7 @@ Component({
     _draw: function (points) {
       var rect = this.data.stageRect
       if (rect && this._canvasData) {
-        lesionUtil.drawPath(this._canvasData, points || this.data.pathPoints, rect.width, rect.height, this.data.mode, this.data.imageRect)
+        lesionUtil.drawPath(this._canvasData, points || this._points || [], rect.width, rect.height, this.data.mode, this.data.imageRect)
       }
     },
 
@@ -126,12 +127,12 @@ Component({
         if (!point) return
         self._isDrawing = true
         lesionUtil.vibrate('light')
+        self._points = [point]
         self.setData({
-          pathPoints: [point],
           pointCount: 1,
           canSave: false
         }, function () {
-          self._draw([point])
+          self._draw(self._points)
         })
       }
       if (self.data.stageRect) begin(self.data.stageRect)
@@ -145,21 +146,29 @@ Component({
       var point = lesionUtil.getPoint(touch, self.data.stageRect, self.data.imageRect)
       if (!point) return
 
-      var points = self.data.pathPoints
+      var points = self._points || []
       var last = points[points.length - 1]
       if (last && Math.abs(last.x - point.x) < 0.8 && Math.abs(last.y - point.y) < 0.8) return
-      var nextPoints = points.concat(point).slice(-260)
+      self._points = points.concat(point).slice(-260)
+
+      // 重绘和 setData 都按 16ms 节流，降低低端机 touchmove 卡顿（BUG-I3）
+      var now = Date.now()
+      if (self._lastDrawAt && now - self._lastDrawAt < 16) return
+      self._lastDrawAt = now
       self.setData({
-        pathPoints: nextPoints,
-        pointCount: nextPoints.length,
-        canSave: self._canSave(nextPoints, self.data.mode)
-      }, function () {
-        self._draw(nextPoints)
+        pointCount: self._points.length,
+        canSave: self._canSave(self._points, self.data.mode)
       })
+      self._draw(self._points)
     },
 
     onTouchEnd: function () {
       this._isDrawing = false
+      // 补齐节流期间可能漏掉的最后一帧状态
+      this.setData({
+        pointCount: (this._points || []).length,
+        canSave: this._canSave(this._points || [], this.data.mode)
+      })
       this._draw()
     },
 
@@ -171,10 +180,10 @@ Component({
       var mode = e.currentTarget.dataset.mode || 'freehand'
       var self = this
       self._isDrawing = false
+      self._points = []
       self.setData({
         mode: mode,
         modeLabel: mode === 'rectangle' ? '矩形框选' : '自由圈选',
-        pathPoints: [],
         pointCount: 0,
         canSave: false
       }, function () {
@@ -185,8 +194,8 @@ Component({
     onResetTap: function () {
       var self = this
       self._isDrawing = false
+      self._points = []
       self.setData({
-        pathPoints: [],
         pointCount: 0,
         canSave: false
       }, function () {
@@ -195,7 +204,7 @@ Component({
     },
 
     onSaveTap: function () {
-      var points = this.data.pathPoints || []
+      var points = this._points || []
       if (!this._canSave(points, this.data.mode)) {
         wx.showToast({ title: '请用手指圈出患处', icon: 'none' })
         return
@@ -219,8 +228,8 @@ Component({
     _teardown: function () {
       this._canvasData = null
       this._isDrawing = false
+      this._points = []
       this.setData({
-        pathPoints: [],
         pointCount: 0,
         canSave: false,
         stageRect: null,

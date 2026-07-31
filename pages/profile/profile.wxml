@@ -1,5 +1,9 @@
 <view class="vet-page profile-page">
   <!-- 页头：简洁专业 -->
+  <view class="profile-back" bindtap="goBack">
+    <view class="profile-back-arrow"></view>
+    <text>返回</text>
+  </view>
   <view class="profile-head">
     <view class="profile-head-left">
       <view class="profile-title">宠物档案</view>

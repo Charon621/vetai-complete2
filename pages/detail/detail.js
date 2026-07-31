@@ -1,5 +1,6 @@
 var storage = require('../../utils/storage')
 var analytics = require('../../utils/analytics')
+var textUtil = require('../../utils/text')
 
 var PAGE_SIZE = 20
 
@@ -8,6 +9,26 @@ var URGENCY_TEXT = {
   moderate: '建议关注',
   urgent: '建议就医',
   emergency: '紧急就医'
+}
+
+function confidenceLevelText(percent) {
+  if (percent === null) return ''
+  if (percent >= 70) return '匹配较高'
+  if (percent >= 40) return '匹配中等'
+  return '匹配较低'
+}
+
+function getMonthLabel(record) {
+  var t = getRecordTime(record)
+  if (!t) return '更早'
+  var d = new Date(t)
+  return d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月'
+}
+
+function getDayNum(record) {
+  var t = getRecordTime(record)
+  if (!t) return '--'
+  return ('0' + new Date(t).getDate()).slice(-2)
 }
 
 function cleanText(value) {
@@ -19,16 +40,6 @@ function isUsableImagePath(path) {
   if (!path || typeof path !== 'string') return false
   if (path.indexOf('http://127.0.0.1') === 0 && path.indexOf('/__tmp__/') >= 0) return false
   return true
-}
-
-function normalizePercent(value) {
-  if (typeof value === 'string') {
-    var parsed = parseFloat(value.replace('%', '').trim())
-    if (!isNaN(parsed)) value = parsed
-  }
-  if (typeof value !== 'number' || isNaN(value)) return null
-  if (value > 0 && value <= 1) return Math.round(value * 100)
-  return Math.max(0, Math.min(100, Math.round(value)))
 }
 
 function getDateShort(record) {
@@ -72,16 +83,63 @@ Page({
     showingCount: 0,
     monthlyCount: 0,
     attentionCount: 0,
-    recentText: '--'
+    recentText: '--',
+    monthGroups: [],
+    pets: [],
+    activeProfileId: '',
+    searchOpen: false
   },
 
   onLoad: function () {
+    this.loadPets()
     this.loadRecords()
   },
 
   onShow: function () {
-    if (this._loaded) this.loadRecords()
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 1 })
+    }
+    if (this._loaded) {
+      this.loadPets()
+      this.loadRecords()
+    }
     this._loaded = true
+  },
+
+  loadPets: function () {
+    var profiles = storage.getPetProfiles() || []
+    var activeId = storage.getActiveProfileId ? storage.getActiveProfileId() : ''
+    this.setData({
+      pets: profiles.map(function (p) {
+        return {
+          id: p.id,
+          petName: p.petName || '未命名',
+          initial: (p.petName || '宠').charAt(0),
+          meta: [p.petTypeLabel, p.breed, p.ageLabel].filter(Boolean).join(' · ')
+        }
+      }),
+      activeProfileId: activeId
+    })
+  },
+
+  switchPet: function (e) {
+    var id = e.currentTarget.dataset.id
+    if (!id || id === this.data.activeProfileId) {
+      // 点当前宠物 → 去编辑档案
+      wx.navigateTo({ url: '/pages/profile/profile' })
+      return
+    }
+    if (storage.setActiveProfileId) storage.setActiveProfileId(id)
+    this.setData({ activeProfileId: id })
+    wx.showToast({ title: '已切换宠物', icon: 'none' })
+  },
+
+  goProfiles: function () {
+    wx.navigateTo({ url: '/pages/profile/profile' })
+  },
+
+  toggleSearch: function () {
+    this.setData({ searchOpen: !this.data.searchOpen })
   },
 
   getRecordTime: getRecordTime,
@@ -151,7 +209,10 @@ Page({
     var i, r, key
     for (i = 0; i < records.length; i++) {
       r = records[i]
-      key = (r.petName || '') + '||' + (r.bodyPartLabel || '')
+      // 只对“同一档案同一部位”做趋势；临时问诊没有档案归属，
+      // 不同宠物的记录会因同名“临时问诊”被串成假趋势，必须排除（BUG-J4）
+      if (!r.profileId || r.isTemporary) continue
+      key = r.profileId + '||' + (r.bodyPartLabel || '')
       if (!groups[key]) groups[key] = []
       groups[key].push(r)
     }
@@ -205,10 +266,16 @@ Page({
     })
 
     return source.map(function (r) {
-      var confidence = normalizePercent(r.confidence)
-      if (confidence === null) confidence = normalizePercent(r.primaryDiagnosisProbability)
+      var confidence = textUtil.normalizePercent(r.confidence, null)
+      if (confidence === null) confidence = textUtil.normalizePercent(r.primaryDiagnosisProbability, null)
       var disease = cleanText(r.disease || r.primaryDiagnosis || r.lesionNameCn || '')
       var summary = cleanText(r.possibleMeaning || r.explanation || r.observations || r.careSuggestion || '')
+      var matchText = confidenceLevelText(confidence)
+      var metaLine = [
+        cleanText(r.bodyPartLabel),
+        r.source === 'chat' ? '对话问诊' : '拍照初筛',
+        matchText
+      ].filter(Boolean).join(' · ')
       return Object.assign({}, r, {
         petName: cleanText(r.petName) || '临时问诊',
         disease: disease,
@@ -216,12 +283,32 @@ Page({
         bodyPartLabel: cleanText(r.bodyPartLabel),
         modelProviderLabel: cleanText(r.modelProviderLabel),
         dateShort: getDateShort(r),
+        dayNum: getDayNum(r),
+        monthLabel: getMonthLabel(r),
+        sourceLabel: r.source === 'chat' ? '对话问诊' : '拍照初筛',
+        metaLine: metaLine,
         urgencyText: URGENCY_TEXT[r.urgency] || '建议关注',
         confidenceText: confidence === null ? '' : confidence + '%',
+        matchText: matchText,
         summaryText: summary || '点击查看完整初筛报告',
         trendTag: trendMap[r.id] || null
       })
     })
+  },
+
+  // 时间轴：把已分页的记录按月份分组
+  groupByMonth: function (list) {
+    var groups = []
+    var map = {}
+    list.forEach(function (it) {
+      var key = it.monthLabel || '更早'
+      if (!map[key]) {
+        map[key] = { monthLabel: key, items: [] }
+        groups.push(map[key])
+      }
+      map[key].items.push(it)
+    })
+    return groups
   },
 
   sortAndDisplay: function () {
@@ -230,6 +317,7 @@ Page({
     var displayRecords = source.slice(0, PAGE_SIZE)
     this.setData({
       displayRecords: displayRecords,
+      monthGroups: this.groupByMonth(displayRecords),
       totalCount: totalCount,
       showingCount: displayRecords.length,
       hasMore: totalCount > PAGE_SIZE
@@ -244,6 +332,7 @@ Page({
     this.setData({
       currentPage: currentPage,
       displayRecords: displayRecords,
+      monthGroups: this.groupByMonth(displayRecords),
       showingCount: displayRecords.length,
       hasMore: end < source.length
     })
@@ -259,6 +348,25 @@ Page({
     } else {
       wx.navigateTo({ url: '/pages/result/result?id=' + id })
     }
+  },
+
+  // 单条删除记录（BUG-C8：此前只有清空全部，无法删除单条）
+  onDeleteRecord: function (e) {
+    var self = this
+    var id = e.currentTarget.dataset.id
+    if (!id) return
+    wx.showModal({
+      title: '删除记录',
+      content: '确定删除这条问诊记录吗？删除后不可恢复。',
+      confirmText: '删除',
+      confirmColor: '#c76f5a',
+      success: function (res) {
+        if (!res.confirm) return
+        storage.deleteRecord(id)
+        self.loadRecords()
+        wx.showToast({ title: '已删除', icon: 'success' })
+      }
+    })
   },
 
   clearRecords: function () {

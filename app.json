@@ -16,46 +16,29 @@
   "window": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "VetAI",
-    "navigationBarBackgroundColor": "#F8FAFC",
-    "backgroundColor": "#F8FAFC",
+    "navigationBarBackgroundColor": "#FBFAF6",
+    "backgroundColor": "#FBFAF6",
     "enablePullDownRefresh": false,
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
-    "color": "#94A3B8",
-    "selectedColor": "#5B82E8",
-    "backgroundColor": "#ffffff",
+    "custom": true,
+    "color": "#9AA69F",
+    "selectedColor": "#0F1F1A",
+    "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "快速初筛",
-        "iconPath": "images/tab-home.png",
-        "selectedIconPath": "images/tab-home-active.png"
-      },
-      {
-        "pagePath": "pages/chat/chat",
-        "text": "医生对话",
-        "iconPath": "images/tab-chat.png",
-        "selectedIconPath": "images/tab-chat-active.png"
+        "text": "检查"
       },
       {
         "pagePath": "pages/detail/detail",
-        "text": "记录",
-        "iconPath": "images/tab-history.png",
-        "selectedIconPath": "images/tab-history-active.png"
-      },
-      {
-        "pagePath": "pages/profile/profile",
-        "text": "档案",
-        "iconPath": "images/tab-profile.png",
-        "selectedIconPath": "images/tab-profile-active.png"
+        "text": "档案"
       },
       {
         "pagePath": "pages/user/user",
-        "text": "我的",
-        "iconPath": "images/tab-user.png",
-        "selectedIconPath": "images/tab-user-active.png"
+        "text": "我的"
       }
     ]
   },
@@ -69,9 +52,9 @@
     }
   },
   "requiredPrivateInfos": [
-    "getLocation"
+    "getLocation",
+    "chooseLocation"
   ],
-  "darkmode": true,
   "style": "v2",
   "lazyCodeLoading": "requiredComponents",
   "sitemapLocation": "sitemap.json"

@@ -25,6 +25,46 @@
       {
         "value": "yolo26n.pt",
         "type": "file"
+      },
+      {
+        "value": "evaluation",
+        "type": "folder"
+      },
+      {
+        "value": "tests",
+        "type": "folder"
+      },
+      {
+        "value": "tools",
+        "type": "folder"
+      },
+      {
+        "value": "docs",
+        "type": "folder"
+      },
+      {
+        "value": "node_modules",
+        "type": "folder"
+      },
+      {
+        "value": ".git",
+        "type": "folder"
+      },
+      {
+        "value": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "value": "test_kb.js",
+        "type": "file"
+      },
+      {
+        "value": "*.py",
+        "type": "suffix"
+      },
+      {
+        "value": "*.md",
+        "type": "suffix"
       }
     ],
     "include": []

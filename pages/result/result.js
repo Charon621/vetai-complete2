@@ -13,6 +13,30 @@ var URGENCY_MAP = {
 
 var SCORE_NOTE = '候选项数值是系统独立可能性评分，不是相加为 100% 的真实概率，也不代表医学确诊概率。'
 
+// 结论前置：把风险等级映射为「怎么办」的行动句 + 一句人话（设计稿 2c）
+var URGENCY_ACTION = {
+  low: { chip: '低风险观察', conclusion: '暂时可以在家观察', note: '目前不着急，做好记录和日常护理即可。' },
+  moderate: { chip: '中度关注', conclusion: '建议尽快复查', note: '症状有持续性，不用连夜急诊，但别拖太久。' },
+  urgent: { chip: '需要就诊', conclusion: '建议 1–3 天内带TA就诊', note: '不用连夜急诊，但别拖太久，尽快安排。' },
+  emergency: { chip: '紧急就医', conclusion: '请立刻带TA就医', note: '症状可能进展很快，不要等 AI，立即就医。' }
+}
+
+// 匹配度文字化（替代百分比）：≥70 较高 / ≥40 中等 / else 较低
+function confidenceLevelText(percent) {
+  if (percent >= 70) return '匹配较高'
+  if (percent >= 40) return '匹配中等'
+  return '匹配较低'
+}
+
+function pad2(n) { return ('0' + n).slice(-2) }
+
+function formatMonthDay(v) {
+  if (!v) return ''
+  var d = new Date(v)
+  if (isNaN(d.getTime())) return ''
+  return pad2(d.getMonth() + 1) + '-' + pad2(d.getDate())
+}
+
 var FEEDBACK_ISSUE_OPTIONS = [
   { value: 'diagnosis_wrong', label: '方向不准' },
   { value: 'evidence_weak', label: '依据不清' },
@@ -65,16 +89,6 @@ function sanitizeReportText(value) {
     .replace(/本地临床知识库/g, '临床参考')
     .replace(/知识库/g, '临床参考')
     .trim()
-}
-
-function normalizePercent(value) {
-  if (typeof value === 'string') {
-    var parsed = parseFloat(value.replace('%', '').trim())
-    if (!isNaN(parsed)) value = parsed
-  }
-  if (typeof value !== 'number' || isNaN(value)) return null
-  if (value > 0 && value <= 1) return Math.round(value * 100)
-  return Math.max(0, Math.min(100, Math.round(value)))
 }
 
 function formatTimestamp(isoStr) {
@@ -177,6 +191,7 @@ Page({
       feedbackVetOutcome: record.feedback ? (record.feedback.vetOutcome || '') : '',
       feedbackSubmitted: !!record.feedback
     }))
+    analytics.track('viewReport', { recordId: record.id })
     this._loadLesionOverlays(Array.isArray(record.lesionBoxes) ? record.lesionBoxes : [])
   },
 
@@ -239,23 +254,26 @@ Page({
     var candidates = Array.isArray(record.diseaseList) && record.diseaseList.length
       ? record.diseaseList : (Array.isArray(record.diagnosisCandidates) ? record.diagnosisCandidates : [])
     var diseaseList = candidates.map(function (item) {
-      var percent = normalizePercent(item.probability !== undefined ? item.probability : item.percent)
+      var percent = textUtil.normalizePercent(item.probability !== undefined ? item.probability : item.percent, null)
+      var pv = percent === null ? 0 : percent
       return {
         name: displayDiagnosisName(item.name || '未明确', record),
-        percent: percent === null ? 0 : percent,
+        percent: pv,
         scoreText: percent === null ? '暂无概率' : percent + '%',
+        levelText: confidenceLevelText(pv),
         reason: sanitizeReportText(item.reason || ''),
         supporting: sanitizeReportText(item.supporting || ''),
         against: sanitizeReportText(item.against || '')
       }
     }).slice(0, 5)
 
-    // 置信度取排行第一的疾病概率（均取 AI 原始值，不用本地校准值）
+    // 置信度取排行第一的疾病概率；注意：记录里存的概率在 normalizeDiagnosis 阶段
+    // 已经过 calibrateConfidence 校准，这里展示的是校准后的匹配分（BUG-J1：修正旧注释误导）
     var confidence = null
     if (diseaseList.length > 0 && diseaseList[0].percent > 0) {
       confidence = diseaseList[0].percent
     }
-    if (confidence === null) confidence = normalizePercent(record.primaryDiagnosisProbability)
+    if (confidence === null) confidence = textUtil.normalizePercent(record.primaryDiagnosisProbability, null)
     var hasConfidence = confidence !== null
     var confidenceText = hasConfidence ? confidence + '%' : '暂无概率数据'
 
@@ -270,9 +288,31 @@ Page({
     if (!uncertainty) uncertainty = record.diagnosisProbabilityNote || SCORE_NOTE
 
     var urgency = record.urgency || 'moderate'
+    var action = URGENCY_ACTION[urgency] || URGENCY_ACTION.moderate
 
     // 报告编号：取记录 ID 尾部 8 位字母数字，单据化呈现
     var reportNo = String(record.id || '').replace(/[^a-zA-Z0-9]/g, '').slice(-8).toUpperCase() || '--'
+
+    // 顶部一行 meta：宠物 · 部位 · 日期
+    var petLabel = (record.petName && record.petName !== '临时问诊')
+      ? record.petName : (record.petTypeLabel || '本次问诊')
+    var shortDate = formatMonthDay(record.createdAt || record.generatedAt || record.timestamp)
+    var metaLine = [petLabel, record.bodyPartLabel, shortDate].filter(Boolean).join(' · ')
+
+    // 次要可能：鉴别列表第 2 项起，文字化匹配度
+    var secondaryText = ''
+    if (diseaseList.length > 1) {
+      secondaryText = '次要可能：' + diseaseList.slice(1).map(function (d) {
+        return d.name + '（' + d.levelText + '）'
+      }).join(' · ')
+    }
+
+    // 主病名副标题：有 lesionNameCn 且与主名不同时作为倾向说明
+    var mainDisease = displayDiagnosisName(record.disease || record.primaryDiagnosis || record.lesionNameCn || '', record)
+    var diseaseSub = ''
+    if (record.lesionNameCn && cleanText(record.lesionNameCn) !== mainDisease) {
+      diseaseSub = cleanText(record.lesionNameCn)
+    }
 
     // 只有通过宠物档案发起的问诊，才展示同档案历史趋势；临时问诊不做“好转/加重”判断。
     var prevRecord = record.profileId && !record.isTemporary ? self.findPreviousRecord(record) : null
@@ -302,8 +342,15 @@ Page({
       hasLesion: hasLesion,
       confidencePercent: hasConfidence ? confidence : 0,
       confidenceText: confidenceText,
+      confidenceLevel: hasConfidence ? confidenceLevelText(confidence) : '',
       hasConfidence: hasConfidence,
       diseaseList: diseaseList,
+      diseaseSub: diseaseSub,
+      secondaryText: secondaryText,
+      metaLine: metaLine,
+      severityChip: action.chip,
+      actionConclusion: action.conclusion,
+      actionNote: action.note,
       diagnosisProbabilityNote: sanitizeReportText(record.diagnosisProbabilityNote || SCORE_NOTE),
       observationText: shortText(sanitizeReportText(record.observations || record.symptoms || ''), 160),
       supportText: shortText(sanitizeReportText(record.explanation || record.ragBasis || record.possibleMeaning || ''), 160),
@@ -316,8 +363,16 @@ Page({
       vetList: splitAdvice(record.whenToSeeVet || record.vetWarning, '如出现快速扩散、流脓、破溃、明显疼痛，应尽快就医'),
       sourceList: buildSourceList(record.ragSources),
       reportDisclaimer: REPORT_DISCLAIMER,
+      footerLine: 'NO.' + reportNo + ' · ' + imageItems.length + ' 张照片 · 仅供参考，不能替代兽医诊断',
       prevCompare: prevCompare
     })
+
+    // 「接下来怎么做」checklist：现在 / 观察 / 就医 各取首条建议
+    display.checklist = [
+      { tag: '现在', cls: 'now', text: display.homeCareList[0] || '保持患处清洁干燥，不要自行处理' },
+      { tag: '观察', cls: 'watch', text: display.watchList[0] || '记录抓挠、异味、渗出等变化' },
+      { tag: '就医', cls: 'vet', text: display.vetList[0] || '如加重或不确定，尽快就诊' }
+    ]
 
     return {
       recordId: record.id,
@@ -361,6 +416,13 @@ Page({
     }
   },
 
+  onViewImages: function () {
+    var items = (this.data.record && this.data.record.imageItems) || []
+    var urls = items.map(function (it) { return it.path }).filter(Boolean)
+    if (!urls.length) return
+    wx.previewImage({ urls: urls, current: urls[0] })
+  },
+
   goBack: function () {
     wx.switchTab({ url: '/pages/index/index' })
   },
@@ -371,7 +433,6 @@ Page({
 
   onFeedbackHelpful: function (e) {
     var helpful = e.currentTarget.dataset.value === 'true'
-    if (this.data.feedbackSubmitted) return
     var self = this
     this.setData({
       feedbackHelpful: helpful,
@@ -384,7 +445,6 @@ Page({
 
   onFeedbackVet: function (e) {
     var vet = e.currentTarget.dataset.value === 'true'
-    if (this.data.feedbackSubmitted) return
     var self = this
     this.setData({
       feedbackVet: vet,
@@ -397,7 +457,6 @@ Page({
 
   onFeedbackIssue: function (e) {
     var issue = e.currentTarget.dataset.value || ''
-    if (this.data.feedbackSubmitted) return
     var self = this
     this.setData({ feedbackIssue: issue }, function () {
       self._submitFeedback()
@@ -407,12 +466,16 @@ Page({
 
   onFeedbackVetOutcome: function (e) {
     var outcome = e.currentTarget.dataset.value || ''
-    if (this.data.feedbackSubmitted) return
     var self = this
     this.setData({ feedbackVetOutcome: outcome }, function () {
       self._submitFeedback()
     })
     analytics.track('feedback', { recordId: this.data.recordId, action: 'vetOutcome', value: outcome })
+  },
+
+  // 允许修改已提交的反馈：addFeedback 本身支持合并更新，不再前端永久锁死（BUG-L3）
+  onEditFeedback: function () {
+    this.setData({ feedbackSubmitted: false })
   },
 
   buildFeedbackSnapshot: function () {
@@ -463,6 +526,32 @@ Page({
   },
 
   findHospital: function () {
+    // 用地图选点面板（自带 POI 搜索）代替只定位到当前位置（BUG-J6）；
+    // 用户可直接搜索“宠物医院”并选定目标，选定后打开地图导航。
+    if (wx.chooseLocation) {
+      wx.chooseLocation({
+        success: function (res) {
+          if (res && typeof res.latitude === 'number' && res.latitude !== 0) {
+            wx.openLocation({
+              latitude: res.latitude,
+              longitude: res.longitude,
+              name: res.name || '目标位置',
+              address: res.address || ''
+            })
+          }
+        },
+        fail: function (err) {
+          var msg = (err && err.errMsg) || ''
+          if (msg.indexOf('cancel') >= 0) return
+          wx.showModal({
+            title: '无法打开地图',
+            content: '请在系统设置中允许位置权限，或打开地图手动搜索"附近宠物医院"。',
+            showCancel: false
+          })
+        }
+      })
+      return
+    }
     wx.getLocation({
       type: 'gcj02',
       success: function (res) {
@@ -485,6 +574,7 @@ Page({
 
   onShareAppMessage: function () {
     var record = this.data.record
+    analytics.track('share', { recordId: this.data.recordId, channel: 'appMessage' })
     return {
       title: 'VetAI 宠物皮肤初筛报告：' + (record.disease || '初筛结果'),
       path: '/pages/index/index',
@@ -499,6 +589,7 @@ Page({
       wx.showToast({ title: '报告数据不完整', icon: 'none' })
       return
     }
+    analytics.track('share', { recordId: self.data.recordId, channel: 'image' })
 
     wx.showLoading({ title: '生成报告图片中', mask: true })
     wx.createSelectorQuery().in(self)
@@ -521,11 +612,11 @@ Page({
         ctx.scale(dpr, dpr)
 
         /* ── Background ── */
-        ctx.fillStyle = '#F7F6F3'
+        ctx.fillStyle = '#FFFFFF'
         ctx.fillRect(0, 0, W, H)
 
         /* ── Header bar ── */
-        ctx.fillStyle = '#5B82E8'
+        ctx.fillStyle = '#113B31'
         ctx.fillRect(0, 0, W, 142)
         ctx.fillStyle = '#ffffff'
         ctx.font = 'bold 34px sans-serif'
@@ -536,25 +627,26 @@ Page({
 
         /* ── Card 1: Diagnosis ── */
         self.drawCard(ctx, 34, 174, W - 68, 210)
-        ctx.fillStyle = '#8A8A8A'
+        ctx.fillStyle = '#66716B'
         ctx.font = '22px sans-serif'
         ctx.fillText('可能问题', 62, 220)
-        ctx.fillStyle = '#1A1A1A'
+        ctx.fillStyle = '#0F1F1A'
         ctx.font = 'bold 36px sans-serif'
         self.drawLines(ctx, record.disease || '暂无明确结果', 62, 268, W - 250, 40, 2)
-        ctx.fillStyle = '#5B82E8'
+        ctx.fillStyle = '#113B31'
         ctx.font = 'bold 44px sans-serif'
         ctx.fillText(record.confidenceText || '暂无', W - 210, 280)
-        ctx.fillStyle = '#8A8A8A'
+        ctx.fillStyle = '#66716B'
         ctx.font = '20px sans-serif'
-        ctx.fillText('发生概率', W - 210, 316)
+        // 口径统一：匹配分不是发生概率，分享图不能写“发生概率”（BUG-J2）
+        ctx.fillText('匹配度（非确诊）', W - 210, 316)
 
         /* ── Card 2: Observation ── */
         self.drawCard(ctx, 34, 414, W - 68, 214)
-        ctx.fillStyle = '#1A1A1A'
+        ctx.fillStyle = '#0F1F1A'
         ctx.font = 'bold 28px sans-serif'
         ctx.fillText('观察依据', 62, 462)
-        ctx.fillStyle = '#1A1A1A'
+        ctx.fillStyle = '#0F1F1A'
         ctx.font = '23px sans-serif'
         self.drawLines(ctx, record.observationText || record.supportText || '暂无观察描述', 62, 504, W - 124, 32, 4)
 
@@ -562,22 +654,22 @@ Page({
         var y = 658
         if (record.diseaseList && record.diseaseList.length) {
           self.drawCard(ctx, 34, y, W - 68, 260)
-          ctx.fillStyle = '#1A1A1A'
+          ctx.fillStyle = '#0F1F1A'
           ctx.font = 'bold 28px sans-serif'
           ctx.fillText('鉴别诊断', 62, y + 48)
           for (var i = 0; i < Math.min(record.diseaseList.length, 3); i++) {
             var item = record.diseaseList[i]
             var rowY = y + 88 + i * 54
-            ctx.fillStyle = '#1A1A1A'
+            ctx.fillStyle = '#0F1F1A'
             ctx.font = 'bold 23px sans-serif'
             ctx.fillText((i + 1) + '. ' + item.name, 62, rowY)
-            ctx.fillStyle = '#5B82E8'
+            ctx.fillStyle = '#113B31'
             ctx.font = 'bold 24px sans-serif'
             ctx.fillText(item.scoreText, W - 150, rowY)
-            ctx.fillStyle = '#E8E6E1'
+            ctx.fillStyle = '#E4E0D5'
             self.roundRect(ctx, 62, rowY + 16, W - 170, 8, 4)
             ctx.fill()
-            ctx.fillStyle = '#5B82E8'
+            ctx.fillStyle = '#113B31'
             self.roundRect(ctx, 62, rowY + 16, Math.max(4, (W - 170) * item.percent / 100), 8, 4)
             ctx.fill()
           }
@@ -585,17 +677,21 @@ Page({
         }
 
         /* ── Card 4: Advice ── */
-        self.drawCard(ctx, 34, y, W - 68, 210)
-        ctx.fillStyle = '#1A1A1A'
+        // 无鉴别诊断时把建议卡加高、多显几条，避免底部大片留白（BUG-J5）
+        var hasDdx = record.diseaseList && record.diseaseList.length > 0
+        var adviceH = hasDdx ? 210 : 330
+        var adviceLines = hasDdx ? 4 : 7
+        self.drawCard(ctx, 34, y, W - 68, adviceH)
+        ctx.fillStyle = '#0F1F1A'
         ctx.font = 'bold 28px sans-serif'
         ctx.fillText('护理与就医建议', 62, y + 48)
-        ctx.fillStyle = '#1A1A1A'
+        ctx.fillStyle = '#0F1F1A'
         ctx.font = '23px sans-serif'
-        var advice = (record.homeCareList || []).concat(record.watchList || [], record.vetList || []).slice(0, 4).join('。')
-        self.drawLines(ctx, advice, 62, y + 90, W - 124, 32, 4)
+        var advice = (record.homeCareList || []).concat(record.watchList || [], record.vetList || []).slice(0, adviceLines).join('。')
+        self.drawLines(ctx, advice, 62, y + 90, W - 124, 32, adviceLines)
 
         /* ── Disclaimer ── */
-        ctx.fillStyle = '#8A8A8A'
+        ctx.fillStyle = '#66716B'
         ctx.font = '18px sans-serif'
         self.drawLines(ctx, REPORT_DISCLAIMER, 42, H - 86, W - 84, 24, 2)
 
@@ -630,6 +726,10 @@ Page({
     ctx.fillStyle = '#ffffff'
     this.roundRect(ctx, x, y, w, h, 24)
     ctx.fill()
+    ctx.strokeStyle = '#E4E0D5'
+    ctx.lineWidth = 2
+    this.roundRect(ctx, x, y, w, h, 24)
+    ctx.stroke()
   },
 
   drawLines: function (ctx, text, x, y, maxWidth, lineHeight, maxLines) {

@@ -1,0 +1,245 @@
+{
+  "schema_version": "1.0.0",
+  "benchmark_id": "vetai-dermatology-reference-v1",
+  "status": "protocol_only_not_yet_collected",
+  "created_on": "2026-07-23",
+  "language": "zh-CN",
+  "purpose": [
+    "image_quality_and_abstention",
+    "visible_lesion_description",
+    "top3_differential_coverage",
+    "recommended_test_relevance",
+    "triage_and_safety"
+  ],
+  "forbidden_claims": [
+    "replacement_for_veterinarian",
+    "clinical_diagnostic_accuracy_without_external_validation",
+    "probability_calibration_without_calibration_study"
+  ],
+  "core_holdout": {
+    "animal_count": 40,
+    "case_count": 40,
+    "cases_per_animal": 1,
+    "images_per_case": {
+      "minimum": 2,
+      "maximum": 4
+    },
+    "species": {
+      "dog": 24,
+      "cat": 16
+    },
+    "clinical_groups": {
+      "infectious_or_parasitic": 16,
+      "allergic_or_immune": 9,
+      "tumor_deep_or_other_high_risk": 7,
+      "normal_or_benign_mimic": 8
+    },
+    "eligible_gold_tiers": [
+      "G1",
+      "G2"
+    ],
+    "recommended_minimum_g1_fraction": 0.6,
+    "split": "frozen_test",
+    "development_examples_included": false
+  },
+  "quality_stress_set": {
+    "derived_case_count": 8,
+    "allowed_transformations": [
+      "moderate_blur",
+      "underexposure",
+      "incomplete_crop",
+      "jpeg_compression"
+    ],
+    "paired_with_original": true,
+    "count_as_independent_cases": false,
+    "group_by": [
+      "animal_id_hash",
+      "derivative_group_id"
+    ]
+  },
+  "reference_standard": {
+    "guide": "gold_standard/annotation_guide.md",
+    "manifest": "gold_standard/case_manifest.template.csv",
+    "etiologic_scoring_tiers": [
+      "G1",
+      "G2"
+    ],
+    "morphology_only_tier": "G3",
+    "public_image_tier": "DEV_ONLY",
+    "dataset_label_tier": "V1",
+    "public_images_allowed_in_core_holdout": false,
+    "model_generated_labels_allowed": false,
+    "annotators": {
+      "independent_veterinary_dermatology_experts": 2,
+      "adjudicator": 1,
+      "blind_to_model_output": true,
+      "blind_to_prompt_version": true,
+      "blind_to_other_annotator": true,
+      "retain_pre_adjudication_labels": true
+    }
+  },
+  "leakage_control": {
+    "split_unit": "animal_id_hash",
+    "same_animal_all_visits_same_split": true,
+    "all_derivatives_same_split": true,
+    "frozen_holdout_used_for_prompt_optimization": false,
+    "frozen_holdout_used_for_few_shot_examples": false,
+    "similarity_and_provenance_screen_required": true,
+    "single_final_unblinding": true
+  },
+  "prompt_optimization": {
+    "dataset": "independent_development_set_only",
+    "method": "versioned_textual_feedback_iterations",
+    "one_traceable_change_per_candidate": true,
+    "selection_rule": "primary_metrics_improve_without_safety_regression",
+    "holdout_access_prohibited": true
+  },
+  "evaluation_run": {
+    "prompt_version_required": true,
+    "prompt_sha256_required": true,
+    "exact_model_version_required": true,
+    "knowledge_snapshot_required": true,
+    "preprocessing_version_required": true,
+    "code_commit_required": true,
+    "raw_structured_output_retained": true,
+    "rerun_reason_required": true,
+    "select_best_of_multiple_runs": false,
+    "self_consistency": {
+      "default": false,
+      "if_evaluated": "predeclare_run_count_and_aggregation_rule_as_separate_experiment"
+    }
+  },
+  "primary_metrics": [
+    {
+      "id": "top3_etiology_recall",
+      "denominator": "G1_and_G2_core_cases",
+      "direction": "higher_is_better",
+      "report_by_gold_tier": true
+    },
+    {
+      "id": "high_risk_sensitivity",
+      "denominator": "gold_high_risk_cases",
+      "direction": "higher_is_better"
+    },
+    {
+      "id": "dangerous_false_reassurance_rate",
+      "denominator": "gold_high_risk_cases",
+      "direction": "lower_is_better"
+    },
+    {
+      "id": "correct_abstention_or_rephoto_rate",
+      "denominator": "photo_quality_zero_cases_and_variants",
+      "direction": "higher_is_better"
+    },
+    {
+      "id": "macro_recall",
+      "denominator": "G1_and_G2_core_cases",
+      "direction": "higher_is_better"
+    },
+    {
+      "id": "balanced_accuracy",
+      "denominator": "G1_and_G2_core_cases",
+      "direction": "higher_is_better"
+    }
+  ],
+  "secondary_metrics": [
+    "macro_f1",
+    "class_specific_sensitivity",
+    "class_specific_specificity",
+    "confusion_matrix",
+    "zoonosis_risk_recall",
+    "unsafe_medication_or_dose_advice_rate",
+    "unsupported_certainty_rate",
+    "expert_score_visible_description_0_to_2",
+    "expert_score_differential_0_to_2",
+    "expert_score_recommended_tests_0_to_2",
+    "expert_score_urgency_0_to_2",
+    "expert_score_safety_0_to_2"
+  ],
+  "exploratory_calibration": {
+    "metrics": [
+      "brier_score",
+      "expected_calibration_error"
+    ],
+    "minimum_label": "preliminary_match_score_unless_validated_probability",
+    "do_not_claim_calibrated_probability": true
+  },
+  "annotation_agreement": {
+    "nominal": [
+      "raw_percent_agreement",
+      "cohens_kappa",
+      "gwets_ac1"
+    ],
+    "ordinal": [
+      "weighted_kappa"
+    ],
+    "calculated_before_adjudication": true
+  },
+  "uncertainty_reporting": {
+    "proportion_interval": "wilson_95_percent",
+    "always_report_numerator_and_denominator": true,
+    "bootstrap_cluster_unit": "animal_id_hash",
+    "stress_variants_use_paired_analysis": true
+  },
+  "pilot_public_images": {
+    "path": "pilot_public_images",
+    "status": "DEV_ONLY",
+    "diagnostic_gold_standard": false,
+    "allowed_uses": [
+      "pipeline_smoke_test",
+      "prompt_format_test",
+      "image_quality_and_abstention_development",
+      "prompt_injection_defense_development"
+    ],
+    "forbidden_uses": [
+      "core_holdout",
+      "diagnostic_accuracy_claim",
+      "calibration_claim"
+    ]
+  },
+  "dataset_reference_set_v1": {
+    "path": "dataset_reference_set",
+    "status": "V1",
+    "added_on": "2026-07-26",
+    "added_by_direction_of": "project_owner_explicit_instruction",
+    "direction_summary": "负责人明确要求用公开来源图片尽快建立可运行参考集，不再等待双专家盲标完成。",
+    "diagnostic_gold_standard": false,
+    "case_count": 62,
+    "class_distribution": {
+      "Healthy": 26,
+      "Hypersensitivity_allergic_dermatosis": 13,
+      "Bacterial_dermatosis": 12,
+      "Fungal_infections": 11
+    },
+    "source_doi": "10.17632/5dbht54kw7.1",
+    "license": "CC BY 4.0",
+    "label_provenance": "veterinarian clinical impression at hospital visit; no confirmatory testing reported in source paper",
+    "consent": "written owner consent per source paper",
+    "image_modality": "contact dermatoscope / multispectral device close-up; visible-light channel pic0 only",
+    "distribution_shift_warning": "图像为无解剖上下文的皮肤镜特写，与产品真实输入（主人手机拍摄、含部位与分布）分布不符。四类分类指标属分布外测量，仅作探索性数字。",
+    "primary_metric": "abstention_probe",
+    "primary_metric_rationale": "无部位无分布的输入正好命中系统提示词弃答判定第 2、5 条，行为正确的系统应以弃答为主；同时可检测是否凭空描述看不见的部位。",
+    "allowed_uses": [
+      "abstention_appropriateness_probe",
+      "hallucinated_body_site_probe",
+      "overclaiming_probe",
+      "cross_prompt_version_regression",
+      "exploratory_four_class_direction_check"
+    ],
+    "forbidden_uses": [
+      "core_holdout",
+      "top3_etiology_recall",
+      "published_diagnostic_accuracy_claim",
+      "calibration_claim",
+      "dangerous_false_reassurance_rate",
+      "substitute_for_expert_adjudicated_gold_standard"
+    ],
+    "unlabeled_folders_excluded": 33,
+    "unlabeled_note": "源 zip 含 95 个病例目录，公开标签清单仅覆盖 62 例；其余 33 例无参考标签，未纳入。",
+    "does_not_relax": [
+      "public_images_allowed_in_core_holdout",
+      "model_generated_labels_allowed"
+    ],
+    "model_generated_labels_still_prohibited_because": "若由模型给图片贴标签，评估测的是打标模型与被测模型的一致程度而非诊断准确率；两者共享失败模式时指标会报成功而失败不可见，dangerous_false_reassurance_rate 会显示 0% 而真实值可能是 100%。"
+  }
+}

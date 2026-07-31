@@ -56,7 +56,8 @@ Page({
     var profiles = storage.getPetProfiles().map(function (item) {
       var lastRecord = null
       for (var i = 0; i < history.length; i++) {
-        if (history[i].profileId === item.id || history[i].petName === item.petName) {
+        // 只按 profileId 归属，不再用 petName 兜底：同名宠物会错配记录（BUG-K1）
+        if (history[i] && history[i].profileId && item.id && history[i].profileId === item.id) {
           lastRecord = history[i]
           break
         }
@@ -76,7 +77,7 @@ Page({
   showCreateForm: function () {
     // 设置标记，chat 页 onShow 检测到后开始新对话
     wx.setStorageSync('chat_start_new', true)
-    wx.switchTab({ url: '/pages/chat/chat' })
+    wx.navigateTo({ url: '/pages/chat/chat' })
   },
 
   showEditForm: function (e) {

@@ -23,8 +23,11 @@ files.filter(function (file) { return file.endsWith('.json') }).forEach(function
 })
 
 files.filter(function (file) { return file.endsWith('.js') }).forEach(function (file) {
+  // CLI 工具的首行 shebang 是合法 Node 脚本（Node 自身会剥离），
+  // 但放进 new Function 的函数体会被当成语法错误，这里先剥离再校验。
+  const source = fs.readFileSync(file, 'utf8').replace(/^#![^\n]*/, '')
   assert.doesNotThrow(function () {
-    new Function(fs.readFileSync(file, 'utf8'))
+    new Function(source)
   }, 'invalid JavaScript: ' + path.relative(root, file))
 })
 

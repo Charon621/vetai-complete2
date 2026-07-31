@@ -1,39 +1,59 @@
 /* ============================================================
- * VetAI Design System v2 — 品质升级
- * 温暖专业的医疗健康产品风格
+ * VetAI Design System v5 — 「处方笺」诊室编辑风 × 鎏金
+ * 暖纸白底 #FBFAF6 · 墨绿 #113B31 · 青柠动作色 #D6F25F
+ * 鎏金双档：文字金 #8A6518（小字达标）/ 装饰金 #C9A24B（印章描边）
+ * 宋体 900 大标题 · 等宽鎏金小字 · 墨线分区 · 鎏金印章
+ * --vet-* 兼容别名全部保留（过渡层，新代码禁用），
+ * 各页面不改一行 wxss 即可整体换肤。
  * ============================================================ */
 
 page {
-  /* ── 1. 品牌色体系 — 柔和蓝 ── */
-  --brand: #5B82E8;
-  --brand-dark: #3D62C8;
-  --brand-light: #EEF2FE;
-  --brand-mid: #A5BAF4;
+  /* ── 1. 品牌色体系 — 墨绿（诊室信任感） ── */
+  --brand: #113B31;
+  --brand-dark: #0C2A23;
+  --brand-light: #EAF3E2;
+  --brand-mid: #5E7A70;
 
-  /* ── 2. 强调色：温暖珊瑚橙 ── */
-  --accent: #E07A4F;
-  --accent-soft: #FDF3EE;
+  /* ── 1b. 动作色：青柠 — 只给「可点的动作」 ── */
+  --lime: #D6F25F;
+  --lime-soft: rgba(214, 242, 95, 0.22);
+  --on-lime: #113B31;
 
-  /* ── 3. 中性色体系：暖调有温度 ── */
-  --bg: #F7F6F3;
+  /* ── 1c. 鎏金双档：文字金（小字）/ 装饰金（印章、描边） ── */
+  --gold: #8A6518;
+  --gold-bright: #C9A24B;
+  --gold-line: rgba(138, 101, 24, 0.45);
+  /* 淡金雾：非动作提示底色（替代青柠的装饰性误用） */
+  --gold-mist: rgba(138, 101, 24, 0.08);
+
+  /* ── 2. 强调色：珊瑚（仅用于警示/紧急） ── */
+  --accent: #C9553E;
+  --accent-soft: #F7E4DD;
+
+  /* ── 3. 中性色体系：暖纸白 + 纯白卡片浮于纸面 ── */
+  --bg: #FBFAF6;
   --card: #FFFFFF;
-  --surface: #F0EFEB;
-  --text: #1A1A1A;
-  --body: #3D3D3D;
-  --muted: #8A8A8A;
-  --faint: #B5B5B5;
-  --line: #E8E6E1;
-  --line-light: #F0EEEA;
+  --surface: #F3F0E8;
+  --text: #0F1F1A;
+  --body: #4A443A;
+  --muted: #5F6B64;
+  --faint: #8C8471;
+  --ghost: #9AA69F;
+  --line: #E2DCCB;
+  --line-light: #ECE8DC;
+  --on-brand: #F2F7EF;
 
-  /* ── 4. 圆角：严格 3 级 ── */
-  --r-sm: 8rpx;
-  --r-md: 16rpx;
-  --r-lg: 24rpx;
+  /* ── 4. 圆角三档：内容卡 24rpx，舞台级（主卡/抽屉/底栏）40rpx；
+          气泡 28rpx + 8rpx 小角不对称（对话感，不入档）；胶囊 999rpx ── */
+  --r-sm: 12rpx;
+  --r-md: 24rpx;
+  --r-lg: 40rpx;
 
-  /* ── 5. 阴影：纯黑透明度，禁止彩色阴影 ── */
-  --shadow-sm: 0 2rpx 8rpx rgba(0,0,0,0.04);
-  --shadow-md: 0 4rpx 16rpx rgba(0,0,0,0.06);
-  --shadow-lg: 0 8rpx 32rpx rgba(0,0,0,0.08);
+  /* ── 5. 阴影：只给浮起元素（弹层/底栏）用 ── */
+  --shadow-sm: 0 1rpx 4rpx rgba(15, 31, 26, 0.03);
+  --shadow-md: 0 4rpx 12rpx rgba(15, 31, 26, 0.05);
+  --shadow-lg: 0 8rpx 28rpx rgba(15, 31, 26, 0.08);
+  --shadow-bar: 0 -16rpx 40rpx rgba(15, 31, 26, 0.06);
 
   /* ── 6. 间距：8pt 栅格 ── */
   --sp-1: 8rpx;
@@ -45,30 +65,32 @@ page {
   --sp-8: 64rpx;
   --sp-10: 80rpx;
 
-  /* ── 7. 字号层级 ── */
-  --fs-display: 40rpx;
-  --fs-title: 34rpx;
+  /* ── 7. 字号六档阶梯：68 仅首页问候 / 44 页头结论 / 30 区块 / 28 正文 / 24 辅助 / 21 元数据下限 ── */
+  --fs-hero: 68rpx;
+  --fs-display: 44rpx;
+  --fs-title: 30rpx;
   --fs-body: 28rpx;
   --fs-caption: 24rpx;
-  --fs-mini: 20rpx;
+  --fs-mini: 21rpx;
 
-  /* ── 7b. 字体族 — 多层次排版 ── */
+  /* ── 7b. 字体族：宋体大标题 + 等宽元数据是 v4 视觉核心 ── */
   --font-sans: -apple-system, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
-  --font-serif: 'STSong', 'Songti SC', 'Source Han Serif SC', Georgia, serif;
+  --font-serif: 'Songti SC', 'STSong', 'Source Han Serif SC', Georgia, serif;
   --font-mono: 'SF Mono', 'Menlo', 'Roboto Mono', 'Courier New', monospace;
   --font-kai: 'KaiTi', 'STKaiti', 'AR PL UKai', serif;
 
-  /* ── 8. 严重度语义色 — 降饱和，贴合暖调品牌体系 ── */
-  --sev-low: #63A67C;
-  --sev-mid: #E0964A;
-  --sev-urgent: #D96B5E;
-  --sev-emergency: #A94438;
-  --sev-low-bg: #E9F4EC;
-  --sev-mid-bg: #FBF1E3;
-  --sev-urgent-bg: #F9ECEA;
-  --sev-emergency-bg: #F5E0DE;
+  /* ── 8. 严重度语义色 ── */
+  --sev-low: #3E7D5C;
+  --sev-mid: #B97F35;
+  --sev-mid-text: #8A5A00;
+  --sev-urgent: #C9553E;
+  --sev-emergency: #A03D2B;
+  --sev-low-bg: #E3F0E6;
+  --sev-mid-bg: #FFE9B8;
+  --sev-urgent-bg: #F7E4DD;
+  --sev-emergency-bg: #F2DCD6;
 
-  /* ── 9. 向后兼容：--vet-* 别名 ── */
+  /* ── 9. 向后兼容：--vet-* 别名（勿删，各页 wxss 在用） ── */
   --vet-primary: var(--brand);
   --vet-primary-dark: var(--brand-dark);
   --vet-primary-soft: var(--brand-light);
@@ -90,7 +112,6 @@ page {
   --vet-green-soft: var(--brand-light);
   --vet-green-mid: var(--brand-mid);
 
-  /* ── 10. 严重度向后兼容 ── */
   --vet-low: var(--sev-low);
   --vet-low-bg: var(--sev-low-bg);
   --vet-mid: var(--sev-mid);
@@ -100,21 +121,18 @@ page {
   --vet-emg: var(--sev-emergency);
   --vet-emg-bg: var(--sev-emergency-bg);
 
-  /* ── 11. 圆角向后兼容 ── */
   --vet-r-page: var(--r-lg);
   --vet-r-card-lg: var(--r-lg);
   --vet-r-card: var(--r-md);
   --vet-r-card-sm: var(--r-sm);
-  --vet-r-image: var(--r-md);
-  --vet-r-field: var(--r-md);
+  --vet-r-image: var(--r-sm);
+  --vet-r-field: 999rpx;
   --vet-r-pill: 999rpx;
 
-  /* ── 12. 阴影向后兼容 ── */
   --vet-shadow: var(--shadow-sm);
   --vet-shadow-strong: var(--shadow-md);
 
-  /* ── 13. 间距向后兼容 ── */
-  --vet-page-x: var(--sp-4);
+  --vet-page-x: 44rpx;
   --vet-gap-xs: var(--sp-1);
   --vet-gap: var(--sp-2);
   --vet-gap-lg: var(--sp-4);
@@ -128,46 +146,57 @@ page {
   font-size: var(--fs-body);
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
-  transition: all 0.2s ease;
 }
 
 /* ============================================================
- * 暗色模式
+ * 暗色模式 — 墨绿深底，青柠/鎏金提亮
  * ============================================================ */
 @media (prefers-color-scheme: dark) {
   page {
-    --bg: #161616;
-    --card: #262626;
-    --surface: #333333;
-    --text: #F0F0F0;
-    --body: #C0C0C0;
-    --muted: #808080;
-    --faint: #606060;
-    --line: #454545;
-    --line-light: #383838;
+    --bg: #101B16;
+    --card: #182620;
+    --surface: #202E27;
+    --text: #F0F4EE;
+    --body: #C6CCC2;
+    --muted: #8C978F;
+    --faint: #7A8378;
+    --ghost: #5D6862;
+    --line: #2A3A33;
+    --line-light: #22312A;
+    --on-brand: #F2F7EF;
 
-    --brand: #7B9AF0;
-    --brand-dark: #8DA0F0;
-    --brand-light: #2A2F45;
-    --brand-mid: #4A60C8;
+    --brand: #1C5546;
+    --brand-dark: #2A6B58;
+    --brand-light: #1E2C1B;
+    --brand-mid: #4A7263;
 
-    --accent: #F09A6F;
-    --accent-soft: #3A2A20;
+    --lime: #D6F25F;
+    --lime-soft: rgba(214, 242, 95, 0.14);
+    --on-lime: #113B31;
 
-    --shadow-sm: 0 2rpx 8rpx rgba(0,0,0,0.16);
-    --shadow-md: 0 4rpx 16rpx rgba(0,0,0,0.24);
-    --shadow-lg: 0 8rpx 32rpx rgba(0,0,0,0.32);
+    --gold: #DDB667;
+    --gold-bright: #E8C784;
+    --gold-line: rgba(221, 182, 103, 0.45);
+    --gold-mist: rgba(221, 182, 103, 0.10);
 
-    --sev-low: #7CB894;
-    --sev-mid: #E5A866;
-    --sev-urgent: #DE8377;
-    --sev-emergency: #C05C4E;
-    --sev-low-bg: #21362A;
+    --accent: #DB7B64;
+    --accent-soft: #3B2822;
+
+    --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.28);
+    --shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.36);
+    --shadow-bar: 0 -16rpx 40rpx rgba(0, 0, 0, 0.3);
+
+    --sev-low: #7BAE93;
+    --sev-mid: #D2A05E;
+    --sev-mid-text: #E4BE7C;
+    --sev-urgent: #DB8371;
+    --sev-emergency: #C05C48;
+    --sev-low-bg: #24332A;
     --sev-mid-bg: #3A3120;
-    --sev-urgent-bg: #3A2724;
-    --sev-emergency-bg: #351F1C;
+    --sev-urgent-bg: #3B2722;
+    --sev-emergency-bg: #35201A;
 
-    /* 暗色 vet-* 别名同步 */
     --vet-primary: var(--brand);
     --vet-primary-dark: var(--brand-dark);
     --vet-primary-soft: var(--brand-light);
@@ -213,22 +242,19 @@ button {
   border-radius: 0;
 }
 
-button::after {
-  border: none;
-}
+button::after { border: none; }
 
-input,
-textarea {
+input, textarea {
   color: var(--text);
   font: inherit;
 }
 
-::-webkit-scrollbar {
-  display: none;
-}
+::-webkit-scrollbar { display: none; }
 
 /* ============================================================
  * 页面 & 卡片
+ * v4 原则：纯白底上靠墨线 + 留白分层；卡片默认细线描边；
+ * 「浮起」的元素（弹层、底栏）才用阴影。
  * ============================================================ */
 .vet-page {
   min-height: 100vh;
@@ -239,41 +265,55 @@ textarea {
 
 .vet-card {
   background: var(--card);
-  border: 1rpx solid var(--line-light);
-  border-radius: var(--r-md);
-  box-shadow: var(--shadow-sm);
-  padding: var(--sp-3);
+  border: 1rpx solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
   box-sizing: border-box;
 }
 
 .vet-card-soft {
   background: var(--surface);
-  border: 1rpx solid var(--line-light);
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
   padding: var(--sp-3);
   box-sizing: border-box;
 }
 
-/* ============================================================
- * 区块
- * ============================================================ */
-.vet-section {
-  margin-top: var(--sp-4);
+/* 墨绿主卡（首页 01 / PHOTO、报告主操作等） */
+.vet-card-ink {
+  background: var(--brand);
+  color: var(--on-brand);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  box-sizing: border-box;
 }
+
+/* 墨线描边卡（首页 02 / CHAT 等次级入口） */
+.vet-card-outline {
+  background: var(--card);
+  border: 2rpx solid var(--brand);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  box-sizing: border-box;
+}
+
+/* ============================================================
+ * 区块：标题一律宋体重字重；区块用墨线开头
+ * ============================================================ */
+.vet-section { margin-top: var(--sp-6); }
 
 .vet-section-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--sp-2);
-  margin-bottom: var(--sp-2);
+  margin-bottom: var(--sp-3);
 }
 
 .vet-section-title {
   color: var(--text);
   font-family: var(--font-serif);
   font-size: var(--fs-title);
-  font-weight: 700;
+  font-weight: 900;
   line-height: 1.35;
 }
 
@@ -291,15 +331,15 @@ textarea {
   color: var(--text);
   font-family: var(--font-serif);
   font-size: var(--fs-display);
-  font-weight: 700;
-  line-height: 1.22;
+  font-weight: 900;
+  line-height: 1.25;
 }
 
 .vet-title-lg {
   color: var(--text);
   font-family: var(--font-serif);
   font-size: var(--fs-title);
-  font-weight: 700;
+  font-weight: 900;
   line-height: 1.32;
 }
 
@@ -307,7 +347,7 @@ textarea {
   color: var(--text);
   font-family: var(--font-serif);
   font-size: 30rpx;
-  font-weight: 650;
+  font-weight: 900;
   line-height: 1.38;
 }
 
@@ -325,25 +365,41 @@ textarea {
 
 .vet-label {
   color: var(--muted);
-  font-size: 23rpx;
-  font-weight: 600;
+  font-size: 22rpx;
+  font-weight: 700;
+  letter-spacing: 4rpx;
   line-height: 1.4;
 }
 
+/* 鎏金等宽元数据 —— 日期 / 编号 / 月份 / 区块编号（01 / PHOTO） */
+.vet-mono-gold {
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mini);
+  font-weight: 600;
+  letter-spacing: 4rpx;
+  line-height: 1.4;
+}
+
+/* 青柠荧光笔划线（大标题里的强调词） */
+.vet-hl-lime {
+  background: linear-gradient(transparent 58%, var(--lime) 58%);
+}
+
 /* ============================================================
- * 按钮
+ * 按钮：主按钮墨绿实心胶囊；次按钮墨线描边
  * ============================================================ */
 .vet-btn {
-  min-height: 82rpx;
+  min-height: 96rpx;
   padding: 0 var(--sp-4);
-  border-radius: var(--r-md);
+  border-radius: 999rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   box-sizing: border-box;
-  font-size: var(--fs-body);
-  font-weight: 650;
+  font-size: 30rpx;
+  font-weight: 700;
   transition: transform 160ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
               opacity 160ms ease;
 }
@@ -355,14 +411,13 @@ textarea {
 
 .vet-btn-primary {
   background: var(--brand);
-  color: #FFFFFF;
-  box-shadow: var(--shadow-md);
+  color: var(--on-brand);
 }
 
 .vet-btn-secondary {
-  background: var(--brand-light);
-  color: var(--brand-dark);
-  border: 1rpx solid var(--line);
+  background: transparent;
+  color: var(--brand);
+  border: 2rpx solid var(--brand);
 }
 
 .vet-btn-ghost {
@@ -374,32 +429,67 @@ textarea {
 .vet-btn-danger {
   background: var(--sev-urgent-bg);
   color: var(--sev-emergency);
-  border: 1rpx solid rgba(169, 68, 56, 0.2);
-  box-shadow: none;
+  border: 1rpx solid rgba(160, 61, 43, 0.2);
+}
+
+/* 青柠圆形动作钮（→ / ↑），只用于「可点的动作」 */
+.vet-action-dot {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: var(--lime);
+  color: var(--on-lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  font-weight: 700;
+  flex: none;
+}
+
+.vet-action-dot-outline {
+  background: transparent;
+  border: 2rpx solid var(--brand);
+  color: var(--brand);
+  box-sizing: border-box;
+}
+
+/* 青柠下划线文字动作（判断依据 → / 编辑 → / 新问诊） */
+.vet-link-lime {
+  color: var(--brand);
+  font-weight: 700;
+  border-bottom: 2rpx solid var(--lime);
+  padding-bottom: 2rpx;
 }
 
 /* ============================================================
- * Chips & Tags
+ * Chips & Tags：一律胶囊形；可选中 chip 用墨线描边
  * ============================================================ */
 .vet-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 52rpx;
+  min-height: 56rpx;
   padding: 0 var(--sp-3);
-  border-radius: var(--r-sm);
-  background: var(--brand-light);
-  border: 1rpx solid var(--line);
+  border-radius: 999rpx;
+  background: var(--card);
+  border: 2rpx solid var(--brand);
   color: var(--brand);
   font-size: var(--fs-caption);
-  font-weight: 600;
+  font-weight: 700;
   box-sizing: border-box;
 }
 
 .vet-chip-active {
   background: var(--brand);
   border-color: var(--brand);
-  color: #FFFFFF;
+  color: var(--on-brand);
+}
+
+.vet-chip-muted {
+  border: 1rpx solid var(--line);
+  color: var(--ghost);
+  font-weight: 500;
 }
 
 .vet-tag {
@@ -407,9 +497,8 @@ textarea {
   align-items: center;
   min-height: 40rpx;
   padding: 0 var(--sp-2);
-  border-radius: var(--r-sm);
+  border-radius: 999rpx;
   background: var(--surface);
-  border: 1rpx solid var(--line-light);
   color: var(--muted);
   font-size: var(--fs-mini);
   font-weight: 600;
@@ -417,13 +506,12 @@ textarea {
 }
 
 .vet-tag-brand {
-  background: var(--brand-light);
-  color: var(--brand-dark);
-  border-color: var(--line);
+  background: var(--lime);
+  color: var(--on-lime);
 }
 
 /* ============================================================
- * 分割线
+ * 分割线：细线分层；墨色 2rpx 强分割线开区块
  * ============================================================ */
 .vet-divider {
   height: 1rpx;
@@ -432,23 +520,24 @@ textarea {
   margin: var(--sp-3) 0;
 }
 
+.vet-divider-strong {
+  height: 4rpx;
+  background: var(--text);
+  border: none;
+}
+
 /* ============================================================
  * 表单
  * ============================================================ */
-.vet-field {
-  margin-top: var(--sp-3);
-}
-
-.vet-field:first-child {
-  margin-top: 0;
-}
+.vet-field { margin-top: var(--sp-3); }
+.vet-field:first-child { margin-top: 0; }
 
 .vet-field-label {
   display: block;
   margin-bottom: var(--sp-1);
   color: var(--body);
-  font-size: 25rpx;
-  font-weight: 650;
+  font-size: var(--fs-caption);
+  font-weight: 600;
 }
 
 .vet-input,
@@ -456,16 +545,13 @@ textarea {
   width: 100%;
   border: 1rpx solid var(--line);
   border-radius: var(--r-md);
-  background: var(--surface);
+  background: var(--card);
   color: var(--text);
   font-size: 27rpx;
   box-sizing: border-box;
 }
 
-.vet-input {
-  min-height: 88rpx;
-  padding: 0 var(--sp-3);
-}
+.vet-input { min-height: 88rpx; padding: 0 var(--sp-3); }
 
 .vet-textarea {
   min-height: 176rpx;
@@ -482,7 +568,7 @@ textarea {
   padding: var(--sp-4);
   border-radius: var(--r-lg);
   background: var(--card);
-  border: 1rpx solid var(--line-light);
+  border: 1rpx solid var(--line);
   box-shadow: var(--shadow-lg);
   box-sizing: border-box;
 }
@@ -503,12 +589,12 @@ textarea {
   width: 40%;
   height: 100%;
   border-radius: var(--r-sm);
-  background: linear-gradient(90deg, transparent, var(--brand-mid), transparent);
+  background: linear-gradient(90deg, transparent, var(--lime), transparent);
   animation: vetShimmer 1.5s ease-in-out infinite;
 }
 
 /* ============================================================
- * 图片网格
+ * 图片网格 / 安全区 / 进度条
  * ============================================================ */
 .vet-image-grid {
   display: grid;
@@ -516,16 +602,10 @@ textarea {
   gap: var(--sp-2);
 }
 
-/* ============================================================
- * 安全区
- * ============================================================ */
 .vet-safe-bottom {
   padding-bottom: calc(var(--sp-3) + var(--vet-safe-bottom));
 }
 
-/* ============================================================
- * 进度条
- * ============================================================ */
 .vet-progress {
   height: 10rpx;
   border-radius: var(--r-sm);
@@ -541,7 +621,7 @@ textarea {
 }
 
 /* ============================================================
- * 动画
+ * 动画 / 数字
  * ============================================================ */
 .vet-fade-up {
   animation: vetFadeUp 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -552,14 +632,67 @@ textarea {
   font-family: var(--font-mono);
 }
 
-/* ── 字体族工具类 ── */
 .font-serif { font-family: var(--font-serif); }
 .font-mono  { font-family: var(--font-mono); }
 .font-kai   { font-family: var(--font-kai); }
 
+/* 行内分隔点 —— 用 CSS 画，不用装饰性字形（符合结构自检约束） */
+.mid-dot {
+  display: inline-block;
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: middle;
+  margin: 0 10rpx;
+  opacity: 0.5;
+}
+
 /* ============================================================
- * 线性图标系统 — 纯 CSS，替代 emoji
- * 圆角端点、currentColor 继承上下文颜色
+ * 鎏金印章 — v4 唯一装饰元素（品牌记忆点）
+ * 用法：<view class="vet-seal"><text>AI 初筛</text></view>
+ * ============================================================ */
+.vet-seal {
+  width: 124rpx;
+  height: 124rpx;
+  border-radius: 50%;
+  border: 3rpx solid var(--gold-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(10deg);
+  box-sizing: border-box;
+  position: relative;
+}
+
+.vet-seal::before {
+  content: "";
+  position: absolute;
+  inset: 10rpx;
+  border-radius: 50%;
+  border: 2rpx solid var(--gold-line);
+}
+
+.vet-seal text {
+  font-family: var(--font-serif);
+  font-size: 22rpx;
+  font-weight: 900;
+  color: var(--gold);
+  text-align: center;
+  line-height: 1.25;
+}
+
+.vet-seal-sub {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+  color: var(--gold);
+}
+
+/* ============================================================
+ * 线性图标系统（颜色随 currentColor 自动换肤）
  * ============================================================ */
 .vic {
   position: relative;
@@ -567,11 +700,24 @@ textarea {
   box-sizing: border-box;
 }
 
-/* 医疗十字：AI 医生标识 */
-.vic-cross {
-  width: 30rpx;
-  height: 30rpx;
+/* CSS 箭头 —— 替代文本 "→"，跨平台渲染一致 */
+.vic-arrow {
+  width: 20rpx;
+  height: 20rpx;
+  border-top: 4rpx solid currentColor;
+  border-right: 4rpx solid currentColor;
+  border-radius: 1rpx;
+  transform: rotate(45deg);
+  box-sizing: border-box;
+  flex: none;
 }
+
+/* 圆形动作钮内的光学居正 */
+.vet-action-dot .vic-arrow {
+  margin-left: -4rpx;
+}
+
+.vic-cross { width: 30rpx; height: 30rpx; }
 
 .vic-cross::before,
 .vic-cross::after {
@@ -582,34 +728,24 @@ textarea {
 }
 
 .vic-cross::before {
-  left: 50%;
-  top: 0;
-  width: 11rpx;
-  height: 30rpx;
+  left: 50%; top: 0;
+  width: 11rpx; height: 30rpx;
   transform: translateX(-50%);
 }
 
 .vic-cross::after {
-  top: 50%;
-  left: 0;
-  width: 30rpx;
-  height: 11rpx;
+  top: 50%; left: 0;
+  width: 30rpx; height: 11rpx;
   transform: translateY(-50%);
 }
 
-/* 人物：用户头像 */
-.vic-user {
-  width: 30rpx;
-  height: 30rpx;
-}
+.vic-user { width: 30rpx; height: 30rpx; }
 
 .vic-user::before {
   content: "";
   position: absolute;
-  left: 50%;
-  top: 0;
-  width: 13rpx;
-  height: 13rpx;
+  left: 50%; top: 0;
+  width: 13rpx; height: 13rpx;
   transform: translateX(-50%);
   border: 2.5rpx solid currentColor;
   border-radius: 50%;
@@ -619,10 +755,8 @@ textarea {
 .vic-user::after {
   content: "";
   position: absolute;
-  left: 50%;
-  bottom: 0;
-  width: 26rpx;
-  height: 13rpx;
+  left: 50%; bottom: 0;
+  width: 26rpx; height: 13rpx;
   transform: translateX(-50%);
   border: 2.5rpx solid currentColor;
   border-bottom: none;
@@ -630,10 +764,8 @@ textarea {
   box-sizing: border-box;
 }
 
-/* 对话气泡：对话式问诊入口 */
 .vic-chat {
-  width: 34rpx;
-  height: 28rpx;
+  width: 34rpx; height: 28rpx;
   border: 2.5rpx solid currentColor;
   border-radius: 10rpx;
   box-sizing: border-box;
@@ -642,10 +774,8 @@ textarea {
 .vic-chat::before {
   content: "";
   position: absolute;
-  left: 7rpx;
-  bottom: -8rpx;
-  width: 9rpx;
-  height: 9rpx;
+  left: 7rpx; bottom: -8rpx;
+  width: 9rpx; height: 9rpx;
   border-left: 2.5rpx solid currentColor;
   border-bottom: 2.5rpx solid currentColor;
   transform: rotate(45deg);
@@ -655,10 +785,8 @@ textarea {
 .vic-chat::after {
   content: "";
   position: absolute;
-  left: 5rpx;
-  top: 50%;
-  width: 4rpx;
-  height: 4rpx;
+  left: 5rpx; top: 50%;
+  width: 4rpx; height: 4rpx;
   border-radius: 50%;
   background: currentColor;
   transform: translateY(-50%);

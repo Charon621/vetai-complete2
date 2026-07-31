@@ -50,19 +50,86 @@ function stabilizeTempFile(path) {
 
 function processImage(path, pageContext) {
   return new Promise(function (resolve, reject) {
-    // 只有两步：readFile（真机快路径）→ canvas.toDataURL（DevTools 兜底）
-    // 不再走 getImageInfo → compressImage → canvasToTempFilePath 等中间步骤，
-    // 消除 DevTools 下大量无意义的 fail 日志
-    wx.getFileSystemManager().readFile({
-      filePath: path,
-      encoding: 'base64',
-      success: function (res) {
-        resolve('data:image/jpeg;base64,' + res.data)
+    if (!path || path.indexOf('data:') === 0) {
+      resolve(path)
+      return
+    }
+
+    var maxDim = config.MODEL_IMAGE_MAX_DIM || 1024
+    var quality = config.MODEL_IMAGE_QUALITY || 0.7
+
+    // 统一降采样提速：长边超过上限先缩小再读，上传体积和模型视觉编码都更快；
+    // 同时解决部分安卓机 chooseImage 的 compressed 不生效导致大图被拒的问题（BUG-H1）
+    wx.getImageInfo({
+      src: path,
+      success: function (info) {
+        var longest = Math.max(info.width || 0, info.height || 0)
+        if (longest > maxDim) {
+          downscaleImage(path, info, maxDim, quality, pageContext, resolve, reject)
+          return
+        }
+        // 尺寸达标但文件仍可能过大（高质量 JPEG），超 800KB 仍走质量压缩
+        wx.getFileInfo({
+          filePath: path,
+          success: function (fileInfo) {
+            if (fileInfo && fileInfo.size > 800 * 1024) {
+              compressAndRead(path, info, quality, pageContext, resolve, reject)
+            } else {
+              readThenCanvasFallback(path, pageContext, resolve, reject)
+            }
+          },
+          fail: function () {
+            readThenCanvasFallback(path, pageContext, resolve, reject)
+          }
+        })
       },
       fail: function () {
-        canvasToDataURLFallback(path, pageContext, resolve, reject)
+        // DevTools 假路径等场景拿不到尺寸：保留旧链路兜底
+        readThenCanvasFallback(path, pageContext, resolve, reject)
       }
     })
+  })
+}
+
+/**
+ * 降采样到长边 maxDim：优先 wx.compressImage 的 compressedWidth/Height（原生快），
+ * 不支持/失败时回落 canvas 缩放，再失败回落纯质量压缩
+ */
+function downscaleImage(path, info, maxDim, quality, pageContext, resolve, reject) {
+  var isLandscape = (info.width || 0) >= (info.height || 0)
+  var compressOptions = {
+    src: path,
+    quality: Math.round(quality * 100),
+    success: function (cres) {
+      wx.getFileSystemManager().readFile({
+        filePath: cres.tempFilePath, encoding: 'base64',
+        success: function (fileRes) { resolve('data:image/jpeg;base64,' + fileRes.data) },
+        fail: function () {
+          resizeWithCanvas(path, info, maxDim, quality, pageContext, resolve, reject)
+        }
+      })
+    },
+    fail: function () {
+      resizeWithCanvas(path, info, maxDim, quality, pageContext, resolve, reject)
+    }
+  }
+  // 只设长边，另一边按比例自缩
+  if (isLandscape) compressOptions.compressedWidth = maxDim
+  else compressOptions.compressedHeight = maxDim
+  wx.compressImage(compressOptions)
+}
+
+function readThenCanvasFallback(path, pageContext, resolve, reject) {
+  // 两步：readFile（真机快路径）→ canvas.toDataURL（DevTools 兜底）
+  wx.getFileSystemManager().readFile({
+    filePath: path,
+    encoding: 'base64',
+    success: function (res) {
+      resolve('data:image/jpeg;base64,' + res.data)
+    },
+    fail: function () {
+      canvasToDataURLFallback(path, pageContext, resolve, reject)
+    }
   })
 }
 
@@ -287,7 +354,12 @@ function arrayBufferToBase64(buffer) {
  */
 function checkImageQuality(imagePath, pageContext) {
   return new Promise(function (resolve) {
-    var fallback = { isBlurry: false, isOverexposed: false, isTooDark: false, score: 80, suggestions: [] }
+    var fallback = { isBlurry: false, isOverexposed: false, isTooDark: false, score: 80, suggestions: [], isFallback: true }
+    // 兜底分支记录埋点，验证真机上质检真实生效率（BUG-B3）
+    function resolveFallback(reason) {
+      try { analytics.trackError('quality_fallback', reason || '') } catch (e) {}
+      resolve(fallback)
+    }
 
     wx.getImageInfo({
       src: imagePath,
@@ -301,7 +373,7 @@ function checkImageQuality(imagePath, pageContext) {
         query.select('#qualityCanvas')
           .fields({ node: true, size: true })
           .exec(function (res) {
-            if (!res || !res[0] || !res[0].node) { resolve(fallback); return }
+            if (!res || !res[0] || !res[0].node) { resolveFallback('canvas_not_found'); return }
 
             var canvas = res[0].node
             var ctx = canvas.getContext('2d')
@@ -352,9 +424,10 @@ function checkImageQuality(imagePath, pageContext) {
                 if (isOverexposed) suggestions.push('图片过曝，请避免强光直射')
                 if (isTooDark) suggestions.push('图片过暗，请在光线充足环境下拍摄')
 
-                // 埋点：记录亮度方差/平均亮度的 raw 分布，用于后续用真实数据校准阈值
+                // 埋点：质检样本单独存储，不与行为事件抢配额（BUG-L2），
+                // 用于后续用真实数据校准上面 3 个阈值
                 try {
-                  analytics.track('imageQuality', {
+                  analytics.trackSample('imageQuality', {
                     score: Math.max(0, Math.min(100, score)),
                     variance: Math.round(variance),
                     avgBrightness: Math.round(avgBrightness),
@@ -367,13 +440,13 @@ function checkImageQuality(imagePath, pageContext) {
                   score: score, suggestions: suggestions,
                   variance: Math.round(variance), avgBrightness: Math.round(avgBrightness)
                 })
-              } catch (e) { resolve(fallback) }
+              } catch (e) { resolveFallback('get_image_data_failed') }
             }
-            img.onerror = function () { resolve(fallback) }
+            img.onerror = function () { resolveFallback('image_load_failed') }
             img.src = imagePath
           })
       },
-      fail: function () { resolve(fallback) }
+      fail: function () { resolveFallback('get_image_info_failed') }
     })
   })
 }
@@ -469,6 +542,29 @@ function cropLesionRegion(imagePath, lesionBox, pageContext) {
             var img = canvas.createImage()
             img.onload = function () {
               ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH)
+
+              // 把用户圈选路径直接画到 ROI 图上，让模型看到标注而不只是外接矩形（BUG-I1）
+              try {
+                var pts = Array.isArray(lesionBox.points) ? lesionBox.points : []
+                ctx.strokeStyle = '#FF3B30'
+                ctx.lineWidth = Math.max(2, Math.round(outW * 0.008))
+                ctx.setLineDash([6, 4])
+                if (lesionBox.type !== 'rectangle' && pts.length >= 3) {
+                  ctx.beginPath()
+                  for (var pi = 0; pi < pts.length; pi++) {
+                    var lx = (pts[pi].x * info.width - sx) * outScale
+                    var ly = (pts[pi].y * info.height - sy) * outScale
+                    if (pi === 0) ctx.moveTo(lx, ly)
+                    else ctx.lineTo(lx, ly)
+                  }
+                  ctx.closePath()
+                  ctx.stroke()
+                } else {
+                  ctx.strokeRect((px - sx) * outScale, (py - sy) * outScale, pw * outScale, ph * outScale)
+                }
+                ctx.setLineDash([])
+              } catch (e) {}
+
               wx.canvasToTempFilePath({
                 canvas: canvas, fileType: 'jpg', quality: 0.62,
                 success: function (tmpRes) {
@@ -506,16 +602,17 @@ function cropAllLesionRegions(imagePaths, lesionBoxes, pageContext) {
 
 /**
  * 将 base64 图片数据写入本地用户目录，返回本地文件路径
- * 用于 DevTools 等环境下临时路径为假路径时，用已有的 base64 重建真实文件
+ * dirName 默认临时目录；持久化场景（saveImagePermanent）写 vetai_saved，
+ * 避免永久记录引用 vetai_tmp 里的文件被清理误伤（BUG-H3）
  */
-function base64ToLocalFile(base64, originalPath) {
+function base64ToLocalFile(base64, originalPath, dirName) {
   return new Promise(function (resolve) {
     if (!base64 || base64.indexOf('data:image') !== 0) return resolve(originalPath)
     var userDataPath = wx.env && wx.env.USER_DATA_PATH ? wx.env.USER_DATA_PATH : ''
     if (!userDataPath) return resolve(originalPath)
 
     var fs = wx.getFileSystemManager()
-    var dir = userDataPath + '/vetai_tmp'
+    var dir = userDataPath + '/' + (dirName || 'vetai_tmp')
     var ext = base64.indexOf('data:image/png') === 0 ? 'png' : 'jpg'
     var dest = dir + '/img_' + Date.now() + '_' + Math.floor(Math.random() * 1000000) + '.' + ext
     var data = base64.replace(/^data:image\/[a-zA-Z0-9]+;base64,/, '')
@@ -553,9 +650,9 @@ function saveImagePermanent(tempFilePath) {
   return new Promise(function (resolve) {
     if (!tempFilePath) return resolve({ path: '', newlySaved: false })
 
-    // 如果是 base64 data URL，直接写入本地用户目录
+    // 如果是 base64 data URL，直接写入永久目录 vetai_saved（BUG-H3）
     if (tempFilePath.indexOf('data:image') === 0) {
-      base64ToLocalFile(tempFilePath, '').then(function (localPath) {
+      base64ToLocalFile(tempFilePath, '', 'vetai_saved').then(function (localPath) {
         if (localPath && localPath.indexOf('data:') !== 0) {
           resolve({ path: localPath, newlySaved: true })
         } else {
@@ -606,12 +703,177 @@ function saveImagesPermanent(paths) {
   return Promise.all(paths.map(saveImagePermanent))
 }
 
+// ============================================================
+// 批量选图公共链路（首页 / 聊天页共用）
+// ============================================================
+
+/**
+ * 批量准备用户选择的图片：逐张 processImage 转 base64
+ * →（可选）saveImagePermanent 落盘 →（可选）checkImageQuality 质量检测。
+ * 执行顺序与首页原实现一致：先逐张顺序转码 + 落盘，
+ * 再对展示路径批量并行质检（真机对超长 data URL 质检会静默失效，BUG-B3）。
+ *
+ * opts:
+ *   existingCount  已有图片数（配合 maxCount 截断新增部分）
+ *   maxCount       图片总上限；超出部分直接裁掉，张数记在返回数组的 truncated 属性上
+ *   pageContext    页面实例（canvas 兜底 / 质检所需）
+ *   savePermanent  默认 true；聊天页选图阶段为 false（确认发送时才批量落盘）
+ *   checkQuality   默认 true；聊天页选图阶段为 false（保持原行为不做质检）
+ *   onProgress     function(done, total) 逐张处理进度回调
+ *
+ * resolve 数组 [{ base64, displayPath, quality, originalPath }]。
+ * 单张落盘失败（或未落盘）时 displayPath 退化为 base64，
+ * 保证功能不中断（与两页原有降级策略一致）。
+ */
+function prepareImages(tempPaths, opts) {
+  opts = opts || {}
+  var pageContext = opts.pageContext || null
+  var savePermanent = opts.savePermanent !== false
+  var checkQuality = opts.checkQuality !== false
+  var paths = Array.isArray(tempPaths) ? tempPaths.filter(Boolean) : []
+
+  var truncated = 0
+  if (typeof opts.maxCount === 'number' && opts.maxCount > 0) {
+    var remaining = Math.max(0, opts.maxCount - (opts.existingCount || 0))
+    if (paths.length > remaining) {
+      truncated = paths.length - remaining
+      paths = paths.slice(0, remaining)
+    }
+  }
+
+  function finish(items) {
+    items.truncated = truncated
+    return items
+  }
+
+  if (paths.length === 0) return Promise.resolve(finish([]))
+
+  var total = paths.length
+  return paths.reduce(function (chain, p) {
+    return chain.then(function (acc) {
+      return processImage(p, pageContext).then(function (b64) {
+        var saving = savePermanent ? saveImagePermanent(b64) : Promise.resolve(null)
+        return saving.then(function (saved) {
+          acc.push({
+            base64: b64,
+            // 落盘失败（或未落盘）时退化为 base64 展示，保证功能不中断
+            displayPath: saved && saved.path ? saved.path : b64,
+            quality: null,
+            originalPath: p
+          })
+          if (typeof opts.onProgress === 'function') {
+            try { opts.onProgress(acc.length, total) } catch (e) {}
+          }
+          return acc
+        })
+      })
+    })
+  }, Promise.resolve([])).then(function (items) {
+    if (!checkQuality) return finish(items)
+    // 质量检测对落盘后的本地路径做，避免真机对超长 data URL 静默失效（BUG-B3）
+    return Promise.all(items.map(function (item) {
+      return checkImageQuality(item.displayPath, pageContext)
+    })).then(function (qualityFlags) {
+      for (var i = 0; i < items.length; i++) items[i].quality = qualityFlags[i]
+      return finish(items)
+    })
+  })
+}
+
 function cleanupSavedFiles(savedInfos) {
   if (!Array.isArray(savedInfos)) return
+  var fs = wx.getFileSystemManager()
   savedInfos.forEach(function (info) {
     if (info && info.newlySaved && info.path) {
-      wx.removeSavedFile({ filePath: info.path, fail: function () {} })
+      // 用户目录文件必须用 fs.unlink；wx.removeSavedFile 只对 wx.saveFile 体系生效，之前是静默失败（BUG-H2）
+      fs.unlink({ filePath: info.path, fail: function () {} })
     }
+  })
+}
+
+// ============================================================
+// 本地图片垃圾回收（BUG-H3/H4）
+// 启动时调用：扫描所有本机空间的记录/档案/聊天草稿引用的图片路径，
+// 删除 vetai_tmp / vetai_saved 中未被引用且超过 7 天的文件。
+// 基于引用判断，多条记录共享同一文件也不会被误删。
+// ============================================================
+
+var CLEANUP_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+
+function collectPathsFromValue(value, out) {
+  if (!value) return
+  if (typeof value === 'string') {
+    if (value.indexOf('/vetai_') >= 0) out[value] = true
+    return
+  }
+  if (Array.isArray(value)) {
+    for (var i = 0; i < value.length; i++) collectPathsFromValue(value[i], out)
+    return
+  }
+  if (typeof value === 'object') {
+    var keys = ['imagePath', 'imagePaths', 'avatar', 'photoPaths', 'image', 'images', 'messages', 'draft', 'records', 'profiles']
+    for (var k = 0; k < keys.length; k++) {
+      if (value[keys[k]] !== undefined) collectPathsFromValue(value[keys[k]], out)
+    }
+  }
+}
+
+function collectReferencedImagePaths() {
+  var referenced = {}
+  var keys = []
+  try {
+    keys = (wx.getStorageInfoSync().keys) || []
+  } catch (e) {
+    return null // 拿不到 key 列表时放弃清理，宁可不删不可误删
+  }
+  for (var i = 0; i < keys.length; i++) {
+    var key = keys[i]
+    if (key.indexOf('pet_diagnosis_history') !== 0 &&
+        key.indexOf('pet_profiles') !== 0 &&
+        key.indexOf('chat_consultation_draft') !== 0) continue
+    try {
+      var value = wx.getStorageSync(key)
+      if (Array.isArray(value)) {
+        for (var j = 0; j < value.length; j++) collectPathsFromValue(value[j], referenced)
+      } else {
+        collectPathsFromValue(value, referenced)
+        if (value && value.messages) collectPathsFromValue(value.messages, referenced)
+      }
+    } catch (e) {}
+  }
+  return referenced
+}
+
+function cleanupStaleImages() {
+  if (!USER_DATA_PATH) return
+  var referenced = collectReferencedImagePaths()
+  if (referenced === null) return
+  var fs = wx.getFileSystemManager()
+  var now = Date.now()
+
+  ;['/vetai_tmp', '/vetai_saved'].forEach(function (dirName) {
+    var dir = USER_DATA_PATH + dirName
+    fs.readdir({
+      dirPath: dir,
+      success: function (res) {
+        ;(res.files || []).forEach(function (name) {
+          var fullPath = dir + '/' + name
+          if (referenced[fullPath]) return
+          fs.stat({
+            path: fullPath,
+            success: function (statRes) {
+              var stats = statRes.stats || statRes
+              var mtimeMs = (stats.lastModifiedTime || 0) * 1000
+              if (mtimeMs > 0 && now - mtimeMs > CLEANUP_MAX_AGE_MS) {
+                fs.unlink({ filePath: fullPath, fail: function () {} })
+              }
+            },
+            fail: function () {}
+          })
+        })
+      },
+      fail: function () {}
+    })
   })
 }
 
@@ -644,7 +906,9 @@ module.exports = {
   cropAllLesionRegions: cropAllLesionRegions,
   saveImagePermanent: saveImagePermanent,
   saveImagesPermanent: saveImagesPermanent,
+  prepareImages: prepareImages,
   cleanupSavedFiles: cleanupSavedFiles,
+  cleanupStaleImages: cleanupStaleImages,
   localPathsToBase64: localPathsToBase64,
   stabilizeTempFile: stabilizeTempFile,
   base64ToLocalFile: base64ToLocalFile

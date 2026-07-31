@@ -27,16 +27,23 @@
   <!-- 顶部标题栏 -->
   <view class="chat-header" style="padding-top: {{statusBarHeight * 2}}rpx">
     <view class="chat-header-left">
+      <view class="chat-back-btn" bindtap="onBackTap" aria-label="返回">
+        <text class="chat-back-arrow">‹</text>
+      </view>
       <view class="chat-doctor-avatar">
         <view class="vic vic-cross"></view>
       </view>
       <view>
         <view class="chat-header-title">AI 兽医助手</view>
-        <view class="chat-header-sub">{{isAnalyzing ? '正在分析中…' : '在线问诊'}}</view>
+        <view class="chat-header-sub">
+          <text class="chat-status-dot"></text>
+          <block wx:if="{{isAnalyzing}}"><text>正在分析中…</text></block>
+          <block wx:elif="{{draftPetName}}"><text>在线</text><text class="mid-dot"></text><text>正在问诊{{draftPetName}}</text></block>
+          <block wx:else><text>在线问诊</text></block>
+        </view>
       </view>
     </view>
     <view class="chat-new-btn" wx:if="{{showNewBtn}}" bindtap="onNewChat">
-      <text class="chat-new-icon">+</text>
       <text class="chat-new-text">新问诊</text>
     </view>
   </view>
@@ -48,25 +55,31 @@
 
   <!-- 消息列表 -->
   <scroll-view class="chat-messages" scroll-y scroll-into-view="{{scrollIntoView}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
-    <view wx:for="{{messages}}" wx:key="id" class="msg-row {{item.isUser ? 'msg-row-user' : 'msg-row-doctor'}}">
-      <view class="msg-avatar" wx:if="{{item.isDoctor}}">
-        <view class="vic vic-cross"></view>
-      </view>
-      <view class="msg-avatar msg-avatar-user" wx:if="{{item.isUser}}">
-        <view class="vic vic-user"></view>
-      </view>
-      <view class="msg-content">
-        <view class="msg-bubble {{item.isUser ? 'msg-bubble-user' : 'msg-bubble-doctor'}}" wx:if="{{item.text}}">
-          <text class="msg-text">{{item.text}}</text>
+    <block wx:for="{{messages}}" wx:key="id">
+      <view class="msg-time-divider" wx:if="{{item.showTime}}">— {{item.timeText}} —</view>
+      <view class="msg-row {{item.isUser ? 'msg-row-user' : 'msg-row-doctor'}}">
+        <view class="msg-avatar" wx:if="{{item.isDoctor}}">
+          <view class="vic vic-cross"></view>
         </view>
-        <view class="msg-images" wx:if="{{item.images.length > 0}}">
-          <image wx:for="{{item.images}}" wx:key="*this" wx:for-item="img" src="{{img}}" mode="aspectFill" class="msg-image" />
+        <view class="msg-avatar msg-avatar-user" wx:if="{{item.isUser}}">
+          <view class="vic vic-user"></view>
         </view>
-        <view class="msg-image-wrap" wx:elif="{{item.image}}">
-          <image src="{{item.image}}" mode="aspectFill" class="msg-image" />
+        <view class="msg-content">
+          <view class="msg-bubble {{item.isUser ? 'msg-bubble-user' : 'msg-bubble-doctor'}}" wx:if="{{item.text}}">
+            <text class="msg-text">{{item.text}}</text>
+          </view>
+          <view class="msg-images" wx:if="{{item.images.length > 0}}">
+            <image wx:for="{{item.images}}" wx:key="*this" wx:for-item="img" src="{{img}}" mode="aspectFill" class="msg-image" />
+          </view>
+          <view class="msg-image-wrap" wx:elif="{{item.image}}">
+            <image src="{{item.image}}" mode="aspectFill" class="msg-image" />
+          </view>
         </view>
-        <view class="msg-time">{{item.timeText}}</view>
       </view>
+    </block>
+    <view class="chat-progress" wx:if="{{showProgress}}">
+      <view class="chat-progress-dot"></view>
+      <text>{{progressText}}</text>
     </view>
     <view id="msg-bottom" class="msg-bottom-anchor"></view>
   </scroll-view>
@@ -82,18 +95,19 @@
     </view>
     <view class="photo-preview-actions">
       <view class="photo-preview-btn-cancel" bindtap="onCancelPhotos">取消</view>
-      <view class="photo-preview-btn-secondary" bindtap="onUploadPhoto" wx:if="{{uploadedPhotos.length < 3}}">继续添加</view>
+      <view class="photo-preview-btn-secondary" bindtap="onUploadPhoto" wx:if="{{uploadedPhotos.length < 5}}">继续添加</view>
       <view class="photo-preview-btn-primary" bindtap="onConfirmPhotos">确认上传</view>
     </view>
   </view>
 
   <!-- 底部输入区 -->
   <view class="chat-input-area" wx:if="{{!showPhotoActions}}">
-    <scroll-view class="quick-replies" scroll-x wx:if="{{quickReplies.length > 0}}" show-scrollbar="{{false}}">
+    <scroll-view class="quick-replies" scroll-x wx:if="{{quickReplies.length > 0 || showProgress}}" show-scrollbar="{{false}}">
       <view class="qr-row">
         <view class="qr-chip {{item.field}}" wx:for="{{quickReplies}}" wx:key="key" data-index="{{index}}" bindtap="onQuickReplyTap">
           {{item.label}}
         </view>
+        <view class="qr-chip qr-skip" wx:if="{{showProgress}}" bindtap="onSkipQuestion">跳过</view>
       </view>
     </scroll-view>
 
@@ -103,7 +117,7 @@
       </view>
       <input class="chat-input" value="{{inputText}}" placeholder="{{placeholder || '输入消息…'}}" bindinput="onInput" confirm-type="send" bindconfirm="onSendText" adjust-position />
       <view class="send-btn {{inputText ? 'send-btn-active' : ''}}" bindtap="onSendText">
-        <text class="send-icon">→</text>
+        <text class="send-icon">↑</text>
       </view>
     </view>
 
@@ -125,6 +139,7 @@
     bind:clear="onLesionClear"
     bind:close="onLesionClose" />
 
-  <!-- 隐藏画布：供 image.js 的 canvas.toDataURL 兜底使用 -->
+  <!-- 隐藏画布：供 image.js 的 canvas.toDataURL 兜底和 ROI 裁剪使用 -->
   <canvas type="2d" id="fallbackCanvas" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;"></canvas>
+  <canvas type="2d" id="resizeCanvas" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;"></canvas>
 </view>

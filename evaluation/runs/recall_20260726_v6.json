@@ -1,0 +1,656 @@
+{
+  "tool": "recall_probe",
+  "kbVersion": "2026-07-26-v6",
+  "floors": {
+    "withVisual": 90,
+    "textOnly": 70
+  },
+  "textOnly": {
+    "total": 24,
+    "anyHit": 22,
+    "expectedHit": 19,
+    "anyHitRate": 91.7,
+    "expectedHitRate": 79.2,
+    "rows": [
+      {
+        "complaint": "狗狗最近老是挠，经常带它去草地遛弯，好久没驱虫了",
+        "expected": [
+          "跳蚤过敏性皮炎",
+          "疥螨病",
+          "姬螯螨病（行走的皮屑）"
+        ],
+        "retrieved": [
+          "跳蚤过敏性皮炎",
+          "姬螯螨病（行走的皮屑）",
+          "蜱虫叮咬"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "家里两只猫都在挠，另一只也痒，背上一粒粒的结痂",
+        "expected": [
+          "猫粟粒性皮炎（跳蚤过敏）",
+          "跳蚤过敏性皮炎"
+        ],
+        "retrieved": [
+          "猫浅表脓皮病",
+          "姬螯螨病（行走的皮屑）",
+          "虱感染"
+        ],
+        "hitExpected": false,
+        "abstained": false
+      },
+      {
+        "complaint": "刚从救助站接回来的小猫，脸上一块圆圆的秃了，我手上也起了红疹",
+        "expected": [
+          "皮肤癣菌病（犬猫）"
+        ],
+        "retrieved": [
+          "皮肤癣菌病（犬猫）",
+          "猫疥螨病",
+          "姬螯螨病（行走的皮屑）"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "每年春天就犯，一到换季就开始舔爪子啃肚皮，以前也过敏",
+        "expected": [
+          "特应性皮炎（环境过敏）",
+          "食物过敏性皮炎"
+        ],
+        "retrieved": [
+          "特应性皮炎（环境过敏）",
+          "食物过敏性皮炎",
+          "接触性皮炎"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "老是犯，治好了又来，耳朵反复发炎还一直舔脚",
+        "expected": [
+          "特应性皮炎（环境过敏）",
+          "马拉色菌性外耳炎",
+          "食物过敏性皮炎"
+        ],
+        "retrieved": [
+          "特应性皮炎（环境过敏）",
+          "趾间脓皮病（趾间炎）",
+          "食物过敏性皮炎"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "一直甩头，耳屎特别多，耳朵黏糊糊的还很臭",
+        "expected": [
+          "马拉色菌性外耳炎",
+          "耳螨感染",
+          "细菌性外耳炎"
+        ],
+        "retrieved": [
+          "耳螨感染",
+          "马拉色菌性外耳炎",
+          "耳血肿"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "猫一直甩头挠耳朵，耳朵里好多黑色的东西像黑芝麻",
+        "expected": [
+          "耳螨感染"
+        ],
+        "retrieved": [
+          "耳螨感染",
+          "马拉色菌性外耳炎",
+          "马拉色菌皮炎"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "两边都掉毛，一点都不痒，最近喝水特别多还老是尿",
+        "expected": [
+          "库兴综合征相关皮肤改变",
+          "甲状腺功能减退相关皮肤改变"
+        ],
+        "retrieved": [
+          "库兴综合征相关皮肤改变",
+          "甲状腺功能减退相关皮肤改变",
+          "蠕形螨病（局灶型）"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "老猫瘦了好多，喝水多，背上毛没光泽还两边都掉",
+        "expected": [
+          "猫甲状腺功能亢进相关皮肤改变"
+        ],
+        "retrieved": [
+          "猫甲状腺功能亢进相关皮肤改变"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "两边对称掉毛，也不痒，狗变胖了没精神",
+        "expected": [
+          "甲状腺功能减退相关皮肤改变"
+        ],
+        "retrieved": [
+          "甲状腺功能减退相关皮肤改变",
+          "蠕形螨病（局灶型）",
+          "落叶型天疱疮"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "猫皮很薄，抱一下一碰就破，都没外伤自己就裂开了",
+        "expected": [
+          "猫皮肤脆弱症"
+        ],
+        "retrieved": [
+          "猫皮肤脆弱症",
+          "皮肤创伤/擦伤"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "脖子上烂了一块，昨天还好好的一夜之间就烂开了",
+        "expected": [
+          "急性湿性皮炎（热点）"
+        ],
+        "retrieved": [],
+        "hitExpected": false,
+        "abstained": true
+      },
+      {
+        "complaint": "腿上破了个洞一直流脓，摸着里面硬硬的",
+        "expected": [
+          "深部脓皮病",
+          "脓肿/蜂窝织炎"
+        ],
+        "retrieved": [
+          "深部脓皮病",
+          "肛周瘘管",
+          "脓肿/蜂窝织炎"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "鼻子和脚垫硬邦邦的像老茧，还干裂了",
+        "expected": [
+          "鼻/足垫角化过度",
+          "锌反应性皮病"
+        ],
+        "retrieved": [
+          "鼻/足垫角化过度",
+          "锌反应性皮病",
+          "压力性胼胝/肘部胼胝"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "下巴上黑黑的一片怎么洗都洗不掉",
+        "expected": [
+          "猫痤疮"
+        ],
+        "retrieved": [],
+        "hitExpected": false,
+        "abstained": true
+      },
+      {
+        "complaint": "肚子上密密麻麻小红疙瘩，有的顶上是白的",
+        "expected": [
+          "浅表脓皮病",
+          "脓疱病"
+        ],
+        "retrieved": [
+          "浅表脓皮病"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "身上油乎乎的一股酸臭味，皮肤还发黑了",
+        "expected": [
+          "马拉色菌皮炎",
+          "皮脂溢性皮炎"
+        ],
+        "retrieved": [
+          "马拉色菌皮炎",
+          "马拉色菌性外耳炎"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "爪子中间反复红肿，一直舔，都舔秃了",
+        "expected": [
+          "趾间脓皮病（趾间炎）",
+          "特应性皮炎（环境过敏）"
+        ],
+        "retrieved": [
+          "趾间脓皮病（趾间炎）",
+          "特应性皮炎（环境过敏）",
+          "肢端舔舐性肉芽肿"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "白猫耳朵尖一直烂着好不了，还老出血",
+        "expected": [
+          "猫鳞状细胞癌",
+          "猫日光性皮炎"
+        ],
+        "retrieved": [
+          "猫鳞状细胞癌",
+          "皮肤肿瘤（肥大细胞瘤等）"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "身上长了个硬疙瘩越来越大，表面破了",
+        "expected": [
+          "皮肤肿瘤（肥大细胞瘤等）"
+        ],
+        "retrieved": [
+          "皮肤肿瘤（肥大细胞瘤等）",
+          "皮脂腺囊肿",
+          "深部脓皮病"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "尾巴根那里一直挠，摸着一粒粒的，还看到黑色小点",
+        "expected": [
+          "跳蚤过敏性皮炎"
+        ],
+        "retrieved": [
+          "跳蚤过敏性皮炎",
+          "浅表脓皮病",
+          "耳螨感染"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "幼犬脸肿得厉害，眼睛周围都是脓包，下巴那里也肿了还发烧",
+        "expected": [
+          "幼犬蜂窝织炎"
+        ],
+        "retrieved": [
+          "蚊虫叮咬/昆虫过敏",
+          "脓肿/蜂窝织炎",
+          "落叶型天疱疮"
+        ],
+        "hitExpected": false,
+        "abstained": false
+      },
+      {
+        "complaint": "狗鼻子颜色变浅了发白，上面反复结痂还溃疡",
+        "expected": [
+          "盘状红斑狼疮",
+          "日光性皮炎"
+        ],
+        "retrieved": [
+          "盘状红斑狼疮",
+          "肢端舔舐性肉芽肿"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "眼皮红肿结痂，一直眯着眼流眼泪还用爪子揉",
+        "expected": [
+          "睑炎"
+        ],
+        "retrieved": [
+          "特应性皮炎（环境过敏）",
+          "趾间脓皮病（趾间炎）"
+        ],
+        "hitExpected": false,
+        "abstained": false
+      }
+    ]
+  },
+  "withVisual": {
+    "total": 24,
+    "anyHit": 24,
+    "expectedHit": 24,
+    "anyHitRate": 100,
+    "expectedHitRate": 100,
+    "rows": [
+      {
+        "complaint": "狗狗最近老是挠，经常带它去草地遛弯，好久没驱虫了",
+        "expected": [
+          "跳蚤过敏性皮炎",
+          "疥螨病",
+          "姬螯螨病（行走的皮屑）"
+        ],
+        "retrieved": [
+          "跳蚤过敏性皮炎",
+          "姬螯螨病（行走的皮屑）",
+          "疥螨病"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "家里两只猫都在挠，另一只也痒，背上一粒粒的结痂",
+        "expected": [
+          "猫粟粒性皮炎（跳蚤过敏）",
+          "跳蚤过敏性皮炎"
+        ],
+        "retrieved": [
+          "猫粟粒性皮炎（跳蚤过敏）",
+          "跳蚤过敏性皮炎",
+          "猫浅表脓皮病"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "刚从救助站接回来的小猫，脸上一块圆圆的秃了，我手上也起了红疹",
+        "expected": [
+          "皮肤癣菌病（犬猫）"
+        ],
+        "retrieved": [
+          "皮肤癣菌病（犬猫）",
+          "猫疥螨病",
+          "姬螯螨病（行走的皮屑）"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "每年春天就犯，一到换季就开始舔爪子啃肚皮，以前也过敏",
+        "expected": [
+          "特应性皮炎（环境过敏）",
+          "食物过敏性皮炎"
+        ],
+        "retrieved": [
+          "特应性皮炎（环境过敏）",
+          "食物过敏性皮炎",
+          "接触性皮炎"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "老是犯，治好了又来，耳朵反复发炎还一直舔脚",
+        "expected": [
+          "特应性皮炎（环境过敏）",
+          "马拉色菌性外耳炎",
+          "食物过敏性皮炎"
+        ],
+        "retrieved": [
+          "马拉色菌性外耳炎",
+          "特应性皮炎（环境过敏）",
+          "趾间脓皮病（趾间炎）"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "一直甩头，耳屎特别多，耳朵黏糊糊的还很臭",
+        "expected": [
+          "马拉色菌性外耳炎",
+          "耳螨感染",
+          "细菌性外耳炎"
+        ],
+        "retrieved": [
+          "马拉色菌性外耳炎",
+          "耳螨感染",
+          "马拉色菌皮炎"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "猫一直甩头挠耳朵，耳朵里好多黑色的东西像黑芝麻",
+        "expected": [
+          "耳螨感染"
+        ],
+        "retrieved": [
+          "耳螨感染",
+          "马拉色菌性外耳炎",
+          "马拉色菌皮炎"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "两边都掉毛，一点都不痒，最近喝水特别多还老是尿",
+        "expected": [
+          "库兴综合征相关皮肤改变",
+          "甲状腺功能减退相关皮肤改变"
+        ],
+        "retrieved": [
+          "库兴综合征相关皮肤改变",
+          "甲状腺功能减退相关皮肤改变",
+          "蠕形螨病（局灶型）"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "老猫瘦了好多，喝水多，背上毛没光泽还两边都掉",
+        "expected": [
+          "猫甲状腺功能亢进相关皮肤改变"
+        ],
+        "retrieved": [
+          "猫甲状腺功能亢进相关皮肤改变"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "两边对称掉毛，也不痒，狗变胖了没精神",
+        "expected": [
+          "甲状腺功能减退相关皮肤改变"
+        ],
+        "retrieved": [
+          "甲状腺功能减退相关皮肤改变",
+          "蠕形螨病（局灶型）",
+          "全身型蠕形螨病"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "猫皮很薄，抱一下一碰就破，都没外伤自己就裂开了",
+        "expected": [
+          "猫皮肤脆弱症"
+        ],
+        "retrieved": [
+          "猫皮肤脆弱症",
+          "皮肤创伤/擦伤"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "脖子上烂了一块，昨天还好好的一夜之间就烂开了",
+        "expected": [
+          "急性湿性皮炎（热点）"
+        ],
+        "retrieved": [
+          "急性湿性皮炎（热点）",
+          "皮肤褶皱皮炎"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "腿上破了个洞一直流脓，摸着里面硬硬的",
+        "expected": [
+          "深部脓皮病",
+          "脓肿/蜂窝织炎"
+        ],
+        "retrieved": [
+          "皮肤肿瘤（肥大细胞瘤等）",
+          "深部脓皮病",
+          "皮脂腺囊肿"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "鼻子和脚垫硬邦邦的像老茧，还干裂了",
+        "expected": [
+          "鼻/足垫角化过度",
+          "锌反应性皮病"
+        ],
+        "retrieved": [
+          "鼻/足垫角化过度",
+          "锌反应性皮病",
+          "压力性胼胝/肘部胼胝"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "下巴上黑黑的一片怎么洗都洗不掉",
+        "expected": [
+          "猫痤疮"
+        ],
+        "retrieved": [
+          "猫痤疮"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "肚子上密密麻麻小红疙瘩，有的顶上是白的",
+        "expected": [
+          "浅表脓皮病",
+          "脓疱病"
+        ],
+        "retrieved": [
+          "浅表脓皮病"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "身上油乎乎的一股酸臭味，皮肤还发黑了",
+        "expected": [
+          "马拉色菌皮炎",
+          "皮脂溢性皮炎"
+        ],
+        "retrieved": [
+          "马拉色菌皮炎",
+          "皮脂溢性皮炎",
+          "甲状腺功能减退相关皮肤改变"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "爪子中间反复红肿，一直舔，都舔秃了",
+        "expected": [
+          "趾间脓皮病（趾间炎）",
+          "特应性皮炎（环境过敏）"
+        ],
+        "retrieved": [
+          "趾间脓皮病（趾间炎）",
+          "特应性皮炎（环境过敏）",
+          "肢端舔舐性肉芽肿"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "白猫耳朵尖一直烂着好不了，还老出血",
+        "expected": [
+          "猫鳞状细胞癌",
+          "猫日光性皮炎"
+        ],
+        "retrieved": [
+          "猫鳞状细胞癌",
+          "皮肤肿瘤（肥大细胞瘤等）",
+          "嗜酸性肉芽肿复合体"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "身上长了个硬疙瘩越来越大，表面破了",
+        "expected": [
+          "皮肤肿瘤（肥大细胞瘤等）"
+        ],
+        "retrieved": [
+          "皮肤肿瘤（肥大细胞瘤等）",
+          "皮脂腺囊肿",
+          "深部脓皮病"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "尾巴根那里一直挠，摸着一粒粒的，还看到黑色小点",
+        "expected": [
+          "跳蚤过敏性皮炎"
+        ],
+        "retrieved": [
+          "浅表脓皮病",
+          "跳蚤过敏性皮炎",
+          "耳螨感染"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "幼犬脸肿得厉害，眼睛周围都是脓包，下巴那里也肿了还发烧",
+        "expected": [
+          "幼犬蜂窝织炎"
+        ],
+        "retrieved": [
+          "幼犬蜂窝织炎",
+          "浅表脓皮病",
+          "落叶型天疱疮"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "狗鼻子颜色变浅了发白，上面反复结痂还溃疡",
+        "expected": [
+          "盘状红斑狼疮",
+          "日光性皮炎"
+        ],
+        "retrieved": [
+          "盘状红斑狼疮",
+          "红斑型天疱疮"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      },
+      {
+        "complaint": "眼皮红肿结痂，一直眯着眼流眼泪还用爪子揉",
+        "expected": [
+          "睑炎"
+        ],
+        "retrieved": [
+          "睑炎",
+          "特应性皮炎（环境过敏）",
+          "趾间脓皮病（趾间炎）"
+        ],
+        "hitExpected": true,
+        "abstained": false
+      }
+    ]
+  }
+}

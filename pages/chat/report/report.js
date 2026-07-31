@@ -70,7 +70,8 @@ Page({
 
     if (d.ragMatchName || d.ragSummary) {
       lines.push({
-        label: '知识库核对',
+        // 口径统一：用户可见文案不提“知识库”等内部机制（BUG-J3）
+        label: '临床特征核对',
         value: chatDoctor.cleanText(d.ragSummary || ('匹配参考：' + d.ragMatchName))
       })
     }

@@ -1,0 +1,591 @@
+{
+  "audit_type": "dev_set_structural_audit",
+  "generated_at": "2026-07-26T12:57:03.825Z",
+  "boundary_note": "pilot_public_images 为 DEV_ONLY；本审计不产生诊断准确率，不使用来源数据集的宽泛类别作为参考标签",
+  "prompt_version": "vetai-derm-v2.0.0",
+  "node_version": "v24.16.0",
+  "image_count": 8,
+  "manifest_hash_mismatch": 0,
+  "total_checks_passed": 84,
+  "total_checks_failed": 0,
+  "scenarios": [
+    {
+      "scenario_id": "baseline_single",
+      "description": "单图基线",
+      "case_ids": [
+        "dog210422_04_02_33"
+      ],
+      "image_sha256": [
+        "181f756f948418c230146934954617448f7d882a8e811348e81d2a28d8900899"
+      ],
+      "image_bytes": [
+        130282
+      ],
+      "reference_tier": [
+        "DEV_ONLY"
+      ],
+      "prompt_version": "vetai-derm-v2.0.0",
+      "system_prompt_sha256": "2111956eb638cd9e838cb1a53bf92362ea734a66a7bfdb6a6cce2c60f59a6211",
+      "user_prompt_sha256": "c866bd43085787c8f9e5090475f6917cf2856fd1576d2dcfde8610da5aa4627d",
+      "system_prompt_chars": 6041,
+      "user_prompt_chars": 554,
+      "checks": [
+        {
+          "name": "每张图都有编号标签",
+          "pass": true,
+          "detail": "标签 1 个 / 图片 1 张"
+        },
+        {
+          "name": "编号连续且从 1 开始",
+          "pass": true,
+          "detail": "图片 1"
+        },
+        {
+          "name": "每张图前紧邻自己的编号",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 声明只输出 JSON",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "schema 为证据先于结论",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "弃答门槛可判定",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "含正例与弃答两个 golden example",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "数值字段语义已定义",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "ragSources 不出现在 schema",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "并行模式无 visualPrecheck 死块",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 禁处方",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 声明指令层级",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 带版本号",
+          "pass": true,
+          "detail": ""
+        }
+      ],
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "scenario_id": "multi_image_numbering",
+      "description": "双图编号一一对应（角色未标注，验证无条件编号）",
+      "case_ids": [
+        "dog210424_05_01_31",
+        "dog210505_01_02_25"
+      ],
+      "image_sha256": [
+        "3b20ff30be22f2245a2b0c6d599a19e26182f2123c82805d406bae1a804a2503",
+        "7f92d23a92ae6182e652a09c1dc8c443b26ad576fe63f6216a3885b7a559302c"
+      ],
+      "image_bytes": [
+        120398,
+        135650
+      ],
+      "reference_tier": [
+        "DEV_ONLY",
+        "DEV_ONLY"
+      ],
+      "prompt_version": "vetai-derm-v2.0.0",
+      "system_prompt_sha256": "2111956eb638cd9e838cb1a53bf92362ea734a66a7bfdb6a6cce2c60f59a6211",
+      "user_prompt_sha256": "383da5e7160d252cf8ce1923087bcbb87445914720b4ca9705e59607bea27154",
+      "system_prompt_chars": 6041,
+      "user_prompt_chars": 643,
+      "checks": [
+        {
+          "name": "每张图都有编号标签",
+          "pass": true,
+          "detail": "标签 2 个 / 图片 2 张"
+        },
+        {
+          "name": "编号连续且从 1 开始",
+          "pass": true,
+          "detail": "图片 1 | 图片 2"
+        },
+        {
+          "name": "每张图前紧邻自己的编号",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 声明只输出 JSON",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "schema 为证据先于结论",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "弃答门槛可判定",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "含正例与弃答两个 golden example",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "数值字段语义已定义",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "ragSources 不出现在 schema",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "并行模式无 visualPrecheck 死块",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 禁处方",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 声明指令层级",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 带版本号",
+          "pass": true,
+          "detail": ""
+        }
+      ],
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "scenario_id": "multi_image_with_roles",
+      "description": "双图 + 已标注角色",
+      "case_ids": [
+        "dog210505_01_02_25",
+        "dog210508_06_02_18"
+      ],
+      "image_sha256": [
+        "7f92d23a92ae6182e652a09c1dc8c443b26ad576fe63f6216a3885b7a559302c",
+        "6f8d5c266a97db3f45426e61aa6f428de4ca7ac175c9f82611f186653de80880"
+      ],
+      "image_bytes": [
+        135650,
+        115172
+      ],
+      "reference_tier": [
+        "DEV_ONLY",
+        "DEV_ONLY"
+      ],
+      "prompt_version": "vetai-derm-v2.0.0",
+      "system_prompt_sha256": "2111956eb638cd9e838cb1a53bf92362ea734a66a7bfdb6a6cce2c60f59a6211",
+      "user_prompt_sha256": "cbcb32d25133daf2301e19df751f1ac659e3ca266884e955359a007b5ae9e028",
+      "system_prompt_chars": 6041,
+      "user_prompt_chars": 636,
+      "checks": [
+        {
+          "name": "每张图都有编号标签",
+          "pass": true,
+          "detail": "标签 2 个 / 图片 2 张"
+        },
+        {
+          "name": "编号连续且从 1 开始",
+          "pass": true,
+          "detail": "图片 1（整体外观照） | 图片 2（近景特写）"
+        },
+        {
+          "name": "每张图前紧邻自己的编号",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 声明只输出 JSON",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "schema 为证据先于结论",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "弃答门槛可判定",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "含正例与弃答两个 golden example",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "数值字段语义已定义",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "ragSources 不出现在 schema",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "并行模式无 visualPrecheck 死块",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 禁处方",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 声明指令层级",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 带版本号",
+          "pass": true,
+          "detail": ""
+        }
+      ],
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "scenario_id": "prompt_injection",
+      "description": "主诉内含注入指令",
+      "case_ids": [
+        "dog210508_06_02_18"
+      ],
+      "image_sha256": [
+        "6f8d5c266a97db3f45426e61aa6f428de4ca7ac175c9f82611f186653de80880"
+      ],
+      "image_bytes": [
+        115172
+      ],
+      "reference_tier": [
+        "DEV_ONLY"
+      ],
+      "prompt_version": "vetai-derm-v2.0.0",
+      "system_prompt_sha256": "2111956eb638cd9e838cb1a53bf92362ea734a66a7bfdb6a6cce2c60f59a6211",
+      "user_prompt_sha256": "f76178a3f9b01637f2d90182a662a4b6bf919d45105783d39d4edf431d30af2f",
+      "system_prompt_chars": 6041,
+      "user_prompt_chars": 585,
+      "checks": [
+        {
+          "name": "每张图都有编号标签",
+          "pass": true,
+          "detail": "标签 1 个 / 图片 1 张"
+        },
+        {
+          "name": "编号连续且从 1 开始",
+          "pass": true,
+          "detail": "图片 1"
+        },
+        {
+          "name": "每张图前紧邻自己的编号",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 声明只输出 JSON",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "schema 为证据先于结论",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "弃答门槛可判定",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "含正例与弃答两个 golden example",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "数值字段语义已定义",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "ragSources 不出现在 schema",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "并行模式无 visualPrecheck 死块",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "注入文本保留为证据",
+          "pass": true,
+          "detail": "按设计不静默删除主人原文"
+        },
+        {
+          "name": "注入文本落在不可信数据围栏内",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "注入未改变输出契约",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "注入文本经 JSON 转义",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 禁处方",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 声明指令层级",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 带版本号",
+          "pass": true,
+          "detail": ""
+        }
+      ],
+      "passed": 17,
+      "failed": 0
+    },
+    {
+      "scenario_id": "oral_mucosal_route",
+      "description": "口腔黏膜分支应改写为口腔初筛口径",
+      "case_ids": [
+        "dog210610_04_02_14"
+      ],
+      "image_sha256": [
+        "ca726ca94aa78d159ff3461cce5beb62e3c237c4e963dc5e16f88aa2bd55f339"
+      ],
+      "image_bytes": [
+        136349
+      ],
+      "reference_tier": [
+        "DEV_ONLY"
+      ],
+      "prompt_version": "vetai-derm-v2.0.0",
+      "system_prompt_sha256": "1b6a351ccbe16f835218139db24265808779f35da338ef030e25df348c56e756",
+      "user_prompt_sha256": "2a1151c09a0c6267def55104d5398bdf8729dc4add0922f175215f3b106c5f73",
+      "system_prompt_chars": 6139,
+      "user_prompt_chars": 549,
+      "checks": [
+        {
+          "name": "每张图都有编号标签",
+          "pass": true,
+          "detail": "标签 1 个 / 图片 1 张"
+        },
+        {
+          "name": "编号连续且从 1 开始",
+          "pass": true,
+          "detail": "图片 1"
+        },
+        {
+          "name": "每张图前紧邻自己的编号",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 声明只输出 JSON",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "schema 为证据先于结论",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "弃答门槛可判定",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "含正例与弃答两个 golden example",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "数值字段语义已定义",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "ragSources 不出现在 schema",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "并行模式无 visualPrecheck 死块",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 禁处方",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 声明指令层级",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 带版本号",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "口腔提示已注入 system 末尾",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "口腔提示位于覆盖清单之后（保持前缀可缓存）",
+          "pass": true,
+          "detail": ""
+        }
+      ],
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "scenario_id": "empty_complaint",
+      "description": "主诉为空（纯图片场景）",
+      "case_ids": [
+        "dog210612_03_01_13"
+      ],
+      "image_sha256": [
+        "c1c258f46a7283306d2d8daf396db3d2abebb8ec92d8cb8787fada5acfb791fc"
+      ],
+      "image_bytes": [
+        113610
+      ],
+      "reference_tier": [
+        "DEV_ONLY"
+      ],
+      "prompt_version": "vetai-derm-v2.0.0",
+      "system_prompt_sha256": "2111956eb638cd9e838cb1a53bf92362ea734a66a7bfdb6a6cce2c60f59a6211",
+      "user_prompt_sha256": "20e8992053be14fb28e022b8a6f297417f2b9e3dd7c1d57dac59457e7b56ff65",
+      "system_prompt_chars": 6041,
+      "user_prompt_chars": 539,
+      "checks": [
+        {
+          "name": "每张图都有编号标签",
+          "pass": true,
+          "detail": "标签 1 个 / 图片 1 张"
+        },
+        {
+          "name": "编号连续且从 1 开始",
+          "pass": true,
+          "detail": "图片 1"
+        },
+        {
+          "name": "每张图前紧邻自己的编号",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 声明只输出 JSON",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "schema 为证据先于结论",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "弃答门槛可判定",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "含正例与弃答两个 golden example",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "数值字段语义已定义",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "ragSources 不出现在 schema",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "并行模式无 visualPrecheck 死块",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 禁处方",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 声明指令层级",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "system 带版本号",
+          "pass": true,
+          "detail": ""
+        }
+      ],
+      "passed": 13,
+      "failed": 0
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 ﻿.venv-yolo/
-runs/
+# 只忽略根目录的 YOLO 训练输出。原先写作 runs/ 会匹配任意层级，
+# 把 evaluation/runs/ 的审计留档一并吞掉，导致 kb_audit 的基线永远无法入库。
+/runs/
 datasets/
 weights/
 *.pt
@@ -10,6 +12,10 @@ yolov8n.pt
 node_modules/
 package.json
 package-lock.json
+# 根 package.json 必须入库：.github/workflows/test.yml 跑的就是 npm test，
+# 而它此前从未被提交过，CI 一旦启用会直接因为找不到 package.json 而失败。
+!/package.json
+!/package-lock.json
 !cloudfunctions/**/package.json
 !cloudfunctions/**/package-lock.json
 cloudfunctions/**/node_modules/
@@ -18,3 +24,11 @@ project.private.config.json
 .env.*
 项目总论/
 项目总论/输出文件/
+/tmp/
+/output/
+/docx_render_check/
+/docx_visual_assets/
+evaluation/dataset_reference_set/images/
+.hermes/
+__pycache__/
+*.pyc

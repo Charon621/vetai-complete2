@@ -19,8 +19,13 @@ function initCanvas(pageContext, canvasId) {
         }
         var canvas = res[0].node
         var ctx = canvas.getContext('2d')
-        var dpr = wx.getSystemInfoSync().pixelRatio || 2
-        resolve({ canvas: canvas, ctx: ctx, dpr: dpr })
+        var dpr = 2
+        try {
+          // wx.getSystemInfoSync 已废弃，优先用新 API（BUG-A1）
+          var winInfo = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
+          dpr = winInfo.pixelRatio || 2
+        } catch (e) {}
+        resolve({ canvas: canvas, ctx: ctx, dpr: dpr, sizedWidth: 0, sizedHeight: 0 })
       })
   })
 }
@@ -51,8 +56,9 @@ function smoothPoints(points, tension) {
     var p2 = points[i + 1]
     var p3 = points[i + 2 >= points.length ? points.length - 1 : i + 2]
 
-    // 在 p1 和 p2 之间插值 4 个点
-    for (var t = 0; t <= 1; t += 0.25) {
+    // 在 p1 和 p2 之间插值；用整数步进避免浮点累加丢掉末点（BUG-I4）
+    for (var step = 0; step <= 4; step++) {
+      var t = step / 4
       var t2 = t * t
       var t3 = t2 * t
 
@@ -107,9 +113,15 @@ function drawPath(canvasData, points, width, height, mode, drawRect) {
   var canvas = canvasData.canvas
   var box = drawRect || { left: 0, top: 0, width: width, height: height }
 
-  canvas.width = width * canvasData.dpr
-  canvas.height = height * canvasData.dpr
-  ctx.scale(canvasData.dpr, canvasData.dpr)
+  // 只在尺寸变化时重设 canvas（重设会清空并丢失 transform），
+  // 避免每次 touchmove 都重建导致低端机卡顿（BUG-I3）
+  if (canvasData.sizedWidth !== width || canvasData.sizedHeight !== height) {
+    canvas.width = width * canvasData.dpr
+    canvas.height = height * canvasData.dpr
+    ctx.scale(canvasData.dpr, canvasData.dpr)
+    canvasData.sizedWidth = width
+    canvasData.sizedHeight = height
+  }
   ctx.clearRect(0, 0, width, height)
 
   if (!points || points.length === 0) return
@@ -133,18 +145,7 @@ function drawPath(canvasData, points, width, height, mode, drawRect) {
     ctx.setLineDash([8, 4])
     ctx.strokeRect(rx, ry, rw, rh)
     ctx.setLineDash([])
-
-    // 四角手柄
-    var corners = [
-      [rx, ry], [rx + rw, ry],
-      [rx, ry + rh], [rx + rw, ry + rh]
-    ]
-    ctx.fillStyle = '#f5c15b'
-    corners.forEach(function (c) {
-      ctx.beginPath()
-      ctx.arc(c[0], c[1], 6, 0, Math.PI * 2)
-      ctx.fill()
-    })
+    // 四角手柄已移除：没有拖拽交互却画手柄会误导用户（BUG-I2）
     return
   }
 

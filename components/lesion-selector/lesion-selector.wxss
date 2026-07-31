@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   Lesion Selector Component — VetAI Design System v2
+   Lesion Selector Component — VetAI DS v5
    患处圈选浮层（index / chat 共用）
    ═══════════════════════════════════════════ */
 
@@ -74,7 +74,7 @@
 .tool-chip-on {
   background: var(--brand);
   border-color: var(--brand);
-  color: #FFFFFF;
+  color: var(--on-brand);
 }
 
 .tool-stat {
