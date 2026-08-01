@@ -31,6 +31,8 @@ var DISEASE_KB = [
     },
     typicalFeatures: '边界不清的红肿脱毛区，表面浆液性渗出，周围毛发潮湿粘连，急性发作（24-48h内）',
     ddx: '与浅表脓皮病区分：热点为大面积急性渗出性糜烂，脓皮病多为丘疹脓疱散在分布',
+    exclusions: ['仅限部位:背部', '仅限部位:腰部', '仅限部位:颈部', '仅限部位:臀部', '仅限部位:面部', '仅限部位:颊'],
+    contraindications: ['非年龄:老年'],
     urgency: 'moderate'
   },
 
@@ -137,6 +139,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '幼犬面部/前肢对称性脱毛、红斑、皮屑，早期不痒或轻痒，多可自愈',
     ddx: '与真菌感染区分：蠕形螨早期不痒或轻痒，真菌通常瘙痒剧烈；与脓皮病区分：蠕形螨对称性脱毛更明显',
+    exclusions: ['仅限部位:面部', '仅限部位:眼周', '仅限部位:口周'],
     urgency: 'low'
   },
 
@@ -220,6 +223,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '趾间皮肤红肿、潮湿，可能有脓疱或结节，犬频繁舔爪，慢性反复发作，双侧多见',
     ddx: '与蠕形螨爪型区分：趾间炎以红肿和舔舐为主，蠕形螨有更广泛脱毛；与接触性皮炎区分：接触性通常四爪对称',
+    exclusions: ['仅限部位:趾', '仅限部位:爪', '仅限部位:足'],
     urgency: 'low',
     sources: [
       { title: 'Merck Veterinary Manual - Pyoderma in Dogs and Cats', url: 'https://www.merckvetmanual.com/integumentary-system/pyoderma/pyoderma-in-dogs-and-cats', tier: 'manual' }
@@ -238,6 +242,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '前肢腕部附近圆形脱毛区，皮肤增厚形成结节/溃疡，表面光滑或有结痂，犬持续舔舐',
     ddx: '与深部脓皮病区分：舔舐肉芽肿为肢侧面单个边界清的顽固斑块或结节、与强迫性舔舐相关，深部脓皮病多灶且伴瘘管流脓。与趾间脓皮病区分：舔舐肉芽肿在腕或跖侧面而非趾间。与皮肤肿瘤区分：外观可相似，单个顽固不愈结节需活检排除肥大细胞瘤等。',
+    exclusions: ['仅限部位:肢端', '仅限部位:腕', '仅限部位:胫'],
     urgency: 'low'
   },
 
@@ -268,6 +273,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '皮肤褶皱深处红肿、潮湿、糜烂，有异味，因褶皱摩擦和潮湿环境导致',
     ddx: '与马拉色菌区分：褶皱皮炎是局部解剖问题，马拉色菌多为广泛性',
+    exclusions: ['仅限部位:褶皱', '仅限部位:面', '仅限部位:尾'],
     urgency: 'moderate'
   },
 
@@ -283,6 +289,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '鼻部、唇缘和压力点出现结痂、角化和裂纹，哈士奇等北欧犬种好发',
     ddx: '与鼻/足垫角化过度区分：锌反应性是营养代谢病，好发北欧犬种（哈士奇、阿拉斯加、萨摩），鼻镜口周对称结痂、补锌后改善；角化过度多为老年退行、局限鼻镜或足垫、无补锌反应。与压力性胼胝区分：锌反应性累及鼻唇和多处皮肤黏膜交界，胼胝仅限肘、跗等卧地压力点。与落叶型天疱疮区分：天疱疮有脓疱和大范围叶状结痂、可全身对称扩散，锌反应性以角化结痂为主。',
+    exclusions: ['仅限部位:口周', '仅限部位:眼周', '仅限部位:肘', '仅限部位:跗'],
     urgency: 'low'
   },
 
@@ -298,6 +305,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '鼻部或腹部无毛区红斑、结痂和溃疡，日光暴露加重，白色毛发区好发，长期可恶变',
     ddx: '与锌反应性皮病区分：日光性皮炎好发白色毛发和无色素区，与日照相关',
+    exclusions: ['仅限部位:鼻', '仅限部位:耳', '仅限部位:腹', '仅限部位:无毛'],
     urgency: 'moderate'
   },
 
@@ -328,6 +336,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '肛周皮肤多个引流性瘘管和溃疡，排便疼痛，德牧好发',
     ddx: '与肛周腺瘤区分：瘘管为炎性溃疡性病变，腺瘤为结节肿块',
+    exclusions: ['仅限部位:肛周', '仅限部位:肛门'],
     urgency: 'urgent'
   },
 
@@ -379,6 +388,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '三种形式：嗜酸性溃疡（唇部无痛性溃疡）、嗜酸性肉芽肿（腹部/大腿黄色隆起斑块）、嗜酸性斑（腹部红色溃疡斑）',
     ddx: '与猫鳞状细胞癌区分：EGC 好发年轻猫、唇部无痛性溃疡、对糖皮质激素反应好；鳞癌好发老年白猫日照部位（耳尖、鼻、眼睑）、慢性不愈的增生性溃疡且易出血、属恶性需活检。与皮肤肿瘤区分：EGC 常多灶且年轻猫多见，肿瘤多为孤立进行性增大的结节，细胞学或活检可鉴别。',
+    exclusions: ['仅限部位:唇', '仅限部位:口腔', '仅限部位:腹'],
     urgency: 'moderate'
   },
 
@@ -394,6 +404,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '下巴和唇部出现黑色粉刺、红肿和结痂，可继发毛囊炎和脓皮病',
     ddx: '与真菌区分：痤疮局限于下巴，真菌通常圆形脱毛和鳞屑',
+    exclusions: ['仅限部位:下颏', '仅限部位:唇'],
     urgency: 'low'
   },
 
@@ -409,6 +420,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '腹部和腿部对称性短毛或脱毛，无皮肤病变（无红斑、结痂），猫过度舔毛',
     ddx: '与过敏区分：心理性脱毛无原发皮损，毛发被舔断而非脱落；与内分泌脱毛区分',
+    exclusions: ['仅限部位:腹', '仅限部位:大腿', '仅限部位:背部'],
     urgency: 'low'
   },
 
@@ -424,6 +436,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '脚垫肿大、发紫或充血，可能溃疡出血，猫特异性疾病，常双侧多趾受累',
     ddx: '与外伤区分：双侧多趾同时受累是特征，外伤通常单侧单趾',
+    exclusions: ['仅限部位:足', '仅限部位:爪'],
     urgency: 'moderate'
   },
 
@@ -439,6 +452,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '白色猫耳尖和鼻部红斑、结痂和溃疡，日光暴露加重，长期可发展为鳞癌',
     ddx: '与过敏区分：日光性皮炎限于无色素区，白猫好发，耳尖和鼻部起始',
+    exclusions: ['仅限部位:鼻', '仅限部位:耳', '仅限部位:眼睑', '仅限部位:无毛'],
     urgency: 'moderate'
   },
 
@@ -469,6 +483,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '扁脸猫面部和鼻部褶皱深处红肿、潮湿、有分泌物和异味',
     ddx: '与泪痕皮炎区分：褶皱皮炎在鼻部褶皱深处，泪痕在眼下方浸渍',
+    exclusions: ['仅限部位:面', '仅限部位:褶皱'],
     urgency: 'moderate'
   },
 
@@ -484,6 +499,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '尾根背部皮脂腺过度分泌，毛发油腻、蜡样粘连，伴黑色颗粒',
     ddx: '与跳蚤区分：尾根腺炎是皮脂分泌异常无瘙痒，跳蚤过敏有剧烈瘙痒',
+    exclusions: ['仅限部位:尾根', '仅限部位:尾'],
     urgency: 'low'
   },
 
@@ -514,6 +530,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '眼下方皮肤因泪液浸渍红肿、红褐色染色和潮湿，扁脸猫多见',
     ddx: '与面部褶皱皮炎区分：泪痕在眼下方浸渍，褶皱皮炎在鼻部褶皱深处',
+    exclusions: ['仅限部位:眼', '仅限部位:泪'],
     urgency: 'low'
   },
 
@@ -626,6 +643,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '双侧耳道大量黑褐色蜡样分泌物，动物频繁甩头和抓耳，猫多发，耳道皮肤红肿',
     ddx: '与马拉色菌性外耳炎区分：耳螨分泌物为干燥黑褐色蜡样，马拉色菌为油腻有臭味',
+    exclusions: ['仅限部位:耳'],
     urgency: 'moderate'
   },
 
@@ -641,6 +659,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '耳道黄褐色油腻分泌物，有酸臭/霉味，耳道皮肤红肿增厚，垂耳犬好发',
     ddx: '与耳螨区分：马拉色菌分泌物油腻有臭味，耳螨为干燥黑褐色蜡样',
+    exclusions: ['仅限部位:耳'],
     urgency: 'moderate'
   },
 
@@ -656,6 +675,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '耳道脓性分泌物、红肿、疼痛，可能有溃疡，常继发于耳螨或过敏',
     ddx: '与耳螨区分：细菌性外耳炎分泌物为脓性，耳螨为干燥黑褐色蜡样',
+    exclusions: ['仅限部位:耳'],
     urgency: 'moderate'
   },
 
@@ -671,6 +691,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '皮肤下圆形隆起结节，内容物为白色/黄褐色皮脂样物，通常无痛',
     ddx: '与肿瘤区分：囊肿内容物为皮脂，有波动感；与脓肿区分：脓肿有红肿热痛',
+    exclusions: ['仅限部位:躯干', '仅限部位:头'],
     urgency: 'low'
   },
 
@@ -761,6 +782,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '大型犬压力点局部脱毛、皮肤增厚粗糙和角化，长期卧硬地更明显，可继发感染',
     ddx: '与鼻/足垫角化过度区分：胼胝在肘、跗、胸骨等卧地骨突压力点、与硬地摩擦史相关，角化过度在鼻镜和足垫承重面。与锌反应性皮病区分：胼胝为局部机械性、无品种和补锌关联，锌反应性累及鼻唇多处并好发北欧犬种。与深部脓皮病区分：单纯胼胝无脓性渗出和瘘管，若压力点继发感染出现流脓需按深部脓皮病处理。',
+    exclusions: ['仅限部位:肘', '仅限部位:跗'],
     urgency: 'low'
   },
 
@@ -776,6 +798,7 @@ var DISEASE_KB = [
     },
     typicalFeatures: '鼻镜或足垫过度角化、干裂和硬皮样增厚，严重时可裂开疼痛或跛行',
     ddx: '与锌反应性皮病区分：角化过度好发老年犬、局限鼻镜或足垫承重面、无品种和营养关联；锌反应性好发北欧犬种、鼻唇多处受累、对补锌有反应。与压力性胼胝区分：角化过度在鼻镜和足垫承重面，胼胝在肘、跗、胸骨等骨突压力点、与卧硬地相关。与落叶型天疱疮区分：天疱疮伴脓疱结痂且多部位对称扩散，单纯角化过度只有厚硬角质、无脓疱。',
+    exclusions: ['仅限部位:鼻', '仅限部位:足垫'],
     urgency: 'low'
   },
 
@@ -895,7 +918,8 @@ var SUPPLEMENTAL_DISEASE_KB = [
     },
     typicalFeatures: '褶皱夹缝内发红、潮湿、糜烂和异味，可因唾液、尿液、皮脂或摩擦反复刺激。',
     ddx: '与马拉色菌皮炎区分：皮褶炎首先受解剖褶皱和浸渍影响，马拉色菌可作为继发因素存在。',
-    redFlags: ['深层化脓肿胀', '面部感染影响眼部', '会阴褶感染伴排尿疼痛']
+    redFlags: ['深层化脓肿胀', '面部感染影响眼部', '会阴褶感染伴排尿疼痛'],
+        exclusions: ['仅限部位:褶皱', '仅限部位:面', '仅限部位:尾'],
   },
   {
     targetName: '马拉色菌皮炎',
@@ -968,6 +992,7 @@ var SUPPLEMENTAL_DISEASE_KB = [
     },
     typicalFeatures: '青年短毛犬下颏部粉刺、丘疹、脓疱或结痂，可因摩擦和潮湿反复。',
     ddx: '与猫痤疮区分：本条为犬下颏毛囊炎；与皮肤肿瘤区分：痤疮局限下颏且常见粉刺和毛囊性病变，肿瘤多为孤立进行性肿块。',
+    exclusions: ['仅限部位:下颏', '仅限部位:唇'],
     urgency: 'low',
     redFlags: ['结节破溃形成瘘管', '肿胀蔓延至脸颊', '进食疼痛拒食']
   },
@@ -1016,6 +1041,7 @@ var SUPPLEMENTAL_DISEASE_KB = [
     },
     typicalFeatures: '耳廓突然出现柔软或有波动感的肿胀，常继发于外耳炎、耳螨或剧烈甩头抓耳。',
     ddx: '与外耳炎区分：耳血肿的主要问题是耳廓囊性肿胀，外耳炎主要表现为耳道红肿分泌物和异味。',
+    exclusions: ['仅限部位:耳'],
     urgency: 'moderate',
     redFlags: ['耳廓快速肿大', '明显疼痛', '伴严重外耳炎']
   },
@@ -1031,6 +1057,7 @@ var SUPPLEMENTAL_DISEASE_KB = [
     },
     typicalFeatures: '肛周不适、拖屁股、舔咬肛门，严重时肛门旁红肿、脓肿或破溃。',
     ddx: '与肛周瘘管区分：肛门囊病常以肛门囊堵塞、炎症或脓肿为主；肛周瘘管多为慢性多发瘘管和溃疡，德牧更常见。',
+    exclusions: ['仅限部位:肛', '仅限部位:直肠'],
     urgency: 'moderate',
     redFlags: ['肛门旁脓肿破溃', '排便疼痛明显', '发热精神差']
   },
@@ -1136,6 +1163,7 @@ var SUPPLEMENTAL_DISEASE_KB = [
     },
     typicalFeatures: '眼睑边缘红肿、结痂、脱毛或分泌物，常伴揉眼、流泪或眯眼。',
     ddx: '与泪痕皮炎区分：睑炎主要在眼睑边缘红肿结痂，泪痕皮炎主要为眼下潮湿红褐色染色。眼部疼痛或角膜风险需要线下检查。',
+    exclusions: ['仅限部位:眼睑', '仅限部位:眼'],
     urgency: 'moderate',
     redFlags: ['眯眼明显', '角膜混浊', '眼部疼痛', '眼周快速肿胀']
   }
@@ -1781,7 +1809,11 @@ function toClinicalCard(entry, index) {
     version: entry.version || KB_VERSION,
     keywords: entry.keywords || { breeds: [], locations: [], symptoms: [] },
     ddx: entry.ddx || '',
-    relatedDiseases: entry.relatedDiseases || []
+    relatedDiseases: entry.relatedDiseases || [],
+    // BUG-P1：排除条件（硬约束：物种/部位/年龄不符时排除该候选）
+    exclusions: entry.exclusions || [],
+    // BUG-P1：禁用归因条件（特定场景下不应归因该疾病）
+    contraindications: entry.contraindications || []
   }
 }
 
@@ -2679,6 +2711,149 @@ function buildRagPrompt(query) {
   parts.push('规则：照片+部位+病史同时吻合才采用；不吻合可以完全不采用。不要把低频病在仅有泛词时推为第一。不要写“确诊”，不要在报告中提及检索或知识库。')
 
   return parts.join('\n')
+  }
+
+  // ============================================================
+  // BUG-P1：排除规则函数
+// 遍历候选疾病，检查排除条件，命中则从候选列表移除
+// 排除条件为硬约束（物种/部位/年龄明显不符），不适用概率性描述
+// ============================================================
+
+/**
+ * 应用排除规则，过滤候选疾病列表
+ * @param {Array} candidates - 诊断候选列表 [{ name, probability, ... }]
+ * @param {Object} petInfo - 宠物信息 { species, bodyPart, age, ... }
+ * @returns {Array} 过滤后的候选列表
+ */
+function applyExclusionRules(candidates, petInfo) {
+  if (!Array.isArray(candidates) || candidates.length === 0) return candidates
+  if (!petInfo) return candidates
+
+  // 构建疾病名→疾病卡的查找映射（只构建一次）
+  var nameToCard = {}
+  for (var i = 0; i < DISEASE_KB.length; i++) {
+    var card = DISEASE_KB[i]
+    nameToCard[card.name] = card
+    // 别名也参与查找，方便 LLM 输出的别名形式也能匹配
+    if (card.aliases) {
+      for (var a = 0; a < card.aliases.length; a++) {
+        nameToCard[card.aliases[a]] = card
+      }
+    }
+  }
+
+  // BUG-P1：排除规则检查函数
+  function checkExclusion(card, petInfo) {
+    if (!card) return false
+
+    // 1. 物种排除：复用 species 字段，检查 petInfo.species 是否在 card.species 中
+    var petSpecies = (petInfo.species || petInfo.petType || '').trim()
+    if (petSpecies) {
+      // 将 petInfo 的物种名映射到中文
+      var speciesMap = { 'dog': '犬', 'cat': '猫', '犬': '犬', '猫': '猫' }
+      var mappedSpecies = speciesMap[petSpecies] || petSpecies
+      if (card.species && card.species.length > 0 && mappedSpecies !== '') {
+        var speciesMatch = false
+        for (var s = 0; s < card.species.length; s++) {
+          if (card.species[s] === mappedSpecies) {
+            speciesMatch = true
+            break
+          }
+        }
+        // 如果物种不匹配，排除该候选
+        if (!speciesMatch) return true
+      }
+    }
+
+    // 2. 检查排除条件（exclusions 数组）
+    var exclusions = card.exclusions || []
+    for (var e = 0; e < exclusions.length; e++) {
+      var rule = exclusions[e]
+      if (matchExclusionRule(rule, petInfo)) return true
+    }
+
+    // 3. 检查禁用归因条件（contraindications 数组）
+    var contraindications = card.contraindications || []
+    for (var c = 0; c < contraindications.length; c++) {
+      var contraRule = contraindications[c]
+      if (matchExclusionRule(contraRule, petInfo)) return true
+    }
+
+    return false
+  }
+
+  // 匹配单条排除规则
+  function matchExclusionRule(rule, petInfo) {
+    // 部位排除规则
+    if (rule.indexOf('非部位:') === 0) {
+      var excludedPart = rule.slice(4) // 去掉 '非部位:'
+      var bodyPart = petInfo.bodyPartLabel || petInfo.bodyPart || ''
+      if (bodyPart.indexOf(excludedPart) >= 0) return true
+    }
+    // 仅限部位规则：如果 petInfo 的 bodyPart 不在该部位中，排除
+    if (rule.indexOf('仅限部位:') === 0) {
+      var requiredPart = rule.slice(5) // 去掉 '仅限部位:'
+      var bodyPart2 = petInfo.bodyPartLabel || petInfo.bodyPart || ''
+      if (bodyPart2 && bodyPart2.indexOf(requiredPart) < 0) return true
+    }
+    // 年龄排除规则
+    if (rule.indexOf('非年龄:') === 0) {
+      var excludedAge = rule.slice(4) // 去掉 '非年龄:'
+      var petAge = petInfo.age || ''
+      if (petAge.indexOf(excludedAge) >= 0) return true
+    }
+    // 仅限年龄规则
+    if (rule.indexOf('仅限年龄:') === 0) {
+      var requiredAge = rule.slice(5) // 去掉 '仅限年龄:'
+      var petAge2 = petInfo.age || ''
+      if (petAge2 && petAge2.indexOf(requiredAge) < 0) return true
+    }
+    // 通用排除规则（兼容旧格式，如 '非面部'、'仅限犬'）
+    if (rule.indexOf('非') === 0) {
+      var excludedTerm = rule.slice(1) // 去掉 '非'
+      var bodyPart3 = petInfo.bodyPartLabel || petInfo.bodyPart || ''
+      if (bodyPart3.indexOf(excludedTerm) >= 0) return true
+      var petAge3 = petInfo.age || ''
+      if (petAge3.indexOf(excludedTerm) >= 0) return true
+    }
+    // 仅限通用规则（如 '仅限面部'、'仅限幼年'）
+    if (rule.indexOf('仅限') === 0) {
+      var requiredTerm = rule.slice(2) // 去掉 '仅限'
+      var bodyPart4 = petInfo.bodyPartLabel || petInfo.bodyPart || ''
+      var petAge4 = petInfo.age || ''
+      var hasInBodyPart = bodyPart4.indexOf(requiredTerm) >= 0
+      var hasInAge = petAge4.indexOf(requiredTerm) >= 0
+      if (bodyPart4 || petAge4) {
+        if (!hasInBodyPart && !hasInAge) return true
+      }
+    }
+    return false
+  }
+
+  var filtered = []
+  for (var j = 0; j < candidates.length; j++) {
+    var candidate = candidates[j]
+    var candidateName = candidate.name || ''
+    // BUG-P1：先尝试精确匹配，再尝试模糊匹配
+    var card = nameToCard[candidateName]
+    if (!card) {
+      // 尝试模糊匹配：去掉括号内容后匹配
+      var cleanName = candidateName.replace(/[（(].*[）)]/g, '').trim()
+      for (var k = 0; k < DISEASE_KB.length; k++) {
+        if (DISEASE_KB[k].name.indexOf(cleanName) >= 0 || cleanName.indexOf(DISEASE_KB[k].name) >= 0) {
+          card = DISEASE_KB[k]
+          break
+        }
+      }
+    }
+    if (card && checkExclusion(card, petInfo)) {
+      // 排除命中，不加入过滤后的列表
+      continue
+    }
+    filtered.push(candidate)
+  }
+
+  return filtered
 }
 
 module.exports = {
@@ -2702,5 +2877,7 @@ module.exports = {
   KB_VERSION_DATE: KB_VERSION_DATE,
   getKbVersionInfo: getKbVersionInfo,
   isGenericVisualSign: isGenericSign,
-  classifySign: classifySign
+  classifySign: classifySign,
+  // BUG-P1：排除规则函数
+  applyExclusionRules: applyExclusionRules
 }

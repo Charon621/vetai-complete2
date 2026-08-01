@@ -787,8 +787,18 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
     : []
 
   // prompt 要求候选按 probability 降序，但不能依赖模型自觉：这里强制重排，
-  // 保证 candidates[0] 恒为最高分，下游“第一项即最可能方向”的假设才成立。
+  // 保证 candidates[0] 恒为最高分，下游"第一项即最可能方向"的假设才成立。
   candidates.sort(function (a, b) { return b.probability - a.probability })
+
+  // BUG-P1：应用排除规则（物种/部位/年龄不符时从候选列表移除）
+  if (kb && kb.applyExclusionRules && petInfo) {
+    var beforeCount = candidates.length
+    candidates = kb.applyExclusionRules(candidates, petInfo)
+    if (candidates.length < beforeCount) {
+      // 排除后若候选列表为空，标记为弃答
+      // 排除条件不产生新的弃答文案，后续逻辑会处理空候选
+    }
+  }
 
   var abstained = !!cleanModelText(data.abstainReason || '')
   var primaryDiagnosis = displayDiagnosisForSpecies(cleanDiagName(data.primaryDiagnosis || (candidates[0] && candidates[0].name) || '未明确'), petInfo && petInfo.species)
