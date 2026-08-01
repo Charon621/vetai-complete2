@@ -3,14 +3,13 @@
 ## 1. 目标与背景
 
 本文件是把 `benchmark_config.json`（40 例冻结方案、指标体系、泄漏控制）与
-`annotation_guide.md`（G1/G2/G3/V1 分层标准、疾病特异证据路径、双盲裁决流程）
+`annotation_guide.md`（G1/G2/G3 分层标准、疾病特异证据路径、双盲裁决流程）
 落地为可排期、可交付、可验收的操作计划。分层定义、最小证据路径、指标口径等**标准本身
 不在此重复**，一律以上述两文件为准；本文件只回答「谁、在什么时间、按什么进入/退出条件、
 产出什么」。
 
 范围限定：只覆盖 `core_holdout` 的 40 例 G1/G2 冻结集及其 8 例画质压力变体
-（`quality_stress_set`）。`DEV_ONLY` 公开图与 `V1` 数据集参考集
-（`../dataset_reference_set/`）不属于本计划，且按 `benchmark_config.json`
+（`quality_stress_set`）。`DEV_ONLY` 公开图不属于本计划，且按 `benchmark_config.json`
 的 `does_not_relax`，其存在不放宽本计划任何要求。
 
 当前状态：`benchmark_config.json.status = protocol_only_not_yet_collected`，

@@ -196,50 +196,5 @@
       "diagnostic_accuracy_claim",
       "calibration_claim"
     ]
-  },
-  "dataset_reference_set_v1": {
-    "path": "dataset_reference_set",
-    "status": "V1",
-    "added_on": "2026-07-26",
-    "added_by_direction_of": "project_owner_explicit_instruction",
-    "direction_summary": "负责人明确要求用公开来源图片尽快建立可运行参考集，不再等待双专家盲标完成。",
-    "diagnostic_gold_standard": false,
-    "case_count": 62,
-    "class_distribution": {
-      "Healthy": 26,
-      "Hypersensitivity_allergic_dermatosis": 13,
-      "Bacterial_dermatosis": 12,
-      "Fungal_infections": 11
-    },
-    "source_doi": "10.17632/5dbht54kw7.1",
-    "license": "CC BY 4.0",
-    "label_provenance": "veterinarian clinical impression at hospital visit; no confirmatory testing reported in source paper",
-    "consent": "written owner consent per source paper",
-    "image_modality": "contact dermatoscope / multispectral device close-up; visible-light channel pic0 only",
-    "distribution_shift_warning": "图像为无解剖上下文的皮肤镜特写，与产品真实输入（主人手机拍摄、含部位与分布）分布不符。四类分类指标属分布外测量，仅作探索性数字。",
-    "primary_metric": "abstention_probe",
-    "primary_metric_rationale": "无部位无分布的输入正好命中系统提示词弃答判定第 2、5 条，行为正确的系统应以弃答为主；同时可检测是否凭空描述看不见的部位。",
-    "allowed_uses": [
-      "abstention_appropriateness_probe",
-      "hallucinated_body_site_probe",
-      "overclaiming_probe",
-      "cross_prompt_version_regression",
-      "exploratory_four_class_direction_check"
-    ],
-    "forbidden_uses": [
-      "core_holdout",
-      "top3_etiology_recall",
-      "published_diagnostic_accuracy_claim",
-      "calibration_claim",
-      "dangerous_false_reassurance_rate",
-      "substitute_for_expert_adjudicated_gold_standard"
-    ],
-    "unlabeled_folders_excluded": 33,
-    "unlabeled_note": "源 zip 含 95 个病例目录，公开标签清单仅覆盖 62 例；其余 33 例无参考标签，未纳入。",
-    "does_not_relax": [
-      "public_images_allowed_in_core_holdout",
-      "model_generated_labels_allowed"
-    ],
-    "model_generated_labels_still_prohibited_because": "若由模型给图片贴标签，评估测的是打标模型与被测模型的一致程度而非诊断准确率；两者共享失败模式时指标会报成功而失败不可见，dangerous_false_reassurance_rate 会显示 0% 而真实值可能是 100%。"
   }
 }

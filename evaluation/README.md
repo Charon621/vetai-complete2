@@ -8,21 +8,6 @@
 - 公开网页图片、论文插图、来源数据集的宽泛类别，以及模型自己生成的标签，都不能进入最终金标准。
 - `gold_standard/` 描述的是尚需真实病例、病例级诊断证据和盲法专家标注才能建立的冻结测试集。未完成该流程前，不得发布“准确率提高”之类的产品结论。
 
-### 2026-07-26 补充：新增 V1 层级（`dataset_reference_set/`）
-
-按负责人明确指示，新增一个用公开数据集兽医标签建立的**可运行**参考集，
-共 62 例，见 [`dataset_reference_set/README.md`](dataset_reference_set/README.md)。
-
-上面三条边界**全部继续有效，未被修改**：
-
-- V1 **不是**冻结核心集，不参与 `top3_etiology_recall` 等核心病因指标，不能发布准确率；
-- `model_generated_labels_allowed` 仍为 `false`——V1 的标签来自执业兽医，不是模型生成的；
-- `gold_standard/` 的双专家盲标流程仍是唯一能支撑对外结论的路径，仍未开始。
-
-**取回图片后发现的关键事实**：这批图是接触式皮肤镜特写，无部位、无分布、无动物本体，
-与产品真实输入（手机照片）分布不符。因此它的主指标是**弃答恰当性**与**是否编造部位**，
-而不是四类准确率——后者只作探索性数字。详见该目录 README。
-
 ## 目录
 
 | 路径 | 用途 |
@@ -41,8 +26,6 @@
 | `tools/agreement_stats.py` | 一致性与区间统计：Cohen's κ、Gwet's AC1、加权 κ、Fleiss' κ、Wilson CI、按动物聚类 bootstrap、McNemar |
 | `tools/repeatability.py` | 重测信度：完全一致率与两两 κ 均值（对应 Kocaman et al. 2026 的模型内稳定性测试） |
 | `tools/run_dev_set.js` | 对 8 张 DEV_ONLY 图做结构与鲁棒性审计，输出带 prompt SHA-256 的审计日志 |
-| `tools/score_v1_reference.py` | V1 评分：弃答恰当性与编造部位探针（主指标）+ 四类粗粒度探索性指标 |
-| `dataset_reference_set/` | V1 参考集：62 例，兽医宽泛标签，CC BY 4.0，含映射表与取图脚本 |
 | `runs/` | 审计与评估运行记录（每次运行一个文件，不覆盖旧运行） |
 
 ### 工具链使用顺序
@@ -63,11 +46,6 @@ python evaluation/tools/agreement_stats.py path/to/expert_annotations.csv --long
 # 4. 模型重测信度（同输入至少三轮）
 python evaluation/tools/repeatability.py run1.jsonl run2.jsonl run3.jsonl \
   --field parsed.urgency --ordered
-
-# 5. V1 参考集评分（今天就能跑；主指标是弃答恰当性，不是准确率）
-python evaluation/dataset_reference_set/fetch_images.py --check
-python evaluation/tools/score_v1_reference.py v1_predictions.jsonl \
-  --json-out evaluation/runs/v1_score_YYYYMMDD.json
 ```
 
 每个工具都带 `--self-test`，改动后先跑自检。`validate_annotations.py` 报出阻断性错误时不得继续计算任何指标。
@@ -81,11 +59,9 @@ python evaluation/tools/score_v1_reference.py v1_predictions.jsonl \
 | 标注表与裁决表 | 空表已就绪，等待真实病例与专家 |
 | 统计与校验工具链 | 已完成并通过自检 |
 | 开发集结构审计 | 已完成（84 项检查全通过，见 `runs/dev_audit_v2.0.0.json`） |
-| V1 数据集参考集 | 已完成，62 例就位，可立即运行弃答与编造部位探针 |
 | **G1/G2 专家标注冻结核心集** | **未开始——这仍是对外结论的唯一阻塞项** |
 
-V1 让「今天就能跑出数字」成为可能，但它测的是**行为安全性**（该弃答时是否弃答、
-是否描述看不见的部位），不是诊断准确率。在两名兽医皮肤科专家按 `annotation_guide.md`
+在两名兽医皮肤科专家按 `annotation_guide.md`
 完成盲标与裁决之前，仍不能产出任何可对外发布的诊断准确率、召回率或校准结论。
 
 ## 推荐使用顺序
