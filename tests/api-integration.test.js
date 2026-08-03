@@ -241,77 +241,92 @@ async function run() {
   }
 
   // --- 用例 1：犬病例、唯一候选“猫痤疮”→ 全清空 → 安全弃答 ---
+  // BUG-L10：mock 的自由文本字段全部植入“猫痤疮”，验证排除后病名不从任何
+  // 用户可见字段回流（此前的假阴性正是因为 mock 自由文本是中性描述）。
   calls.length = 0
   fullResponse = {
-    observations: '下颌区域可见黑色粉刺',
+    observations: '下颌区域可见猫痤疮样黑色粉刺',
     primaryDiagnosis: '猫痤疮',
     primaryDiagnosisProbability: 85,
     diagnosisCandidates: [{ name: '猫痤疮', probability: 85, reason: '下颌黑头粉刺' }],
-    lesionNameCn: '下颌粉刺',
+    lesionNameCn: '下颌猫痤疮粉刺',
     confidence: 85,
-    explanation: '下颌区域黑色粉刺',
-    possibleMeaning: '可能与毛囊角化有关',
-    homeCare: '保持清洁干燥',
-    whenToWatch: '观察是否扩散',
-    whenToSeeVet: '如加重请就医',
-    careSuggestion: '避免自行挤压',
-    vetWarning: '如破溃请就医',
+    explanation: '符合猫痤疮表现',
+    possibleMeaning: '可能与猫痤疮有关',
+    homeCare: '猫痤疮需保持清洁干燥',
+    whenToWatch: '观察猫痤疮是否扩散',
+    whenToSeeVet: '猫痤疮如加重请就医',
+    careSuggestion: '避免挤压猫痤疮',
+    vetWarning: '猫痤疮破溃请就医',
     urgency: 'low',
     ragSources: []
   }
   result = await api.diagnose([image], dogPetInfo)
-  assert.strictEqual(result.success, true, 'BUG-L7 用例1：全排除弃答应成功完成')
+  assert.strictEqual(result.success, true, 'BUG-L10 用例1：全排除弃答应成功完成')
   assert.deepStrictEqual(calls.map(function (call) { return call.phase }), ['full-diagnosis'],
-    'BUG-L7 用例1：useKnowledgeBase=false 真实入口只走 full-diagnosis，预检与快路径关闭')
-  assert.deepStrictEqual(result.data.diagnosisCandidates, [], 'BUG-L7 用例1：过滤后候选列表为空')
-  assert.deepStrictEqual(result.data.diseaseList, [], 'BUG-L7 用例1：过滤后疾病列表为空')
-  assert.strictEqual(result.data.primaryDiagnosis, '无法可靠判断', 'BUG-L7 用例1：主方向改为无法可靠判断')
-  assert.strictEqual(result.data.disease, '无法可靠判断', 'BUG-L7 用例1：兼容字段 disease 同步')
-  assert.strictEqual(result.data.primaryDiagnosisProbability, 0, 'BUG-L7 用例1：概率归 0')
-  assert.strictEqual(result.data.confidenceRaw, 0, 'BUG-L7 用例1：原始置信度归 0')
-  assert.strictEqual(result.data.confidence, 0, 'BUG-L7 用例1：置信度归 0')
-  assert.strictEqual(result.data.isReject, true, 'BUG-L7 用例1：全清空必须弃答')
+    'BUG-L10 用例1：useKnowledgeBase=false 真实入口只走 full-diagnosis，预检与快路径关闭')
+  assert.deepStrictEqual(result.data.diagnosisCandidates, [], 'BUG-L10 用例1：过滤后候选列表为空')
+  assert.deepStrictEqual(result.data.diseaseList, [], 'BUG-L10 用例1：过滤后疾病列表为空')
+  assert.strictEqual(result.data.primaryDiagnosis, '无法可靠判断', 'BUG-L10 用例1：主方向改为无法可靠判断')
+  assert.strictEqual(result.data.disease, '无法可靠判断', 'BUG-L10 用例1：兼容字段 disease 同步')
+  assert.strictEqual(result.data.primaryDiagnosisProbability, 0, 'BUG-L10 用例1：概率归 0')
+  assert.strictEqual(result.data.confidenceRaw, 0, 'BUG-L10 用例1：原始置信度归 0')
+  assert.strictEqual(result.data.confidence, 0, 'BUG-L10 用例1：置信度归 0')
+  assert.strictEqual(result.data.isReject, true, 'BUG-L10 用例1：全清空必须弃答')
   assert.ok(result.data.abstainReason && result.data.abstainReason.length > 0,
-    'BUG-L7 用例1：弃答文案非空')
+    'BUG-L10 用例1：弃答文案非空')
   assert.ok(result.data.abstainReason.indexOf('知识库') < 0 && result.data.abstainReason.indexOf('RAG') < 0 &&
     result.data.abstainReason.indexOf('提示词') < 0 && result.data.abstainReason.indexOf('排除规则') < 0,
-    'BUG-L7 用例1：弃答文案不得暴露内部机制')
-  assertNoForbiddenName(result.data, '猫痤疮', 'BUG-L7 用例1')
+    'BUG-L10 用例1：弃答文案不得暴露内部机制')
+  // 递归扫描整个报告对象：规范名和别名都不得出现在任何用户可见字段
+  assertNoForbiddenName(result.data, '猫痤疮', 'BUG-L10 用例1')
+  assertNoForbiddenName(result.data, '猫下巴痤疮', 'BUG-L10 用例1-别名')
+  assertNoForbiddenName(result.data, 'feline acne', 'BUG-L10 用例1-英文别名')
+  // 弃答界面的核心字段应被重建为受控文案，而不是保留模型原始描述
+  assert.strictEqual(result.data.lesionNameCn, '皮肤照片观察', 'BUG-L10 用例1：病名不得出现在病灶名称')
+  assert.strictEqual(result.data.observations, '', 'BUG-L10 用例1：观察描述必须清空')
 
   // --- 用例 2：犬病例、第一候选“猫痤疮”、第二候选“特应性皮炎（环境过敏）” → 主方向同步 ---
+  // BUG-L10：部分排除时，自由文本命中被移除病名必须重建；BUG-L11：置信度跟随保留候选。
   calls.length = 0
   fullResponse = {
-    observations: '面部红斑瘙痒',
+    observations: '面部红斑瘙痒，下颌可见猫痤疮样粉刺',
     primaryDiagnosis: '猫痤疮',
     primaryDiagnosisProbability: 85,
     diagnosisCandidates: [
       { name: '猫痤疮', probability: 85, reason: '下颌粉刺' },
       { name: '特应性皮炎（环境过敏）', probability: 70, reason: '面部瘙痒红斑' }
     ],
-    lesionNameCn: '面部红斑',
+    lesionNameCn: '面部猫痤疮样红斑',
     confidence: 85,
-    explanation: '面部瘙痒性红斑',
-    possibleMeaning: '可能与过敏有关',
-    homeCare: '保持清洁干燥',
-    whenToWatch: '观察是否扩散',
-    whenToSeeVet: '如加重请就医',
+    explanation: '猫痤疮合并面部瘙痒性红斑',
+    possibleMeaning: '可能与猫痤疮和过敏有关',
+    homeCare: '保持清洁干燥，猫痤疮需避免摩擦',
+    whenToWatch: '观察猫痤疮是否扩散',
+    whenToSeeVet: '猫痤疮如加重请就医',
     careSuggestion: '避免自行用药',
     vetWarning: '如破溃请就医',
     urgency: 'moderate',
     ragSources: []
   }
   result = await api.diagnose([image], dogPetInfo)
-  assert.strictEqual(result.success, true, 'BUG-L7 用例2：部分排除应正常完成')
+  assert.strictEqual(result.success, true, 'BUG-L10 用例2：部分排除应正常完成')
   assert.strictEqual(result.data.primaryDiagnosis, '特应性皮炎（环境过敏）',
-    'BUG-L7 用例2：主方向必须同步为保留候选首项')
-  assert.strictEqual(result.data.disease, '特应性皮炎（环境过敏）', 'BUG-L7 用例2：disease 与主方向一致')
+    'BUG-L10 用例2：主方向必须同步为保留候选首项')
+  assert.strictEqual(result.data.disease, '特应性皮炎（环境过敏）', 'BUG-L10 用例2：disease 与主方向一致')
   assert.strictEqual(result.data.diseaseList[0].name, '特应性皮炎（环境过敏）',
-    'BUG-L7 用例2：diseaseList 首项与主方向一致')
+    'BUG-L10 用例2：diseaseList 首项与主方向一致')
   assert.strictEqual(result.data.diagnosisCandidates[0].name, '特应性皮炎（环境过敏）',
-    'BUG-L7 用例2：诊断候选首项与主方向一致')
-  assert.strictEqual(result.data.diagnosisCandidates.length, 1, 'BUG-L7 用例2：排除后只剩 1 个候选')
-  assertNoForbiddenName(result.data, '猫痤疮', 'BUG-L7 用例2')
-  assert.notStrictEqual(result.data.isReject, true, 'BUG-L7 用例2：部分排除不强制弃答')
+    'BUG-L10 用例2：诊断候选首项与主方向一致')
+  assert.strictEqual(result.data.diagnosisCandidates.length, 1, 'BUG-L10 用例2：排除后只剩 1 个候选')
+  assertNoForbiddenName(result.data, '猫痤疮', 'BUG-L10 用例2')
+  assertNoForbiddenName(result.data, '猫下巴痤疮', 'BUG-L10 用例2-别名')
+  assert.notStrictEqual(result.data.isReject, true, 'BUG-L10 用例2：部分排除不强制弃答')
+  // BUG-L11：模型整体置信度 85 不得继续使用；三者必须统一为保留候选的 70
+  assert.strictEqual(result.data.confidenceRaw, 70, 'BUG-L11 用例2：原始置信度取保留候选匹配分')
+  assert.strictEqual(result.data.confidence, 70, 'BUG-L11 用例2：置信度取保留候选校准分')
+  assert.strictEqual(result.data.primaryDiagnosisProbability, 70, 'BUG-L11 用例2：主概率与置信度恒等')
+  assert.strictEqual(result.data.diseaseList[0].probability, 70, 'BUG-L11 用例2：diseaseList 分数同步')
 
   // --- 用例 3：模型主动返回非空 abstainReason 但没有 _isReject → 仍应拒答 ---
   calls.length = 0

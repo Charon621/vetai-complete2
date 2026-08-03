@@ -98,10 +98,12 @@ function checkFieldCompleteness(DB) {
 /**
  * 别名冲突：同一个别名被多个条目占用。
  *
- * 只有当两个条目**共享物种**时才算真冲突——检索一开始就按 species 过滤，
- * 犬条目和猫条目永远不会同时参与打分，所以「晒伤」同时属于
- * 日光性皮炎（犬）和猫日光性皮炎（猫）不会造成互相加分。
- * 物种不相交的同名别名单列为 benign，不计入冲突数。
+ * 同物种同名会造成互相加分，属于真冲突（blocking）。
+ * 跨物种同名（如「晒伤」同时属于日光性皮炎（犬）和猫日光性皮炎（猫））
+ * 对 search() 检索不构成冲突，但 BUG-L9 之后对 applyExclusionRules() 排除链路
+ * 必须按物种消歧——候选别名命中的多张卡会先按宠物物种过滤，无法唯一消歧时
+ * 保守保留。因此这里单独列出 crossSpecies，供审计确认消歧行为有探针覆盖，
+ * 不再标成 benign。
  */
 function checkAliasCollisions(DB) {
   const byName = {}
@@ -109,7 +111,7 @@ function checkAliasCollisions(DB) {
 
   const owner = {}
   const collisions = []
-  const benign = []
+  const crossSpecies = []
 
   function speciesOverlap(a, b) {
     const sa = (byName[a] && byName[a].species) || []
@@ -123,13 +125,13 @@ function checkAliasCollisions(DB) {
       if (owner[a] && owner[a] !== d.name) {
         const rec = { alias: a, owners: [owner[a], d.name] }
         if (speciesOverlap(owner[a], d.name)) collisions.push(rec)
-        else benign.push(rec)
+        else crossSpecies.push(rec)
       } else if (!owner[a]) {
         owner[a] = d.name
       }
     })
   })
-  return { blocking: collisions, benignCrossSpecies: benign }
+  return { blocking: collisions, crossSpecies: crossSpecies }
 }
 
 /** 条目名语义重叠（一个名字是另一个的子串，去掉括号后比较） */
@@ -367,6 +369,86 @@ function runProbes() {
 }
 
 // --------------------------------------------------------------------------
+// BUG-L8/BUG-L9：排除规则行为探针（真实入口 applyExclusionRules）
+// 与上面的 search 探针互补：search 测“该不该检索到”，这里测“排除后该不该留”。
+// --------------------------------------------------------------------------
+const EXCLUSION_PROBES = [
+  // 部位父子映射：粗粒度页面入参不得误删合法候选
+  { id: 'loc-cat-acne-head', desc: '猫+头部+猫痤疮 应保留（下颏/唇是头部子部位）', petInfo: { species: '猫', bodyPart: 'head', bodyPartLabel: '头部' }, candidate: '猫痤疮', expectKept: true },
+  { id: 'loc-demodex-limbs', desc: '犬+四肢+蠕形螨病（局灶型）应保留（locations 含前肢/爪部）', petInfo: { species: '犬', bodyPart: 'limbs', bodyPartLabel: '四肢' }, candidate: '蠕形螨病（局灶型）', expectKept: true },
+  { id: 'loc-egc-limbs', desc: '猫+四肢+嗜酸性肉芽肿复合体应保留（locations 含大腿/爪部）', petInfo: { species: '猫', bodyPart: 'limbs', bodyPartLabel: '四肢' }, candidate: '嗜酸性肉芽肿复合体', expectKept: true },
+  // 反向用例保留：黑/白名单语义不能被父子映射放宽
+  { id: 'loc-ear-back-excluded', desc: '犬+背部+耳螨感染应排除（反向用例保持）', petInfo: { species: '犬', bodyPart: 'back', bodyPartLabel: '背部' }, candidate: '耳螨感染', expectKept: false },
+  { id: 'loc-ear-ears-kept', desc: '犬+耳部+耳螨感染应保留', petInfo: { species: '犬', bodyPart: 'ears', bodyPartLabel: '耳部' }, candidate: '耳螨感染', expectKept: true },
+  // 跨物种同名消歧
+  { id: 'alias-sunburn-dog', desc: '犬+腹部+晒伤 应绑犬日光性皮炎并保留', petInfo: { species: '犬', bodyPart: 'abdomen', bodyPartLabel: '腹部' }, candidate: '晒伤', expectKept: true },
+  { id: 'alias-solar-dermatitis-dog', desc: '犬+腹部+solar dermatitis 应保留', petInfo: { species: '犬', bodyPart: 'abdomen', bodyPartLabel: '腹部' }, candidate: 'solar dermatitis', expectKept: true },
+  { id: 'alias-sunburn-cat-ears', desc: '猫+耳部+晒伤 应绑猫日光性皮炎并保留', petInfo: { species: '猫', bodyPart: 'ears', bodyPartLabel: '耳部' }, candidate: '晒伤', expectKept: true },
+  // 年龄规范化（真实页面入参）
+  { id: 'age-senior-excluded', desc: '犬+背部+age=senior+老年 热点应排除（非年龄:老年 生效）', petInfo: { species: '犬', bodyPart: 'back', bodyPartLabel: '背部', age: 'senior', ageLabel: '老年' }, candidate: '急性湿性皮炎（热点）', expectKept: false },
+  { id: 'age-adult-kept', desc: '犬+背部+成年 热点应保留', petInfo: { species: '犬', bodyPart: 'back', bodyPartLabel: '背部', age: 'adult', ageLabel: '成年' }, candidate: '急性湿性皮炎（热点）', expectKept: true },
+  { id: 'age-unknown-kept', desc: '犬+背部+年龄未知 热点应保留（缺失≠不符合）', petInfo: { species: '犬', bodyPart: 'back', bodyPartLabel: '背部', age: 'unknown', ageLabel: '不确定' }, candidate: '急性湿性皮炎（热点）', expectKept: true },
+  { id: 'age-missing-kept', desc: '犬+背部+缺失年龄 热点应保留', petInfo: { species: '犬', bodyPart: 'back', bodyPartLabel: '背部' }, candidate: '急性湿性皮炎（热点）', expectKept: true }
+]
+
+function runExclusionProbes() {
+  return EXCLUSION_PROBES.map(function (p) {
+    const kept = kb.applyExclusionRules([{ name: p.candidate, probability: 80 }], p.petInfo)
+    const pass = (kept.length > 0) === p.expectKept
+    return {
+      id: p.id,
+      desc: p.desc,
+      pass: pass,
+      kept: kept.length > 0,
+      violations: pass ? [] : ['候选应' + (p.expectKept ? '保留' : '排除') + '但实际' + (kept.length > 0 ? '保留' : '排除')]
+    }
+  })
+}
+
+/**
+ * BUG-L8：规则/locations 一致性——有部位白名单的卡，其自身 keywords.locations
+ * 声明的位置（经同义词归一：下巴→下颏、唇部→唇 等，再归一到受控父枚举）
+ * 不得被自己的白名单误删。用任一合法父枚举构造页面可表达输入做黑盒验证。
+ * 失败项计入 P0，作为 KB 门禁的一部分。
+ */
+function checkLocationConsistency(DB) {
+  const issues = []
+  const labelMap = { head: '头部', neck: '颈部', ears: '耳部', back: '背部', abdomen: '腹部', limbs: '四肢', paws: '爪部', tail: '尾部', whole: '全身', other: '其他' }
+  DB.forEach(function (card) {
+    const exclusions = card.exclusions || []
+    const allowedParts = exclusions
+      .filter(function (r) { return r.indexOf('仅限部位:') === 0 })
+      .map(function (r) { return r.slice(5) })
+    if (!allowedParts.length) return
+    const locations = (card.keywords && card.keywords.locations) || []
+    // 合法枚举集合 = 白名单词归一 ∪ locations 词归一
+    const legal = {}
+    allowedParts.concat(locations).forEach(function (w) {
+      kb.normalizeBodyPartWord(w).forEach(function (parent) { legal[parent] = true })
+    })
+    const parents = Object.keys(legal)
+    if (!parents.length) {
+      issues.push({ name: card.name, reason: '白名单与 locations 都无法归一到受控枚举' })
+      return
+    }
+    // 任一合法父枚举输入下卡片都应保留
+    let kept = false
+    parents.forEach(function (parent) {
+      if (kept) return
+      const petInfo = {
+        species: (card.species && card.species[0]) || '',
+        bodyPart: parent,
+        bodyPartLabel: labelMap[parent] || parent
+      }
+      const res = kb.applyExclusionRules([{ name: card.name, probability: 80 }], petInfo)
+      kept = res.length > 0
+    })
+    if (!kept) issues.push({ name: card.name, reason: '自身合法位置被白名单误删：合法枚举 ' + parents.join('/') })
+  })
+  return issues
+}
+
+// --------------------------------------------------------------------------
 // 主流程
 // --------------------------------------------------------------------------
 
@@ -374,6 +456,10 @@ function audit() {
   const DB = kb.DISEASE_KB
   const probes = runProbes()
   const failedP0 = probes.filter(function (p) { return !p.pass && p.severity === 'P0' })
+  const exclusionProbes = runExclusionProbes()
+  const failedExclusion = exclusionProbes.filter(function (p) { return !p.pass })
+  const locationIssues = checkLocationConsistency(DB)
+  const p0Failures = failedP0.length + failedExclusion.length + locationIssues.length
 
   return {
     tool: 'kb_audit',
@@ -387,11 +473,13 @@ function audit() {
     comboCoverage: checkComboCoverage(DB),
     hasBreedSusceptibilityAccessor: typeof kb.getBreedSusceptibility === 'function',
     probes: probes,
+    exclusionProbes: exclusionProbes,
+    locationConsistencyIssues: locationIssues,
     summary: {
-      probesTotal: probes.length,
-      probesPassed: probes.filter(function (p) { return p.pass }).length,
-      p0Failures: failedP0.length,
-      blocking: failedP0.length > 0
+      probesTotal: probes.length + exclusionProbes.length,
+      probesPassed: probes.filter(function (p) { return p.pass }).length + exclusionProbes.filter(function (p) { return p.pass }).length,
+      p0Failures: p0Failures,
+      blocking: p0Failures > 0
     }
   }
 }
@@ -416,10 +504,10 @@ function printReport(r) {
   r.aliasCollisions.blocking.forEach(function (c) {
     console.log('  ! 「' + c.alias + '」→ ' + c.owners.join(' / '))
   })
-  if (r.aliasCollisions.benignCrossSpecies.length) {
-    console.log('  跨物种同名 ' + r.aliasCollisions.benignCrossSpecies.length +
-      ' 处（物种过滤已隔离，不构成冲突）：')
-    r.aliasCollisions.benignCrossSpecies.forEach(function (c) {
+  if (r.aliasCollisions.crossSpecies.length) {
+    console.log('  跨物种同名 ' + r.aliasCollisions.crossSpecies.length +
+      ' 处（BUG-L9 已按物种消歧，见排除探针）：')
+    r.aliasCollisions.crossSpecies.forEach(function (c) {
       console.log('    · 「' + c.alias + '」→ ' + c.owners.join(' / '))
     })
   }
@@ -469,6 +557,20 @@ function printReport(r) {
     }
   })
   console.log('')
+  console.log('[排除规则行为探针] ' + r.exclusionProbes.filter(function (p) { return p.pass }).length +
+    '/' + r.exclusionProbes.length + ' 通过（部位父子映射/跨物种消歧/年龄规范化）')
+  r.exclusionProbes.forEach(function (p) {
+    console.log('  ' + (p.pass ? '✓' : '✗') + ' ' + p.id + ' — ' + p.desc)
+    if (!p.pass) p.violations.forEach(function (v) { console.log('     → ' + v) })
+  })
+  console.log('')
+  console.log('[规则/locations 一致性] ' +
+    (r.locationConsistencyIssues.length === 0 ? '全部有白名单的卡均未被自身白名单误删' :
+      r.locationConsistencyIssues.length + ' 处问题'))
+  r.locationConsistencyIssues.forEach(function (iss) {
+    console.log('  ✗ ' + iss.name + ' — ' + iss.reason)
+  })
+  console.log('')
 
   if (r.summary.blocking) {
     console.log('结论：存在 ' + r.summary.p0Failures + ' 个 P0 级失败，阻断快路径解冻。')
@@ -487,9 +589,13 @@ function selfTest() {
   assert('search 返回数组', Array.isArray(kb.search({ species: '犬', complaint: '红肿' })))
   assert('isPromptWorthyResult 是函数', typeof kb.isPromptWorthyResult === 'function')
   assert('别名冲突检测可运行', Array.isArray(checkAliasCollisions(DB).blocking))
-  assert('别名冲突区分跨物种', Array.isArray(checkAliasCollisions(DB).benignCrossSpecies))
+  assert('别名冲突区分跨物种', Array.isArray(checkAliasCollisions(DB).crossSpecies))
   assert('探针可运行', runProbes().length === PROBES.length)
   assert('探针含 P0 项', PROBES.some(function (p) { return p.severity === 'P0' }))
+  assert('排除行为探针可运行', runExclusionProbes().length === EXCLUSION_PROBES.length)
+  assert('排除行为探针全绿', runExclusionProbes().every(function (p) { return p.pass }))
+  assert('locations 一致性审计可运行', Array.isArray(checkLocationConsistency(DB)))
+  assert('locations 一致性无失败', checkLocationConsistency(DB).length === 0)
 
   checks.forEach(function (c) {
     console.log((c.pass ? '  ✓ ' : '  ✗ ') + c.name)
@@ -528,6 +634,9 @@ module.exports = {
   audit: audit,
   runProbes: runProbes,
   PROBES: PROBES,
+  EXCLUSION_PROBES: EXCLUSION_PROBES,
+  runExclusionProbes: runExclusionProbes,
+  checkLocationConsistency: checkLocationConsistency,
   checkAliasCollisions: checkAliasCollisions,
   checkComboCoverage: checkComboCoverage
 }

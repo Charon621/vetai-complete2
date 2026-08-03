@@ -2714,10 +2714,102 @@ function buildRagPrompt(query) {
   }
 
   // ============================================================
-  // BUG-P1：排除规则函数
-// 遍历候选疾病，检查排除条件，命中则从候选列表移除
-// 排除条件为硬约束（物种/部位/年龄明显不符），不适用概率性描述
-// ============================================================
+  // BUG-L8：受控部位/年龄规范化
+  // 页面 bodyPart 只传粗粒度枚举（head/neck/ears/back/abdomen/limbs/paws/tail/whole/other），
+  // 知识卡白名单/黑名单却用细粒度词（下颏、眼周、前肢、大腿…），裸 indexOf 硬匹配
+  // 会把合法候选误删（如 bodyPartLabel='头部' 匹配不到 '仅限部位:下颏'）。
+  // 这里建立受控父子映射：规则词先归一到父枚举，再与输入枚举比较。
+  // ============================================================
+
+  // BUG-L8：页面枚举值 → 子部位词表（父部位覆盖子部位；'全身' 不自动匹配
+  // 局部专属词，'褶皱' 等泛词不做父级展开，避免白名单过宽漏过本应排除的候选）
+  var BODY_PART_CHILDREN = {
+    head: ['头', '头部', '面部', '面', '下颏', '下巴', '下颌', '眼', '眼周', '眼睑', '口周', '口唇', '唇', '唇部', '口腔', '鼻', '鼻部', '口', '额', '颊', '泪'],
+    neck: ['颈', '颈部'],
+    ears: ['耳', '耳部', '耳缘', '耳尖', '耳廓', '耳道'],
+    back: ['背', '背部', '腰', '腰部', '臀', '臀部'],
+    abdomen: ['腹', '腹部', '腹股沟', '腋下', '下腹'],
+    limbs: ['肢', '四肢', '前肢', '后肢', '腿', '大腿', '小腿', '肢端', '肘', '跗', '腕', '胫'],
+    paws: ['爪', '爪部', '足', '足垫', '肉垫', '脚掌', '脚垫', '趾', '趾间', '脚趾', '甲', '甲床', '甲沟', '指'],
+    tail: ['尾', '尾部', '尾根', '肛周', '肛门', '肛', '直肠', '会阴'],
+    whole: ['全身', '躯干', '胸'],
+    other: ['其他', '褶皱']
+  }
+
+  // BUG-L8：年龄枚举 → 规范中文值；规则数据统一用中文比较
+  var AGE_ENUM_TO_CN = {
+    baby: '幼年',
+    adult: '成年',
+    senior: '老年',
+    unknown: ''
+  }
+
+  // BUG-L8：部位词 → 父枚举集合（找不到返回空数组，调用方按原词兜底）
+  function normalizeBodyPartWord(word) {
+    if (!word) return []
+    var out = []
+    for (var parent in BODY_PART_CHILDREN) {
+      if (!Object.prototype.hasOwnProperty.call(BODY_PART_CHILDREN, parent)) continue
+      var children = BODY_PART_CHILDREN[parent]
+      for (var ci = 0; ci < children.length; ci++) {
+        var child = children[ci]
+        if (word === child || child.indexOf(word) >= 0 || word.indexOf(child) >= 0) {
+          if (out.indexOf(parent) < 0) out.push(parent)
+          break
+        }
+      }
+    }
+    return out
+  }
+
+  // BUG-L8：页面输入（枚举值 + 标签 + 可能细粒度词）→ 父枚举集合
+  function normalizeInputBodyParts(petInfo) {
+    var out = []
+    var raw = []
+    if (petInfo.bodyPart) raw.push(petInfo.bodyPart)
+    if (petInfo.bodyPartLabel) raw.push(petInfo.bodyPartLabel)
+    for (var i = 0; i < raw.length; i++) {
+      var w = String(raw[i] || '').trim()
+      if (!w) continue
+      if (BODY_PART_CHILDREN[w]) {
+        if (out.indexOf(w) < 0) out.push(w)
+        continue
+      }
+      var mapped = normalizeBodyPartWord(w)
+      for (var m = 0; m < mapped.length; m++) {
+        if (out.indexOf(mapped[m]) < 0) out.push(mapped[m])
+      }
+    }
+    return out
+  }
+
+  // BUG-L8：判断输入部位是否命中规则部位词（父子映射感知）。
+  // 规则词无法归一（如 '无毛'）时退回原词子串判断，避免过度放行。
+  function bodyPartRuleHit(inputParents, ruleWord, petInfo) {
+    var ruleParents = normalizeBodyPartWord(ruleWord)
+    if (ruleParents.length === 0) {
+      var rawInput = (petInfo.bodyPartLabel || petInfo.bodyPart || '')
+      return rawInput && rawInput.indexOf(ruleWord) >= 0
+    }
+    for (var i = 0; i < ruleParents.length; i++) {
+      if (inputParents.indexOf(ruleParents[i]) >= 0) return true
+    }
+    return false
+  }
+
+  // BUG-L8：年龄规范化——兼容页面 age 枚举与 ageLabel 中文标签；未知返回空
+  function normalizeAgeValue(petInfo) {
+    var raw = petInfo.age || petInfo.ageLabel || ''
+    if (Object.prototype.hasOwnProperty.call(AGE_ENUM_TO_CN, raw)) return AGE_ENUM_TO_CN[raw]
+    return raw === '不确定' ? '' : raw
+  }
+
+  // BUG-L8：物种规范化（英文枚举 → 中文）
+  function normalizeSpecies(petInfo) {
+    var raw = (petInfo.species || petInfo.petType || '').trim()
+    var map = { dog: '犬', cat: '猫', 犬: '犬', 猫: '猫' }
+    return map[raw] || raw
+  }
 
 /**
  * 应用排除规则，过滤候选疾病列表
@@ -2729,35 +2821,112 @@ function applyExclusionRules(candidates, petInfo) {
   if (!Array.isArray(candidates) || candidates.length === 0) return candidates
   if (!petInfo) return candidates
 
-  // 构建疾病名→疾病卡的查找映射（只构建一次）
-  var nameToCard = {}
+  // BUG-L9：名称→卡片数组索引（一个名称可对应多张卡）。
+  // 原实现 nameToCard[alias] = card 单卡覆盖，后写卡（如猫日光性皮炎）
+  // 会覆盖先写卡（犬日光性皮炎），导致犬病例输出别名“晒伤”时错绑猫卡，
+  // 再被物种规则误删。现在按数组保存，配合物种消歧使用。
+  var nameToCards = {}
+  function addNameToCards(name, card) {
+    if (!name) return
+    if (!nameToCards[name]) nameToCards[name] = []
+    if (nameToCards[name].indexOf(card) < 0) nameToCards[name].push(card)
+  }
   for (var i = 0; i < DISEASE_KB.length; i++) {
     var card = DISEASE_KB[i]
-    nameToCard[card.name] = card
+    addNameToCards(card.name, card)
     // 别名也参与查找，方便 LLM 输出的别名形式也能匹配
     if (card.aliases) {
       for (var a = 0; a < card.aliases.length; a++) {
-        nameToCard[card.aliases[a]] = card
+        addNameToCards(card.aliases[a], card)
       }
     }
   }
 
+  // BUG-L9：候选名 → 疾病卡，按物种消歧。
+  // 规范名/别名命中多张卡时，先按宠物物种过滤；仍无法唯一消歧
+  // （如物种未知或犬猫共患病名）时返回 card=null，调用方保守保留候选，
+  // 不执行硬排除。名称命中知识卡但物种全不符时标记 speciesMismatch。
+  function resolveCardForCandidate(candidateName, petInfo) {
+    var species = normalizeSpecies(petInfo)
+    var cards = nameToCards[candidateName]
+    if (!cards || cards.length === 0) {
+      // 模糊匹配：去掉括号内容后匹配（沿用原行为，但同样按物种消歧）
+      var cleanName = candidateName.replace(/[（(].*[）)]/g, '').trim()
+      if (cleanName) {
+        for (var k = 0; k < DISEASE_KB.length; k++) {
+          var dc = DISEASE_KB[k]
+          if (dc.name.indexOf(cleanName) >= 0 || cleanName.indexOf(dc.name) >= 0) {
+            if (!cards) cards = []
+            if (cards.indexOf(dc) < 0) cards.push(dc)
+          }
+        }
+      }
+    }
+    if (!cards || cards.length === 0) return { card: null, speciesMismatch: false, cards: null }
+    // 按物种过滤：卡声明了物种且与宠物物种不符则剔除；物种未知时不过滤
+    var compatible = []
+    for (var ci = 0; ci < cards.length; ci++) {
+      var c = cards[ci]
+      if (!c.species || c.species.length === 0 || !species) {
+        compatible.push(c)
+      } else if (c.species.indexOf(species) >= 0) {
+        compatible.push(c)
+      }
+    }
+    if (compatible.length === 1) return { card: compatible[0], speciesMismatch: false, cards: cards }
+    if (compatible.length > 1) return { card: null, speciesMismatch: false, cards: cards }
+    // 名称命中知识卡但物种全不符 → 视为物种排除
+    return { card: null, speciesMismatch: true, cards: cards }
+  }
+
+  // BUG-L10：收集被移除候选的“规范名+别名”集合，供上游（normalizeDiagnosis）
+  // 清理自由文本时扫描——只要文本里出现这些词，就按受控文案重建，杜绝病名回流。
+  function pushUniqueStr(list, s) {
+    if (!s) return
+    if (list.indexOf(s) < 0) list.push(s)
+  }
+  function collectRemovedNames(candidateName, cards, out) {
+    if (!cards || cards.length === 0) {
+      var cleanName = candidateName.replace(/[（(].*[）)]/g, '').trim()
+      if (cleanName) {
+        for (var k = 0; k < DISEASE_KB.length; k++) {
+          var dc = DISEASE_KB[k]
+          if (dc.name.indexOf(cleanName) >= 0 || cleanName.indexOf(dc.name) >= 0) {
+            if (!cards) cards = []
+            if (cards.indexOf(dc) < 0) cards.push(dc)
+          }
+        }
+      }
+    }
+    if (!cards) return
+    for (var i = 0; i < cards.length; i++) {
+      var c = cards[i]
+      pushUniqueStr(out, c.name)
+      var aliases = c.aliases || []
+      for (var a = 0; a < aliases.length; a++) pushUniqueStr(out, aliases[a])
+    }
+  }
+
+
   // ============================================================
     // 匹配单条排除规则
     function matchExclusionRule(rule, petInfo) {
-      // 部位排除规则：如果 bodyPart 包含排除部位，排除
+      // 部位排除规则：输入部位命中排除部位（含父子映射）则排除
       if (rule.indexOf('非部位:') === 0) {
         var excludedPart = rule.slice(4) // 去掉 '非部位:'
-        var bodyPart = petInfo.bodyPartLabel || petInfo.bodyPart || ''
-        if (bodyPart && bodyPart.indexOf(excludedPart) >= 0) return true
+        var bodyPart0 = petInfo.bodyPartLabel || petInfo.bodyPart || ''
+        if (bodyPart0) {
+          var inputParents0 = normalizeInputBodyParts(petInfo)
+          if (bodyPartRuleHit(inputParents0, excludedPart, petInfo)) return true
+        }
         return false
       }
       // 仅限部位规则已在上层处理，此处不单独判断
-      // 年龄排除规则
+      // 年龄排除规则（BUG-L8：规范中文值比较）
       if (rule.indexOf('非年龄:') === 0) {
         var excludedAge = rule.slice(4) // 去掉 '非年龄:'
-        var petAge = petInfo.age || ''
-        if (petAge && petAge.indexOf(excludedAge) >= 0) return true
+        var petAge0 = normalizeAgeValue(petInfo)
+        if (petAge0 && petAge0.indexOf(excludedAge) >= 0) return true
         return false
       }
       // 仅限年龄规则已在上层处理，此处不单独判断
@@ -2766,10 +2935,10 @@ function applyExclusionRules(candidates, petInfo) {
         // 跳过已匹配的 '非部位:' 和 '非年龄:' 规则
         if (rule.indexOf('非部位:') === 0 || rule.indexOf('非年龄:') === 0) return false
         var excludedTerm = rule.slice(1) // 去掉 '非'
-        var bodyPart3 = petInfo.bodyPartLabel || petInfo.bodyPart || ''
-        if (bodyPart3 && bodyPart3.indexOf(excludedTerm) >= 0) return true
-        var petAge3 = petInfo.age || ''
-        if (petAge3 && petAge3.indexOf(excludedTerm) >= 0) return true
+        var inputParents1 = normalizeInputBodyParts(petInfo)
+        if (inputParents1.length && bodyPartRuleHit(inputParents1, excludedTerm, petInfo)) return true
+        var petAge1 = normalizeAgeValue(petInfo)
+        if (petAge1 && petAge1.indexOf(excludedTerm) >= 0) return true
         return false
       }
       // 通用仅限规则（如 '仅限面部'、'仅限幼年'）
@@ -2777,11 +2946,11 @@ function applyExclusionRules(candidates, petInfo) {
         // 跳过已匹配的 '仅限部位:' 和 '仅限年龄:' 规则
         if (rule.indexOf('仅限部位:') === 0 || rule.indexOf('仅限年龄:') === 0) return false
         var requiredTerm = rule.slice(2) // 去掉 '仅限'
-        var bodyPart4 = petInfo.bodyPartLabel || petInfo.bodyPart || ''
-        var petAge4 = petInfo.age || ''
-        var hasInBodyPart = bodyPart4 && bodyPart4.indexOf(requiredTerm) >= 0
-        var hasInAge = petAge4 && petAge4.indexOf(requiredTerm) >= 0
-        if (bodyPart4 || petAge4) {
+        var inputParents2 = normalizeInputBodyParts(petInfo)
+        var petAge2 = normalizeAgeValue(petInfo)
+        var hasInBodyPart = inputParents2.length > 0 && bodyPartRuleHit(inputParents2, requiredTerm, petInfo)
+        var hasInAge = petAge2 && petAge2.indexOf(requiredTerm) >= 0
+        if (inputParents2.length || petAge2) {
           if (!hasInBodyPart && !hasInAge) return true
         }
         return false
@@ -2795,14 +2964,13 @@ function applyExclusionRules(candidates, petInfo) {
       if (!card) return false
 
       // 1. 物种排除：复用 species 字段，检查 petInfo.species 是否在 card.species 中
-      var petSpecies = (petInfo.species || petInfo.petType || '').trim()
+      // BUG-L8：物种统一走 normalizeSpecies（英文枚举/中文标签都能识别）
+      var petSpecies = normalizeSpecies(petInfo)
       if (petSpecies) {
-        var speciesMap = { 'dog': '犬', 'cat': '猫', '犬': '犬', '猫': '猫' }
-        var mappedSpecies = speciesMap[petSpecies] || petSpecies
-        if (card.species && card.species.length > 0 && mappedSpecies !== '') {
+        if (card.species && card.species.length > 0 && petSpecies !== '') {
           var speciesMatch = false
           for (var s = 0; s < card.species.length; s++) {
-            if (card.species[s] === mappedSpecies) {
+            if (card.species[s] === petSpecies) {
               speciesMatch = true
               break
             }
@@ -2843,32 +3011,48 @@ function applyExclusionRules(candidates, petInfo) {
       }
 
       var bodyPart = petInfo.bodyPartLabel || petInfo.bodyPart || ''
-      var petAge = petInfo.age || ''
+      // BUG-L8：年龄规范化（页面 age='senior' + ageLabel='老年' → '老年'）
+      var petAge = normalizeAgeValue(petInfo)
+      // BUG-L8：输入部位归一为受控父枚举集合；'其他'/空输入不触发白名单硬删除
+      var inputParents = normalizeInputBodyParts(petInfo)
+      var inputIsOther = inputParents.indexOf('other') >= 0
 
       // 部位白名单：如果存在白名单规则，bodyPart 必须匹配至少一项
-      // 注意：如果 bodyPart 为空（未提供），跳过部位白名单检查
-      if (allowedParts.length > 0 && bodyPart) {
+      // 注意：如果 bodyPart 为空（未提供）或输入为“其他”，跳过部位白名单检查，
+      // 缺失信息/无法表达部位不等于不符合，保守保留（BUG-L8）。
+      if (allowedParts.length > 0 && bodyPart && !inputIsOther) {
         var partMatch = false
         for (var p = 0; p < allowedParts.length; p++) {
-          if (bodyPart && bodyPart.indexOf(allowedParts[p]) >= 0) {
+          if (bodyPartRuleHit(inputParents, allowedParts[p], petInfo)) {
             partMatch = true
             break
+          }
+        }
+        // BUG-L8：知识卡自身 locations 声明的位置也视为合法位置，
+        // 白名单不能把卡片自己声明的合法部位误删（如蠕形螨局灶 locations 含前肢/爪部）。
+        if (!partMatch && card.keywords && card.keywords.locations) {
+          var cardLocations = card.keywords.locations
+          for (var lp = 0; lp < cardLocations.length; lp++) {
+            if (bodyPartRuleHit(inputParents, cardLocations[lp], petInfo)) {
+              partMatch = true
+              break
+            }
           }
         }
         if (!partMatch) return true
       }
 
-      // 部位黑名单：如果 bodyPart 匹配任何排除部位，排除
+      // 部位黑名单：如果 bodyPart 匹配任何排除部位（含父子映射），排除
       for (var ep = 0; ep < excludedParts.length; ep++) {
-        if (bodyPart && bodyPart.indexOf(excludedParts[ep]) >= 0) return true
+        if (bodyPartRuleHit(inputParents, excludedParts[ep], petInfo)) return true
       }
 
       // 年龄白名单：如果存在白名单规则，age 必须匹配至少一项
-            // 注意：如果 age 为空（未提供），跳过年龄白名单检查
-            if (allowedAges.length > 0 && petAge) {
+      // 注意：如果 age 为空（未提供），跳过年龄白名单检查（BUG-L8：缺失≠不符合）
+      if (allowedAges.length > 0 && petAge) {
         var ageMatch = false
         for (var ag = 0; ag < allowedAges.length; ag++) {
-          if (petAge && petAge.indexOf(allowedAges[ag]) >= 0) {
+          if (petAge.indexOf(allowedAges[ag]) >= 0) {
             ageMatch = true
             break
           }
@@ -2890,28 +3074,26 @@ function applyExclusionRules(candidates, petInfo) {
     }
 
   var filtered = []
+  // BUG-L10：被移除候选的名称集合（规范名+别名），挂在返回数组上供上游清理
+  var removedNames = []
   for (var j = 0; j < candidates.length; j++) {
     var candidate = candidates[j]
     var candidateName = candidate.name || ''
-    // BUG-P1：先尝试精确匹配，再尝试模糊匹配
-    var card = nameToCard[candidateName]
-    if (!card) {
-      // 尝试模糊匹配：去掉括号内容后匹配
-      var cleanName = candidateName.replace(/[（(].*[）)]/g, '').trim()
-      for (var k = 0; k < DISEASE_KB.length; k++) {
-        if (DISEASE_KB[k].name.indexOf(cleanName) >= 0 || cleanName.indexOf(DISEASE_KB[k].name) >= 0) {
-          card = DISEASE_KB[k]
-          break
-        }
-      }
+    // BUG-P1：先尝试精确匹配，再尝试模糊匹配；BUG-L9：按物种消歧
+    var resolved = resolveCardForCandidate(candidateName, petInfo)
+    if (resolved.speciesMismatch) {
+      // 候选名命中知识卡但物种全不符：硬排除
+      collectRemovedNames(candidateName, resolved.cards, removedNames)
+      continue
     }
-    if (card && checkExclusionWithRules(card, petInfo)) {
+    if (resolved.card && checkExclusionWithRules(resolved.card, petInfo)) {
       // 排除命中，不加入过滤后的列表
+      collectRemovedNames(candidateName, resolved.cards, removedNames)
       continue
     }
     filtered.push(candidate)
   }
-
+  filtered.removedNames = removedNames
   return filtered
 }
 
@@ -2938,5 +3120,11 @@ module.exports = {
   isGenericVisualSign: isGenericSign,
   classifySign: classifySign,
   // BUG-P1：排除规则函数
-  applyExclusionRules: applyExclusionRules
+  applyExclusionRules: applyExclusionRules,
+  // BUG-L8：受控部位/年龄/物种归一能力，供 kb_audit 与排除规则测试复用
+  BODY_PART_CHILDREN: BODY_PART_CHILDREN,
+  normalizeBodyPartWord: normalizeBodyPartWord,
+  normalizeInputBodyParts: normalizeInputBodyParts,
+  normalizeAgeValue: normalizeAgeValue,
+  normalizeSpecies: normalizeSpecies
 }

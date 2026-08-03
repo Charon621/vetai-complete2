@@ -652,6 +652,29 @@ function cleanUserVisibleText(value) {
     .trim()
 }
 
+// ============================================================
+// BUG-L10：受控拒答/清理文案
+// 候选被排除转安全弃答，或自由文本命中被移除病名时，用以下固定文案重建，
+// 不出现任何具体病名，也不暴露“知识库/RAG/提示词/排除规则”等内部机制词。
+// ============================================================
+var REJECT_REASON = '根据当前照片和宠物信息，暂时无法给出可靠方向，建议补充更清晰照片或咨询线下兽医。'
+var REJECT_LESION_NAME = '皮肤照片观察'
+var REJECT_EXPLANATION = '当前证据不足以支撑明确判断，建议补充更清晰照片或咨询线下兽医。'
+var REJECT_HOME_CARE = '保持患处清洁干燥，避免宠物舔舐抓挠。'
+var REJECT_WATCH = '观察是否有扩散、破溃或症状加重。'
+var REJECT_VET = '如症状加重、扩散、破溃、流脓、明显疼痛或精神食欲异常，请尽快线下就医。'
+var REJECT_CARE = '建议补充更清晰照片或咨询线下兽医，在明确诊断前避免自行用药。'
+
+// BUG-L10：判断文本是否包含名称集合中的任一成员（用于病名泄漏扫描）
+function textContainsAny(text, names) {
+  if (!text || !names || names.length === 0) return false
+  var s = String(text)
+  for (var i = 0; i < names.length; i++) {
+    if (names[i] && s.indexOf(names[i]) >= 0) return true
+  }
+  return false
+}
+
 function normalizeTrustedSourceUrl(value) {
   if (typeof value !== 'string' || value.indexOf('https://') !== 0) return ''
   var match = value.match(/^https:\/\/([^/?#]+)(?:[/?#]|$)/i)
@@ -776,9 +799,13 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
   var candidates = Array.isArray(data.diagnosisCandidates)
     ? data.diagnosisCandidates.map(function (item) {
       var itemName = displayDiagnosisForSpecies(cleanDiagName(item.name || '未明确'), petInfo && petInfo.species)
+      // BUG-L11：保留校准前的原始匹配分，供 confidenceRaw/confidence/primaryDiagnosisProbability
+      // 三者同源派生；probability 是校准后的展示值，不能再拿去做二次校准。
+      var itemRaw = normalizePercent(item.probability, 0)
       return {
         name: itemName,
-        probability: calibrateConfidence(normalizePercent(item.probability, 0)),
+        probabilityRaw: itemRaw,
+        probability: calibrateConfidence(itemRaw),
         reason: cleanUserVisibleText(item.reason || ''),
         supporting: cleanUserVisibleText(item.supporting || ''),
         against: cleanUserVisibleText(item.against || '')
@@ -796,6 +823,9 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
   if (kb && kb.applyExclusionRules && petInfo) {
     candidates = kb.applyExclusionRules(candidates, petInfo)
   }
+  // BUG-L10：被移除候选的规范名+别名集合，由 kb.applyExclusionRules 挂在返回数组上；
+  // 后续 finalRejected 会清空 candidates，这里提前取出用于自由文本病名泄漏扫描。
+  var removedNames = candidates.removedNames || []
 
   var abstained = !!cleanModelText(data.abstainReason || '')
   // BUG-L7：最终拒答状态统一由“非空 abstainReason 或 _isReject=true”决定，
@@ -806,7 +836,40 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
   var excludedAll = hadCandidatesBefore && candidates.length === 0 && !finalRejected
   if (excludedAll) {
     finalRejected = true
-    data.abstainReason = '根据当前照片和宠物信息，暂时无法给出可靠方向，建议补充更清晰照片或咨询线下兽医。'
+    data.abstainReason = REJECT_REASON
+  }
+
+  // BUG-L10：自由文本清理必须放在 finalRejected 判定之后（不能反向改变拒答语义）。
+  // 任何最终拒答（排除全清空或模型主动弃答）时，观察/护理/就医等自由文本一律重建为
+  // 受控安全文案——弃答界面不应继续展示模型对已排除方向的描述，否则病名会经
+  // lesionNameCn/observations/explanation 等字段回流到结果页和聊天报告。
+  // 部分候选被排除但仍有保留候选时，只重建命中被移除病名/别名的字段。
+  if (finalRejected) {
+    data.lesionNameCn = REJECT_LESION_NAME
+    data.observations = ''
+    data.explanation = REJECT_EXPLANATION
+    data.possibleMeaning = ''
+    data.homeCare = REJECT_HOME_CARE
+    data.whenToWatch = REJECT_WATCH
+    data.whenToSeeVet = REJECT_VET
+    data.careSuggestion = REJECT_CARE
+    data.vetWarning = REJECT_VET
+    // 模型主动弃答时保留其弃答理由；若理由本身提到被移除病名则一并清理
+    if (removedNames.length && textContainsAny(data.abstainReason, removedNames)) {
+      data.abstainReason = REJECT_REASON
+    }
+  } else if (removedNames.length > 0) {
+    // 部分排除：自由文本命中被移除病名/别名 → 重建为受控文案，不能安全清理的置空
+    if (textContainsAny(data.lesionNameCn, removedNames)) data.lesionNameCn = REJECT_LESION_NAME
+    if (textContainsAny(data.observations, removedNames)) data.observations = ''
+    if (textContainsAny(data.explanation, removedNames)) data.explanation = ''
+    if (textContainsAny(data.possibleMeaning, removedNames)) data.possibleMeaning = ''
+    if (textContainsAny(data.homeCare, removedNames)) data.homeCare = REJECT_HOME_CARE
+    if (textContainsAny(data.whenToWatch, removedNames)) data.whenToWatch = REJECT_WATCH
+    if (textContainsAny(data.whenToSeeVet, removedNames)) data.whenToSeeVet = REJECT_VET
+    if (textContainsAny(data.careSuggestion, removedNames)) data.careSuggestion = REJECT_CARE
+    if (textContainsAny(data.vetWarning, removedNames)) data.vetWarning = REJECT_VET
+    if (textContainsAny(data.abstainReason, removedNames)) data.abstainReason = REJECT_REASON
   }
 
   // BUG-L7：拒答或全清空时，主方向固定为“无法可靠判断”、候选清空、置信度归 0；
@@ -822,7 +885,12 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
     primaryDiagnosis = candidates[0]
       ? candidates[0].name
       : displayDiagnosisForSpecies(cleanDiagName(data.primaryDiagnosis || '未明确'), petInfo && petInfo.species)
-    rawConf = normalizePercent(data.confidence, candidates[0] ? candidates[0].probability : 0)
+    // BUG-L11：置信度统一从“过滤后首个候选的校准前原始匹配分”派生，
+    // 不用被删除候选或模型整体置信度；confidenceRaw/confidence/primaryDiagnosisProbability
+    // 三者同源，不再出现主方向 70 分但整体置信度 85 的矛盾。
+    rawConf = candidates[0]
+      ? candidates[0].probabilityRaw
+      : normalizePercent(data.confidence, 0)
   }
   var calibratedConf = calibrateConfidence(rawConf)
   // 弃答时 confidence 必须低：模型偶尔会一边写 abstainReason 一边给高分，
@@ -854,11 +922,11 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
     primaryDiagnosis: primaryDiagnosis,
     // 语义定义为“= 首个候选的匹配分”，以候选为准而不是取模型另给的值，
     // 避免同一件事出现两个互相矛盾的数字（拒答时候选已清空则归 0）
+    // BUG-L11：primaryDiagnosisProbability 与 confidence 同源（= 首候选校准分），
+    // 与 confidenceRaw（原始分）来自同一匹配分，杜绝同报告两个分数互相矛盾。
     primaryDiagnosisProbability: finalRejected
       ? 0
-      : (candidates[0]
-        ? candidates[0].probability
-        : calibrateConfidence(normalizePercent(data.primaryDiagnosisProbability, 0))),
+      : calibratedConf,
     diagnosisCandidates: candidates,
     imageFindings: normalizeImageFindings(data.imageFindings),
     evidenceFor: normalizeStringList(data.evidenceFor, 4),
@@ -907,7 +975,8 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
     // 重新生成病名列表；只有未拒答且确实无候选时才保留原回填行为。
     diseaseList: finalRejected ? [] : (candidates.length > 0 ? candidates : [{
       name: primaryDiagnosis,
-      probability: calibrateConfidence(normalizePercent(data.primaryDiagnosisProbability, 0)),
+      // BUG-L11：与报告级置信度字段保持一致，避免回填分数二次校准产生偏差
+      probability: calibratedConf,
       reason: cleanUserVisibleText(data.explanation || '')
     }]),
     symptoms: cleanUserVisibleText(data.explanation || data.observations || ''),
