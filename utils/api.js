@@ -791,22 +791,43 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
   candidates.sort(function (a, b) { return b.probability - a.probability })
 
   // BUG-P1：应用排除规则（物种/部位/年龄不符时从候选列表移除）
+  // BUG-L7：过滤前记录是否存在候选，用于区分“排除导致全清空”与“模型原始空候选”。
+  var hadCandidatesBefore = candidates.length > 0
   if (kb && kb.applyExclusionRules && petInfo) {
-    var beforeCount = candidates.length
     candidates = kb.applyExclusionRules(candidates, petInfo)
-    if (candidates.length < beforeCount) {
-      // 排除后若候选列表为空，标记为弃答
-      // 排除条件不产生新的弃答文案，后续逻辑会处理空候选
-    }
   }
 
   var abstained = !!cleanModelText(data.abstainReason || '')
-  var primaryDiagnosis = displayDiagnosisForSpecies(cleanDiagName(data.primaryDiagnosis || (candidates[0] && candidates[0].name) || '未明确'), petInfo && petInfo.species)
-  var rawConf = normalizePercent(data.confidence, candidates[0] ? candidates[0].probability : 0)
+  // BUG-L7：最终拒答状态统一由“非空 abstainReason 或 _isReject=true”决定，
+  // 不能只读 _isReject，防止模型只写 abstainReason 时拒答状态漏标。
+  var finalRejected = abstained || !!data._isReject
+  // BUG-L7：只有“过滤前有候选、过滤后为空”才视为排除导致的全清空并转安全弃答；
+  // 模型原始空候选（过滤前就为空）不得误判成排除全清空，保持既有兼容行为。
+  var excludedAll = hadCandidatesBefore && candidates.length === 0 && !finalRejected
+  if (excludedAll) {
+    finalRejected = true
+    data.abstainReason = '根据当前照片和宠物信息，暂时无法给出可靠方向，建议补充更清晰照片或咨询线下兽医。'
+  }
+
+  // BUG-L7：拒答或全清空时，主方向固定为“无法可靠判断”、候选清空、置信度归 0；
+  // 未拒答时主方向必须取过滤后首项，不能继续使用已被排除的模型原始主诊断，
+  // 否则被排除病名会经 primaryDiagnosis / disease / diseaseList 回流到最终报告。
+  var primaryDiagnosis
+  var rawConf
+  if (finalRejected) {
+    candidates = []
+    primaryDiagnosis = '无法可靠判断'
+    rawConf = 0
+  } else {
+    primaryDiagnosis = candidates[0]
+      ? candidates[0].name
+      : displayDiagnosisForSpecies(cleanDiagName(data.primaryDiagnosis || '未明确'), petInfo && petInfo.species)
+    rawConf = normalizePercent(data.confidence, candidates[0] ? candidates[0].probability : 0)
+  }
   var calibratedConf = calibrateConfidence(rawConf)
   // 弃答时 confidence 必须低：模型偶尔会一边写 abstainReason 一边给高分，
   // 这里按“弃答即低置信”硬压，避免 UI 同时显示“无法判断”和“较高匹配”。
-  if (abstained && calibratedConf > 20) calibratedConf = 20
+  if (finalRejected && calibratedConf > 20) calibratedConf = 20
   var confLabel = confidenceToLabel(calibratedConf)
 
   // 建议分段
@@ -832,10 +853,12 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
     confidenceLabel: confLabel,
     primaryDiagnosis: primaryDiagnosis,
     // 语义定义为“= 首个候选的匹配分”，以候选为准而不是取模型另给的值，
-    // 避免同一件事出现两个互相矛盾的数字（弃答时候选为空则归 0）
-    primaryDiagnosisProbability: candidates[0]
-      ? candidates[0].probability
-      : (abstained ? 0 : calibrateConfidence(normalizePercent(data.primaryDiagnosisProbability, 0))),
+    // 避免同一件事出现两个互相矛盾的数字（拒答时候选已清空则归 0）
+    primaryDiagnosisProbability: finalRejected
+      ? 0
+      : (candidates[0]
+        ? candidates[0].probability
+        : calibrateConfidence(normalizePercent(data.primaryDiagnosisProbability, 0))),
     diagnosisCandidates: candidates,
     imageFindings: normalizeImageFindings(data.imageFindings),
     evidenceFor: normalizeStringList(data.evidenceFor, 4),
@@ -880,11 +903,13 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
 
     // 前端展示映射
     disease: primaryDiagnosis,
-    diseaseList: candidates.length > 0 ? candidates : [{
+    // BUG-L7：拒答或全清空时 diseaseList 必须为空，不得用兼容回填
+    // 重新生成病名列表；只有未拒答且确实无候选时才保留原回填行为。
+    diseaseList: finalRejected ? [] : (candidates.length > 0 ? candidates : [{
       name: primaryDiagnosis,
       probability: calibrateConfidence(normalizePercent(data.primaryDiagnosisProbability, 0)),
       reason: cleanUserVisibleText(data.explanation || '')
-    }],
+    }]),
     symptoms: cleanUserVisibleText(data.explanation || data.observations || ''),
     treatment: careSuggestion,
     urgencyLabel: cleanUserVisibleText(data.vetWarning || whenToSeeVet || '建议结合症状变化咨询线下兽医'),
@@ -893,7 +918,8 @@ function normalizeDiagnosis(data, providerName, providerCfg, petInfo) {
     bbox: [],
     detections: [],
     notes: [DIAGNOSIS_SCORE_NOTE, '本结果根据照片和病例信息自动生成，仅用于宠物皮肤问题初步参考，不能替代线下兽医诊断。'].join('\n'),
-    isReject: !!data._isReject
+    // BUG-L7：最终拒答状态由非空 abstainReason 或 _isReject=true 统一决定
+    isReject: finalRejected
   }
 }
 
