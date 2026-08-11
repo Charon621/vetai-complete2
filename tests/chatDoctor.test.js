@@ -276,6 +276,60 @@ async function run() {
   assert.strictEqual(restored.session.draft.symptoms.length, 0, 'BUG-C7: symptoms must be normalized')
   assert.strictEqual(restored.session.draft.petName, '奶糖', 'BUG-C7: existing fields must survive normalization')
 
+  // ============================================================
+  // BUG-C11 回归：AI 在线但把「先跳过」当主诉原文返回时，占位不能被覆盖
+  // ============================================================
+  api.chatAI = function (messages, options) {
+    if (options && options.response_format) {
+      return Promise.resolve({
+        success: true,
+        text: JSON.stringify({ complaint: '这个不太清楚，先跳过', bodyPart: '', symptoms: [], duration: '' })
+      })
+    }
+    return Promise.resolve({ success: true, text: '好的，请上传照片' })
+  }
+  var aiSkipSession = chatDoctor.createNewSession()
+  aiSkipSession.phase = chatDoctor.PHASE.COMPLAINT
+  aiSkipSession.draft.petName = '奶糖'
+  aiSkipSession.draft.petType = 'cat'
+  var aiSkipResult = await chatDoctor.processUserInput(aiSkipSession, '这个不太清楚，先跳过', null)
+  assert.ok(aiSkipResult.session.draft.complaint.indexOf('先跳过') < 0,
+    'BUG-C11: AI raw extraction must not override the skip placeholder')
+  assert.ok(aiSkipResult.session.draft.complaint.indexOf('未能清晰描述') >= 0,
+    'BUG-C11: skip should keep the neutral placeholder')
+
+  // ============================================================
+  // BUG-C13 回归：AI 离线时完整介绍句「糯米，猫，3岁，公的」能提取名字；
+  // 「叫它糯米」不能把「它」带进名字
+  // ============================================================
+  api.chatAI = function () { return Promise.resolve({ success: false, error: 'offline' }) }
+  var fullSentenceSession = chatDoctor.createNewSession()
+  var fullSentenceResult = await chatDoctor.processUserInput(fullSentenceSession, '糯米，猫，3岁，公的', null)
+  assert.strictEqual(fullSentenceResult.session.draft.petName, '糯米',
+    'BUG-C13: full intro sentence without 叫/名字 prefix should extract the name')
+  assert.strictEqual(fullSentenceResult.session.draft.petType, 'cat')
+  assert.strictEqual(fullSentenceResult.session.draft.gender, 'male')
+  assert.strictEqual(fullSentenceResult.session.draft.age, 'adult')
+  assert.strictEqual(fullSentenceResult.session.phase, chatDoctor.PHASE.COMPLAINT,
+    'BUG-C13: complete profile should still advance to complaint')
+  var taSession = chatDoctor.createNewSession()
+  var taResult = await chatDoctor.processUserInput(taSession, '叫它糯米', null)
+  assert.strictEqual(taResult.session.draft.petName, '糯米',
+    'BUG-C13: leading 它 must be stripped from the extracted name')
+
+  // ============================================================
+  // BUG-C12 回归：FOLLOW_UP AI 失败时给「没听清」兜底，不用默认文案答非所问
+  // ============================================================
+  var followUpFailSession = chatDoctor.createNewSession()
+  followUpFailSession.phase = chatDoctor.PHASE.FOLLOW_UP
+  followUpFailSession.draft.petName = '奶糖'
+  followUpFailSession.draft.diagnosisResult = { success: true, data: { primaryDiagnosis: '外耳炎' } }
+  var followUpFailResult = await chatDoctor.processUserInput(followUpFailSession, '这个会传染人吗？', null)
+  assert.ok(followUpFailResult.doctorMsg.text.indexOf('没听清') >= 0,
+    'BUG-C12: failed follow-up must return a retry prompt, not the default question')
+  assert.ok(followUpFailResult.doctorMsg.text.indexOf('还有其他想问的吗') < 0,
+    'BUG-C12: default follow-up question must not be used as a non-answer')
+
   console.log('chatDoctor tests passed')
 }
 

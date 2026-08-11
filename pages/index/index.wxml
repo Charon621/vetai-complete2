@@ -33,9 +33,8 @@
       </view>
       <text class="card-no card-no-lime">01 / PHOTO</text>
       <view class="photo-title">拍照初筛</view>
-      <view class="photo-desc">拍几张患处照片，3 分钟出兽医级报告</view>
+      <view class="photo-desc">拍几张患处照片，AI 帮你分析皮肤情况</view>
       <view class="photo-foot">
-        <text class="photo-eta">3 MIN</text>
         <view class="vet-action-dot"><view class="vic-arrow"></view></view>
       </view>
     </view>

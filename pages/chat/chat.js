@@ -452,7 +452,11 @@ Page({
     self.setData({ isAnalyzing: true })
 
     var petInfo = chatDoctor.buildPetInfoForDiagnose(draft)
+    // BUG-C10：恢复会话后补图，photoBase64s 只含新图（saveDraft 持久化时清空 base64），
+    // 与 photoPaths 数量不一致时若直接用 photoBase64s 会丢旧照片；改为按 photoPaths 全量读回。
     var images = (draft.photoBase64s && draft.photoBase64s.length) ? draft.photoBase64s : []
+    var pathCount = (draft.photoPaths && draft.photoPaths.length) ? draft.photoPaths.length : 0
+    var needReload = pathCount > 0 && images.length !== pathCount
 
     function doDiagnose(imgList) {
       if (!imgList || imgList.length === 0) {
@@ -525,15 +529,16 @@ Page({
         })
     }
 
-    if (images.length > 0) {
-      doDiagnose(images)
-      return
-    }
-    // 恢复会话场景：base64 未持久化，从本地文件读回
-    if (draft.photoPaths && draft.photoPaths.length) {
+    if (needReload) {
+      // 恢复会话/补图场景：photoBase64s 与 photoPaths 数量不一致，
+      // 从本地文件全量读回，避免只送新照片而丢失旧照片（BUG-C10）
       imageUtil.localPathsToBase64(draft.photoPaths)
         .then(function (b64s) { doDiagnose(b64s) })
         .catch(function () { self._handleDiagnosisError('没有收到照片，请重新上传') })
+      return
+    }
+    if (images.length > 0) {
+      doDiagnose(images)
       return
     }
     self._handleDiagnosisError('没有收到照片，请重新上传')

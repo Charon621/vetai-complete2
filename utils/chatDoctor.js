@@ -100,7 +100,23 @@ function fallbackExtractInfo(phase, userText) {
     }
 
     match = text.match(/(?:叫|名字(?:是|叫)?)[：:\s]*([\u4e00-\u9fa5A-Za-z0-9_-]{1,12})/)
-    if (match) result.petName = match[1].replace(/(?:是只|是一只|它是).*$/, '')
+    if (match) result.petName = match[1].replace(/(?:是只|是一只|它是).*$/, '').replace(/^它(?:是|叫)?/, '')
+    else if (!result.petName && (result.petType || result.gender || result.age)) {
+      // BUG-C13：AI 掉线时用户一句「糯米，猫，3岁，公」提取不到名字——
+      // 名字无「叫/名字」前缀，原 else if 又因 petType 已提取而跳过。
+      // 取第一个逗号/顿号/空格分隔段作为候选名字，排除数字、单字性别/类型词、
+      // 症状词、回避词及「一只/这只」等量词开头（防把类型词当名字入库）
+      var firstSeg = text.split(/[，,、\s]+/)[0] || ''
+      if (firstSeg && firstSeg.length <= 8 && !/^\d/.test(firstSeg) &&
+          !/^(?:公|母|雄|雌|男|女|狗|犬|猫|兔|鸟)(?:的|猫|狗|兔|仓鼠|鸟)?$/.test(firstSeg) &&
+          !/瘙痒|发红|红肿|红疹|掉毛|脱毛|结痂|皮屑|疙瘩|肿|脓|湿|烂|破皮/.test(firstSeg) &&
+          !/^(?:一只|这只|那只|我的|我家)/.test(firstSeg) &&
+          !/(?:猫|狗|犬|兔|鸟)$/.test(firstSeg) &&
+          /^[\u4e00-\u9fa5A-Za-z0-9_-]{1,8}$/.test(firstSeg) &&
+          !/^(?:不知道|不确定|没有|没名字|没有名字|不清楚|随便|先不说|不想说|保密)$/.test(firstSeg)) {
+        result.petName = firstSeg
+      }
+    }
     else if (!result.petType && !result.gender && !result.age &&
       // BUG-C7：单字性别/类型词（公、母、猫、犬等）与症状句不能当名字入库
       !/^(?:公|母|雄|雌|男|女|狗|犬|猫|兔|鸟)(?:的|猫|狗|兔|仓鼠|鸟)?$/.test(text) &&
@@ -158,7 +174,14 @@ function normalizeExtracted(phase, extracted, userText) {
     result.breed = String(extracted.breed || '').trim()
     result.weight = String(extracted.weight || fallback.weight || '').trim()
   } else if (phase === PHASE.COMPLAINT) {
-    result.complaint = String(extracted.complaint || fallback.complaint || '').trim()
+    // BUG-C11：跳过语优先于 AI 提取——AI 提取 prompt 要求 complaint 保留原文，
+    // 会把「这个不太清楚，先跳过」原样返回覆盖中立占位，必须在此强制拦截
+    var skipText = String(userText || '')
+    if (/先跳过|说不清|不知道怎么描述/.test(skipText) && skipText.trim().length <= 16) {
+      result.complaint = '（用户未能清晰描述症状，请结合照片与已有信息判断）'
+    } else {
+      result.complaint = String(extracted.complaint || fallback.complaint || '').trim()
+    }
     result.bodyPart = hasOption(BODY_PART_OPTIONS, extracted.bodyPart) ? extracted.bodyPart : (fallback.bodyPart || '')
     var allowedSymptoms = ['itching', 'hair_loss', 'scratching', 'crusting', 'oozing', 'redness', 'scaling', 'lump']
     var symptoms = Array.isArray(extracted.symptoms) ? extracted.symptoms : fallback.symptoms
@@ -631,7 +654,10 @@ function processUserInput(session, text, quickReply) {
         return generateDoctorMessageByAI(PHASE.FOLLOW_UP, draft, session.messages || [], text)
           .then(function (aiText) {
             var msgData = getDoctorMessage(PHASE.FOLLOW_UP, draft)
+            // BUG-C12：AI 掉线/失败时 aiText 为 null，若直接回默认文案
+            // （「还有其他想问的吗？」）就是答非所问，改成明确的兜底提示
             if (aiText) msgData.text = aiText
+            else msgData.text = '抱歉，网络不太好，我没听清你的问题。能再说一遍吗？'
             return {
               session: session,
               doctorMsg: {
