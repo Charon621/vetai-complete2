@@ -59,6 +59,14 @@
         "type": "file"
       },
       {
+        "value": ".preview",
+        "type": "folder"
+      },
+      {
+        "value": ".hermes",
+        "type": "folder"
+      },
+      {
         "value": "*.py",
         "type": "suffix"
       },

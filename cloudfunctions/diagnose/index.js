@@ -45,8 +45,14 @@ const QUOTA_SYNC_EVERY = 5        // 每累计 5 次调用同步一次 DB
 const QUOTA_SYNC_INTERVAL = 60000 // 或距上次同步超过 60s 强制同步
 const QUOTA_MEM_MAX_KEYS = 1000   // 超过后清理非当天键，防 Map 单调增长
 
+// 按中国时区(UTC+8)取日期：toISOString() 返回 UTC 日期，直接用会导致
+// 国内用户的日配额在本地凌晨 8 点才重置，而非午夜（BUG-G9）。中国无夏令时，恒为 +8。
+function chinaDateString(now) {
+  return new Date(now + 8 * 3600 * 1000).toISOString().slice(0, 10)
+}
+
 async function checkDailyQuota(openId) {
-  const day = new Date().toISOString().slice(0, 10)
+  const day = chinaDateString(Date.now())
   const key = openId + '_' + day
   const now = Date.now()
   let mem = quotaMem.get(key)

@@ -174,7 +174,7 @@ function addRecord(data) {
   var createdAt = nowMs()
   var timestamp = nowText()
   var record = {
-    id: createId(),
+    id: '',
     ownerId: getUserScope(),
     ownerName: getCurrentUserLabel(),
     createdAt: createdAt,
@@ -186,10 +186,15 @@ function addRecord(data) {
   for (var i = 0; i < keys.length; i++) {
     record[keys[i]] = data[keys[i]]
   }
-  // 系统字段不允许被调用方数据覆盖（BUG-K4）
-  record.id = record.id && data.id === undefined ? record.id : createId()
+  // 系统字段一律由本模块重设，不允许被调用方数据覆盖（BUG-K4）。
+  // 之前只重置 id/ownerId/createdAt，timestamp/dateStr 仍可被调用方注入，
+  // 会污染历史排序与时间展示；这里统一重设，并把晦涩的 id 三元式改为显式赋值。
+  record.id = createId()
   record.ownerId = getUserScope()
+  record.ownerName = getCurrentUserLabel()
   record.createdAt = createdAt
+  record.timestamp = timestamp
+  record.dateStr = timestamp
 
   records.unshift(record)
   // 超出上限丢弃最旧的

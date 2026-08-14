@@ -326,7 +326,7 @@ Page({
       var trendIcon = diff < 0 ? '↘' : (diff > 0 ? '↗' : '→')
       prevCompare = {
         disease: cleanText(prevRecord.disease || prevRecord.primaryDiagnosis || ''),
-        timeAgo: self.formatTimeAgo(prevRecord.generatedAt || prevRecord.timestamp),
+        timeAgo: self.formatTimeAgo(prevRecord.createdAt || prevRecord.generatedAt || prevRecord.timestamp),
         trend: trend,
         trendText: trendText,
         trendIcon: trendIcon
@@ -382,21 +382,28 @@ Page({
   },
 
   findPreviousRecord: function (record) {
+    var self = this
     var allRecords = storage.getHistory()
     var petKey = record.profileId || record.petName
-    var currentTime = record.generatedAt || record.timestamp || new Date().toISOString()
+    var currentTime = self._recordTimeMs(record)
     var prevRecords = allRecords.filter(function (r) {
       if (r.id === record.id) return false
       var rPetKey = r.profileId || r.petName
       if (rPetKey !== petKey) return false
-      var rTime = r.generatedAt || r.timestamp || ''
-      return rTime < currentTime
+      return self._recordTimeMs(r) < currentTime
     }).sort(function (a, b) {
-      var aTime = a.generatedAt || a.timestamp || ''
-      var bTime = b.generatedAt || b.timestamp || ''
-      return bTime.localeCompare(aTime)
+      return self._recordTimeMs(b) - self._recordTimeMs(a)
     })
     return prevRecords.length > 0 ? prevRecords[0] : null
+  },
+
+  // 统一取记录时间（毫秒）：createdAt 是 storage.addRecord 写入的数字时间戳，最可靠；
+  // 旧记录缺失时回退到 generatedAt(ISO)/timestamp 解析。之前用 generatedAt/timestamp
+  // 字符串比较，两者格式不同（ISO vs 本地化）会排错序（BUG-J7）。
+  _recordTimeMs: function (record) {
+    if (typeof record.createdAt === 'number') return record.createdAt
+    var t = Date.parse(String(record.generatedAt || record.timestamp || ''))
+    return isNaN(t) ? 0 : t
   },
 
   formatTimeAgo: function (isoStr) {
@@ -604,7 +611,8 @@ Page({
 
         var canvas = res[0].node
         var ctx = canvas.getContext('2d')
-        var dpr = wx.getSystemInfoSync().pixelRatio || 2
+        var winInfo = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
+        var dpr = winInfo.pixelRatio || 2
         var W = 750
         var H = 1180
         canvas.width = W * dpr

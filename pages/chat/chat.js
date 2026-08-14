@@ -45,6 +45,7 @@ Page({
     isAnalyzing: false, draftPetName: '',
     showProgress: false, progressText: '',
     showNewBtn: false, restoredNotice: false, scrollIntoView: '',
+    menuRight: 0,
     uploadedPhotos: [], uploadedPhotoBoxes: [], showPhotoActions: false,
     selectorVisible: false, selectorImageIndex: -1, selectorImagePath: '',
     selectorInitialBox: null
@@ -54,10 +55,18 @@ Page({
 
   onLoad: function () {
     var statusBarHeight = 20
+    var menuRight = 0
     try {
-      statusBarHeight = (wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()).statusBarHeight || 20
+      var winInfo = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
+      statusBarHeight = winInfo.statusBarHeight || 20
+      // 右上角胶囊按钮：custom 导航下微信仍悬浮显示，需预留其宽度，
+      // 否则自绘 header 右侧按钮会被胶囊遮挡/挤出屏幕
+      var menuRect = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null
+      if (menuRect && menuRect.width && winInfo.windowWidth) {
+        menuRight = winInfo.windowWidth - menuRect.left
+      }
     } catch (e) {}
-    this.setData({ statusBarHeight: statusBarHeight })
+    this.setData({ statusBarHeight: statusBarHeight, menuRight: menuRight })
 
     // 首次从档案页进入时，onLoad 会早于 onShow；在这里消费标记，避免初始化两次。
     if (wx.getStorageSync('chat_start_new')) {
@@ -76,9 +85,7 @@ Page({
       this.checkProfilesAndStart()
       return
     }
-    if (this._session && this._session.phase === chatDoctor.PHASE.FOLLOW_UP) {
-      this.setData({ showNewBtn: true })
-    }
+    // 追问阶段回到页面：保持底部输入可用（新问诊/历史按钮常驻顶部）
   },
 
   // ── 档案选择 ──────────────────────────────
@@ -131,6 +138,7 @@ Page({
     var result = profile ? chatDoctor.initSessionWithProfile(profile) : chatDoctor.initSession()
     var session = result.session
     this._session = session
+    this._uploadedPhotoBase64 = []
     var msgData = chatDoctor.getDoctorMessage(session.phase, session.draft)
     this.setData({
       messages: this._formatMessages(),
@@ -138,7 +146,7 @@ Page({
       inputType: msgData.inputType,
       placeholder: msgData.placeholder || '输入消息…',
       draftPetName: session.draft.petName || '',
-      showNewBtn: false, restoredNotice: result.restored,
+      restoredNotice: result.restored,
       uploadedPhotos: [], uploadedPhotoBoxes: [], showPhotoActions: false,
       isAnalyzing: false
     })
@@ -148,6 +156,11 @@ Page({
   },
 
   dismissRestoredNotice: function () { this.setData({ restoredNotice: false }) },
+
+  // 历史记录：跳档案 tab（detail 页按来源区分「对话问诊/拍照初筛」展示）
+  goHistory: function () {
+    wx.switchTab({ url: '/pages/detail/detail' })
+  },
 
   // 自定义导航栏返回按钮（chat.json navigationStyle: custom，系统不渲染返回键）
   onBackTap: function () {
@@ -215,12 +228,24 @@ Page({
           .then(function (photoBatch) {
             wx.hideLoading()
             analytics.track('upload', { added: photoBatch.length, source: 'chat' })
-            var newPhotos = self.data.uploadedPhotos.concat(photoBatch.map(function (p) { return p.base64 }))
-            var newBoxes = (self.data.uploadedPhotoBoxes || []).concat(photoBatch.map(function () { return null }))
-            self.setData({
-              uploadedPhotos: newPhotos.slice(0, MAX_CHAT_PHOTOS),
-              uploadedPhotoBoxes: newBoxes.slice(0, MAX_CHAT_PHOTOS),
-              showPhotoActions: true
+            // base64 只放实例变量、不进 setData（对齐首页 BUG-B2）；展示用 vetai_tmp
+            // 本地路径，避免 MB 级字符串进 data 卡渲染。
+            if (!self._uploadedPhotoBase64) self._uploadedPhotoBase64 = []
+            var base64List = photoBatch.map(function (p) { return p.base64 })
+            var persistTasks = base64List.map(function (b64) {
+              return imageUtil.base64ToLocalFile(b64, b64, 'vetai_tmp')
+            })
+            Promise.all(persistTasks).then(function (localPaths) {
+              var newPhotos = self.data.uploadedPhotos.concat(localPaths.map(function (lp, i) {
+                return lp && lp.indexOf('data:') !== 0 ? lp : base64List[i]
+              }))
+              var newBoxes = (self.data.uploadedPhotoBoxes || []).concat(photoBatch.map(function () { return null }))
+              self._uploadedPhotoBase64 = self._uploadedPhotoBase64.concat(base64List)
+              self.setData({
+                uploadedPhotos: newPhotos.slice(0, MAX_CHAT_PHOTOS),
+                uploadedPhotoBoxes: newBoxes.slice(0, MAX_CHAT_PHOTOS),
+                showPhotoActions: true
+              })
             })
           })
           .catch(function (err) {
@@ -246,9 +271,13 @@ Page({
     if (self._isProcessing) return
     var photos = self.data.uploadedPhotos
     if (photos.length === 0) return
-    var photoBatch = photos.map(function (p) { return { path: p, base64: p } })
+    // base64 取自实例变量（uploadedPhotos 里存的是本地展示路径），
+    // 落盘/诊断仍用 base64，展示路径只在图片展示时使用。
+    var base64s = (self._uploadedPhotoBase64 || []).slice(0, photos.length)
+    var photoBatch = photos.map(function (p, i) { return { path: p, base64: base64s[i] || p } })
     var photoBoxes = (self.data.uploadedPhotoBoxes || []).slice(0, photos.length)
     self.setData({ showPhotoActions: false, uploadedPhotos: [], uploadedPhotoBoxes: [] })
+    self._uploadedPhotoBase64 = []
     self._isProcessing = true
 
     // 把 base64 图片落盘为本地文件，避免把大体积 base64 写进会话消息 / localStorage（10MB 配额风险）
@@ -304,7 +333,8 @@ Page({
     imageUtil.saveImagesPermanent(photoBatch.map(function (p) { return p.base64 }))
       .then(function (savedInfos) {
         var localPaths = savedInfos.map(function (s) { return s.path || '' }).filter(Boolean)
-        // 落盘成功用本地路径；否则退化为原始 base64，保证功能不中断
+        // 落盘到 vetai_saved 成功用永久路径；部分失败时退化为选图阶段已落盘的
+        // vetai_tmp 本地路径（由 cleanupStaleImages 按引用保护），保证功能不中断
         commit(localPaths.length === photoBatch.length ? localPaths : photoBatch.map(function (p) { return p.path }))
       })
       .catch(function () {
@@ -313,6 +343,7 @@ Page({
   },
 
   onCancelPhotos: function () {
+    this._uploadedPhotoBase64 = []
     this.setData({ showPhotoActions: false, uploadedPhotos: [], uploadedPhotoBoxes: [] })
   },
 
@@ -320,6 +351,7 @@ Page({
     var idx = parseInt(e.currentTarget.dataset.index)
     var photos = this.data.uploadedPhotos.filter(function (_, i) { return i !== idx })
     var boxes = (this.data.uploadedPhotoBoxes || []).filter(function (_, i) { return i !== idx })
+    this._uploadedPhotoBase64 = (this._uploadedPhotoBase64 || []).filter(function (_, i) { return i !== idx })
     this.setData({
       uploadedPhotos: photos,
       uploadedPhotoBoxes: boxes,
@@ -427,7 +459,7 @@ Page({
             quickReplies: uiSource.quickReplies || [],
             inputType: uiSource.inputType || msgData.inputType,
             placeholder: uiSource.placeholder || msgData.placeholder || '输入消息…',
-            draftPetName: result.session.draft.petName || '', showNewBtn: false
+            draftPetName: result.session.draft.petName || ''
           })
 
           if (result.session.phase === chatDoctor.PHASE.ANALYZING) {
@@ -513,7 +545,7 @@ Page({
               self.setData({
                 messages: self._formatMessages(),
                 quickReplies: followMsgData.quickReplies, inputType: 'text',
-                placeholder: followMsgData.placeholder, showNewBtn: true
+                placeholder: followMsgData.placeholder
               })
               self._updateProgress()
               self._scrollToBottom()
