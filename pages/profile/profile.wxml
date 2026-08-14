@@ -10,12 +10,12 @@
       <view class="profile-desc">完善年龄、品种和过往情况，有助于生成更有参考价值的初筛报告。</view>
     </view>
     <view class="head-add-btn" wx:if="{{profiles.length > 0 && !showForm}}" bindtap="showCreateForm">
-      <text class="head-add-icon">+</text>
+      <view class="vic vic-plus head-add-icon"></view>
     </view>
   </view>
 
   <!-- 空状态 -->
-  <view wx:if="{{profiles.length === 0 && !showForm}}" class="empty-panel">
+  <view wx:if="{{profiles.length === 0 && !showForm}}" class="vet-empty empty-panel">
     <view class="empty-icon-wrap">
       <view class="empty-pet-icon">
         <view class="illus-cat">
@@ -28,7 +28,7 @@
         </view>
       </view>
     </view>
-    <view class="empty-title">还没有宠物档案</view>
+    <view class="vet-empty-title">还没有宠物档案</view>
     <view class="empty-desc">通过对话式建档，AI 兽医助手会像真实医生一样逐步询问信息，建立更完整的宠物档案。</view>
     <button class="vet-btn vet-btn-primary empty-add-btn" bindtap="showCreateForm">开始对话建档</button>
   </view>
@@ -40,7 +40,9 @@
         <view class="pet-avatar-wrap">
           <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" class="pet-avatar-img" />
           <view wx:else class="pet-avatar-placeholder">{{item.avatarText}}</view>
-          <view class="current-badge" wx:if="{{activeProfileId === item.id}}">✓</view>
+          <view class="current-badge" wx:if="{{activeProfileId === item.id}}">
+            <view class="vic vic-check current-badge-check"></view>
+          </view>
         </view>
         <view class="pet-info">
           <view class="pet-top">
@@ -65,7 +67,7 @@
           <text class="action-text">编辑</text>
         </view>
         <view class="pet-action action-delete" catchtap="deleteProfile" data-id="{{item.id}}">
-          <text class="action-icon">✕</text>
+          <view class="vic vic-close action-icon-close"></view>
           <text class="action-text">删除</text>
         </view>
       </view>
@@ -74,7 +76,7 @@
     <!-- 添加档案卡片 -->
     <view class="add-profile-card" bindtap="showCreateForm">
       <view class="add-mark">
-        <text class="add-mark-icon">+</text>
+        <view class="vic vic-plus add-mark-icon"></view>
       </view>
       <view class="add-copy">
         <view class="add-title">对话式建档</view>
@@ -92,7 +94,9 @@
           <view class="vet-title-lg">{{editingId ? '编辑档案' : '添加宠物档案'}}</view>
           <view class="vet-caption">基础信息会用于生成初筛报告</view>
         </view>
-        <view class="form-close" bindtap="hideCreateForm">×</view>
+        <view class="form-close" bindtap="hideCreateForm">
+          <view class="vic vic-close"></view>
+        </view>
       </view>
 
       <scroll-view class="form-scroll" scroll-y enhanced show-scrollbar="{{false}}">
@@ -100,7 +104,7 @@
           <view class="avatar-upload" bindtap="chooseAvatar">
             <image wx:if="{{form.avatar}}" src="{{form.avatar}}" mode="aspectFill" class="avatar-img" />
             <view wx:else class="avatar-placeholder">
-              <text class="avatar-plus">+</text>
+              <view class="vic vic-plus avatar-plus"></view>
               <text class="avatar-label">添加头像</text>
             </view>
           </view>

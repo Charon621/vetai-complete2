@@ -1,10 +1,23 @@
-/* v5 底栏 — 白底细线，选中墨字加粗 + 青柠短横线
-   组件不继承 page 上的 CSS 变量，这里按 v5 令牌落值（与 app.wxss 同步维护） */
+/* v6 底栏 — 白底细线，选中宋体墨字 + 青柠短横线展开动画
+   组件不继承 page 上的 CSS 变量：在 :host 按 v6 令牌落值（与 app.wxss 同步维护），
+   组件内部一律引用 var(--*)，禁止直接写色值。 */
+:host {
+  --card: #FFFFFF;
+  --line-light: #ECE8DC;
+  --shadow-bar: 0 -16rpx 40rpx rgba(15, 31, 26, 0.06);
+  --ghost: #9AA69F;
+  --text: #0F1F1A;
+  --lime: #D6F25F;
+  --font-serif: 'Songti SC', 'STSong', 'Source Han Serif SC', Georgia, serif;
+  --dur-base: 240ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .tab-bar {
   display: flex;
-  background: #FFFFFF;
-  border-top: 1rpx solid #ECE8DC;
-  box-shadow: 0 -16rpx 40rpx rgba(15, 31, 26, 0.06);
+  background: var(--card);
+  border-top: 1rpx solid var(--line-light);
+  box-shadow: var(--shadow-bar);
   padding: 20rpx 0 calc(20rpx + env(safe-area-inset-bottom));
 }
 
@@ -21,34 +34,27 @@
 .tab-text {
   font-size: 24rpx;
   font-weight: 500;
-  color: #9AA69F;
+  color: var(--ghost);
   line-height: 1.2;
+  transition: color var(--dur-base) var(--ease-out);
 }
 
 .tab-text.on {
-  color: #0F1F1A;
-  font-weight: 700;
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-weight: 900;
 }
 
 .tab-underline {
   width: 48rpx;
   height: 6rpx;
   border-radius: 3rpx;
-  background: transparent;
+  background: var(--lime);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform var(--dur-base) var(--ease-out);
 }
 
 .tab-underline.show {
-  background: #D6F25F;
-}
-
-@media (prefers-color-scheme: dark) {
-  .tab-bar {
-    background: #182620;
-    border-top-color: #2A3A33;
-    box-shadow: 0 -16rpx 40rpx rgba(0, 0, 0, 0.3);
-  }
-
-  .tab-text { color: #5D6862; }
-
-  .tab-text.on { color: #F0F4EE; }
+  transform: scaleX(1);
 }

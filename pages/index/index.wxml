@@ -4,19 +4,19 @@
   <block wx:if="{{step === 'home'}}">
 
     <!-- 刊头：鎏金日期 + 品牌徽标 -->
-    <view class="home-masthead vet-fade-up">
+    <view class="home-masthead vet-fade-up vet-stagger-1">
       <text class="masthead-date">{{todayMono}}</text>
       <text class="masthead-brand">VETAI</text>
     </view>
 
     <!-- 宋体大标题 + 青柠划线 -->
-    <view class="greet-title vet-fade-up">
+    <view class="greet-title vet-fade-up vet-stagger-2">
       <text>今天</text><text class="vet-hl-lime">还好吗？</text>
     </view>
     <view class="greet-sub">选一只宠物，开始今天的检查</view>
 
     <!-- 宠物行 -->
-    <view class="pet-row vet-fade-up">
+    <view class="pet-row vet-fade-up vet-stagger-3">
       <view class="pet-avatar {{selectedProfileId === item.id ? 'active' : ''}}"
         wx:for="{{displayProfiles}}" wx:key="id" bindtap="onSelectPet">{{item.initial}}</view>
       <view class="pet-avatar pet-avatar-add" bindtap="addPet">+</view>
@@ -24,7 +24,7 @@
     </view>
 
     <!-- 01 / PHOTO 拍照初筛（墨绿主卡） -->
-    <view class="photo-card vet-fade-up" bindtap="startCapture">
+    <view class="photo-card vet-fade-up vet-stagger-4" bindtap="startCapture">
       <view class="vet-seal photo-seal">
         <view class="seal-stack">
           <text>兽医级</text>
@@ -40,7 +40,7 @@
     </view>
 
     <!-- 02 / CHAT 对话问诊（墨线描边卡） -->
-    <view class="chat-card vet-fade-up" bindtap="goChat">
+    <view class="chat-card vet-fade-up vet-stagger-5" bindtap="goChat">
       <view class="chat-card-body">
         <text class="card-no card-no-gold">02 / CHAT</text>
         <view class="chat-card-title">对话问诊</view>
@@ -50,7 +50,7 @@
     </view>
 
     <!-- 上次检查 -->
-    <view class="last-check vet-fade-up" wx:if="{{lastCheck}}">
+    <view class="last-check vet-fade-up vet-stagger-5" wx:if="{{lastCheck}}">
       <view class="last-head">
         <text class="last-title">上次检查</text>
         <text class="last-all" bindtap="goRecords">全部 →</text>
@@ -69,7 +69,7 @@
       </view>
     </view>
 
-    <view class="home-empty" wx:else>
+    <view class="vet-empty home-empty" wx:else>
       还没有检查记录。点上面的「拍照初筛」，为TA做第一次检查吧。
     </view>
   </block>
@@ -146,7 +146,7 @@
           </view>
         </view>
         <view class="append-photo" bindtap="chooseImage" wx:if="{{canAddMore}}">
-          <view class="append-plus"></view>
+          <view class="vic vic-plus"></view>
           <text>继续添加照片</text>
         </view>
       </view>

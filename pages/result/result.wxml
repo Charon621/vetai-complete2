@@ -1,5 +1,14 @@
 <view class="vet-page report-page sev-{{record.urgency || 'moderate'}}">
 
+  <!-- ═══ 骨架屏（记录载入前占位，扫光复用 vetShimmer） ═══ -->
+  <view class="report-skeleton" wx:if="{{!record.id}}">
+    <view class="vet-skeleton sk-hero"></view>
+    <view class="vet-skeleton sk-line"></view>
+    <view class="vet-skeleton sk-line"></view>
+    <view class="vet-skeleton sk-line sk-short"></view>
+  </view>
+
+  <block wx:if="{{record.id}}">
   <!-- ═══ 顶部结论区（结论前置） ═══ -->
   <view class="conclusion">
     <view class="conclusion-main">
@@ -123,7 +132,9 @@
     </view>
   </view>
   <view class="feedback-inline feedback-done-inline" wx:else>
-    <text class="feedback-done-icon">✓</text>
+    <view class="feedback-done-icon">
+      <view class="vic vic-check feedback-done-check"></view>
+    </view>
     <text class="feedback-done-text">感谢你的反馈</text>
     <text class="feedback-edit-link" bindtap="onEditFeedback">修改</text>
   </view>
@@ -143,6 +154,7 @@
     <view class="report-more-sep"></view>
     <text class="report-more-link" bindtap="goHistory">查看历史</text>
   </view>
+  </block>
 
   <canvas type="2d" id="shareCanvas" canvas-id="shareCanvas" style="position:fixed;left:-9999px;top:-9999px;width:750px;height:1200px;"></canvas>
 </view>

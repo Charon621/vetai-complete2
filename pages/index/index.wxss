@@ -19,7 +19,7 @@
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-5) var(--sp-4);
-  background: linear-gradient(135deg, var(--brand-light) 0%, rgba(17, 59, 49, 0.15) 60%, rgba(17, 59, 49, 0.06) 100%);
+  background: linear-gradient(135deg, var(--brand-light) 0%, var(--brand-mist-strong) 60%, var(--brand-mist) 100%);
   border-radius: var(--r-lg);
   box-sizing: border-box;
   position: relative;
@@ -34,7 +34,7 @@
   width: 180rpx;
   height: 180rpx;
   border-radius: 50%;
-  background: rgba(17, 59, 49, 0.06);
+  background: var(--brand-mist);
   pointer-events: none;
 }
 
@@ -319,8 +319,8 @@
   left: 6rpx;
   padding: 3rpx 10rpx;
   border-radius: var(--r-sm);
-  background: rgba(0, 0, 0, 0.55);
-  color: var(--on-brand);
+  background: var(--scrim);
+  color: var(--on-overlay);
   font-size: 20rpx;
   font-weight: 600;
 }
@@ -440,7 +440,7 @@
   color: var(--accent);
 }
 
-/* 继续添加 */
+/* 继续添加（加号图标走全局 .vic-plus） */
 .append-photo {
   min-height: 80rpx;
   border-radius: var(--r-md);
@@ -456,27 +456,9 @@
   transition: all 0.15s ease;
 }
 
-.append-plus {
-  position: relative;
+.append-photo .vic-plus {
   width: 24rpx;
   height: 24rpx;
-}
-
-.append-plus::before,
-.append-plus::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 22rpx;
-  height: 3rpx;
-  border-radius: 2rpx;
-  background: currentColor;
-  transform: translate(-50%, -50%);
-}
-
-.append-plus::after {
-  transform: translate(-50%, -50%) rotate(90deg);
 }
 
 /* ── 通用信息区块 ── */
@@ -578,7 +560,7 @@
 
 .clinical-textarea:focus {
   border-color: var(--brand);
-  box-shadow: 0 0 0 3rpx rgba(17, 59, 49, 0.08);
+  box-shadow: 0 0 0 3rpx var(--brand-focus-ring);
 }
 
 /* ── 底部提交栏 — 浮起面板（与 result/chat 底栏统一） ── */
@@ -615,7 +597,7 @@
   height: 100%;
   border-radius: var(--r-sm);
   background: var(--brand);
-  transition: width 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: width var(--dur-base) var(--ease-standard);
 }
 
 .submit-progress-text {
@@ -667,7 +649,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.72);
+  background: var(--overlay);
 }
 
 .analyzing-card {
@@ -687,10 +669,6 @@
 
 /* ── Dark Mode 适配 ── */
 @media (prefers-color-scheme: dark) {
-  .profile-guide {
-    background: linear-gradient(135deg, rgba(17, 59, 49, 0.12) 0%, rgba(17, 59, 49, 0.04) 100%);
-  }
-
   .profile-guide-icon {
     background: var(--brand);
   }
@@ -732,7 +710,7 @@
 
 .masthead-date {
   font-family: var(--font-mono);
-  font-size: 22rpx;
+  font-size: var(--fs-mini);
   font-weight: 600;
   letter-spacing: 4rpx;
   color: var(--gold);
@@ -745,7 +723,7 @@
   letter-spacing: 3rpx;
   color: var(--gold);
   border: 1rpx solid var(--gold-line);
-  border-radius: 6rpx;
+  border-radius: 6rpx; /* 豁免：微型描边徽标的笔画级圆角，不入三档 */
   padding: 4rpx 12rpx;
 }
 
@@ -845,12 +823,12 @@
   top: 28rpx;
   width: 108rpx;
   height: 108rpx;
-  border-color: rgba(217, 175, 98, 0.55);
+  border-color: var(--gold-line-onbrand);
   transform: rotate(10deg);
 }
 
 .photo-seal::before {
-  border-color: rgba(217, 175, 98, 0.45);
+  border-color: var(--gold-line-onbrand-inner);
 }
 
 .seal-stack {
@@ -987,7 +965,7 @@
   flex-shrink: 0;
   font-size: 20rpx;
   font-weight: 700;
-  border-radius: 8rpx;
+  border-radius: var(--r-sm);
   padding: 6rpx 14rpx;
   background: var(--surface);
   color: var(--muted);
@@ -1002,7 +980,7 @@
 .care-tip {
   margin-top: 20rpx;
   padding: 20rpx 24rpx;
-  border-radius: 20rpx;
+  border-radius: var(--r-md);
   background: var(--gold-mist);
   border-left: 4rpx solid var(--gold);
   font-size: var(--fs-caption);
@@ -1015,15 +993,9 @@
   font-weight: 700;
 }
 
+/* 空状态容器复用全局 .vet-empty，此处仅保留页面内的外边距 */
 .home-empty {
   margin-top: var(--sp-6);
-  padding: var(--sp-5) var(--sp-4);
-  border-radius: var(--r-md);
-  background: var(--gold-mist);
-  color: var(--body);
-  font-size: var(--fs-caption);
-  line-height: 1.6;
-  text-align: center;
 }
 
 

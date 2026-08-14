@@ -14,26 +14,26 @@
             <view class="profile-picker-name">{{item.petName}}</view>
             <view class="profile-picker-meta">{{item.petTypeLabel}}{{item.breed ? '，' + item.breed : ''}}{{item.ageLabel ? '，' + item.ageLabel : ''}}</view>
           </view>
-          <view class="profile-picker-arrow">›</view>
+          <view class="profile-picker-arrow vic vic-arrow"></view>
         </view>
       </view>
       <view class="profile-picker-new" bindtap="onPickNewProfile">
-        <text class="profile-picker-new-icon">+</text>
+        <view class="profile-picker-new-icon vic vic-plus"></view>
         <text>新建档案</text>
       </view>
     </view>
   </view>
 
   <!-- 顶部标题栏 -->
-  <view class="chat-header" style="padding-top: {{statusBarHeight * 2}}rpx">
+  <view class="chat-header" style="padding-top: {{statusBarHeight * 2}}rpx; padding-right: {{menuRight}}px;">
     <view class="chat-header-left">
       <view class="chat-back-btn" bindtap="onBackTap" aria-label="返回">
-        <text class="chat-back-arrow">‹</text>
+        <view class="vic vic-back"></view>
       </view>
       <view class="chat-doctor-avatar">
         <view class="vic vic-cross"></view>
       </view>
-      <view>
+      <view class="chat-header-info">
         <view class="chat-header-title">AI 兽医助手</view>
         <view class="chat-header-sub">
           <text class="chat-status-dot"></text>
@@ -43,8 +43,13 @@
         </view>
       </view>
     </view>
-    <view class="chat-new-btn" wx:if="{{showNewBtn}}" bindtap="onNewChat">
-      <text class="chat-new-text">新问诊</text>
+    <view class="chat-header-actions">
+      <view class="chat-history-btn" bindtap="goHistory" aria-label="历史记录">
+        <text class="chat-history-text">历史</text>
+      </view>
+      <view class="chat-new-btn" bindtap="onNewChat">
+        <text class="chat-new-text">新问诊</text>
+      </view>
     </view>
   </view>
 
@@ -57,7 +62,7 @@
   <scroll-view class="chat-messages" scroll-y scroll-into-view="{{scrollIntoView}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
     <block wx:for="{{messages}}" wx:key="id">
       <view class="msg-time-divider" wx:if="{{item.showTime}}">— {{item.timeText}} —</view>
-      <view class="msg-row {{item.isUser ? 'msg-row-user' : 'msg-row-doctor'}}">
+      <view class="msg-row vet-fade-up {{item.isUser ? 'msg-row-user' : 'msg-row-doctor'}}">
         <view class="msg-avatar" wx:if="{{item.isDoctor}}">
           <view class="vic vic-cross"></view>
         </view>
@@ -89,7 +94,7 @@
     <view class="photo-preview-list">
       <view class="photo-preview-item" wx:for="{{uploadedPhotos}}" wx:key="*this" data-index="{{index}}">
         <image src="{{item}}" mode="aspectFill" class="photo-preview-img" />
-        <view class="photo-preview-remove" catchtap="onRemovePhoto" data-index="{{index}}">×</view>
+        <view class="photo-preview-remove" catchtap="onRemovePhoto" data-index="{{index}}"><view class="vic vic-close"></view></view>
         <view class="photo-preview-circle" catchtap="onOpenLesionSelector" data-index="{{index}}">圈选</view>
       </view>
     </view>
@@ -113,16 +118,23 @@
 
     <view class="input-row" wx:if="{{inputType !== 'analyzing' && inputType !== 'result'}}">
       <view class="input-plus-btn" bindtap="onUploadPhoto">
-        <text class="input-plus-icon">+</text>
+        <view class="vic vic-plus"></view>
       </view>
       <input class="chat-input" value="{{inputText}}" placeholder="{{placeholder || '输入消息…'}}" bindinput="onInput" confirm-type="send" bindconfirm="onSendText" adjust-position />
       <view class="send-btn {{inputText ? 'send-btn-active' : ''}}" bindtap="onSendText">
-        <text class="send-icon">↑</text>
+        <view class="vic vic-up"></view>
       </view>
     </view>
 
     <view class="input-row analyzing-row" wx:elif="{{inputType === 'analyzing'}}">
-      <view class="analyzing-hint">正在分析中…</view>
+      <view class="analyzing-hint">
+        <text>正在分析中</text>
+        <view class="typing-dots">
+          <view class="typing-dot"></view>
+          <view class="typing-dot"></view>
+          <view class="typing-dot"></view>
+        </view>
+      </view>
     </view>
 
     <view class="input-row result-row" wx:elif="{{inputType === 'result'}}">

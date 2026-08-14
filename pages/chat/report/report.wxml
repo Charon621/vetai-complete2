@@ -1,21 +1,47 @@
+<wxs module="fmt">
+/* 纯展示层格式化：日期串取数字生成报告编号；区块序号补零 */
+function serial(dateStr) {
+  var s = '' + (dateStr || '')
+  var digits = s.replace(getRegExp('[^0-9]', 'g'), '')
+  return digits ? digits.slice(0, 8) : '0000'
+}
+function no(n) {
+  return n < 10 ? '0' + n : '' + n
+}
+module.exports = { serial: serial, no: no }
+</wxs>
+
 <view class="report-page">
   <block wx:if="{{displayRecord}}">
-    <!-- 报告头 -->
-    <view class="report-header">
-      <view class="report-pet-row">
-        <view class="report-pet-name">{{displayRecord.petName}}</view>
-        <view class="report-pet-meta">{{displayRecord.petTypeLabel}}{{displayRecord.breed ? '，' + displayRecord.breed : ''}}</view>
+    <!-- 处方笺刊头 -->
+    <view class="report-masthead vet-fade-up">
+      <text class="vet-mono-gold">RPT-{{fmt.serial(displayRecord.dateStr)}}</text>
+      <view class="report-masthead-badge">问诊报告</view>
+    </view>
+    <view class="vet-divider-strong report-open-rule"></view>
+
+    <!-- 结论区：宠物名 + 鎏金印章 -->
+    <view class="report-head vet-fade-up vet-stagger-1">
+      <view class="report-head-main">
+        <view class="vet-title-xl">{{displayRecord.petName}}</view>
+        <view class="report-pet-meta">{{displayRecord.petTypeLabel}}{{displayRecord.breed ? '，' + displayRecord.breed : ''}}{{displayRecord.dateStr ? ' / ' + displayRecord.dateStr : ''}}</view>
       </view>
-      <view class="report-date">{{displayRecord.dateStr}}</view>
+      <view class="vet-seal report-seal">
+        <text>AI 问诊<text class="vet-seal-sub">VETAI</text></text>
+      </view>
     </view>
 
-    <!-- 紧急程度 -->
-    <view class="urgency-banner urgency-{{displayRecord.urgency}}">
-      <text class="urgency-label">{{displayRecord.urgencyText}}</text>
+    <!-- 处方笺结论块：严重度竖条 + chip + 结论 -->
+    <view class="report-verdict verdict-{{displayRecord.urgency}} vet-fade-up vet-stagger-2">
+      <view class="verdict-bar"></view>
+      <view class="verdict-body">
+        <view class="verdict-chip">{{displayRecord.urgencyText}}</view>
+        <view class="verdict-text" wx:if="{{displayRecord.lines.length > 0}}">{{displayRecord.lines[0].value}}</view>
+      </view>
     </view>
 
     <!-- 照片 -->
-    <view class="report-photos" wx:if="{{displayRecord.photos.length > 0}}">
+    <view class="report-photos vet-fade-up vet-stagger-3" wx:if="{{displayRecord.photos.length > 0}}">
       <scroll-view scroll-x show-scrollbar="{{false}}">
         <view class="report-photos-row">
           <image wx:for="{{displayRecord.photos}}" wx:key="*this" src="{{item}}" mode="aspectFill" class="report-photo" />
@@ -23,12 +49,20 @@
       </scroll-view>
     </view>
 
-    <!-- 诊断信息 -->
-    <view class="report-sections">
-      <view class="report-section" wx:for="{{displayRecord.lines}}" wx:key="label">
-        <view class="report-section-label">{{item.label}}</view>
-        <view class="report-section-value">{{item.value}}</view>
-      </view>
+    <!-- 诊断信息（首条已在结论块呈现，此处从第二条起编号列出） -->
+    <view class="report-sections vet-fade-up vet-stagger-4" wx:if="{{displayRecord.lines.length > 1}}">
+      <block wx:for="{{displayRecord.lines}}" wx:key="label">
+        <block wx:if="{{index > 0}}">
+          <view class="vet-divider report-rule" wx:if="{{index > 1}}"></view>
+          <view class="report-section">
+            <view class="report-section-head">
+              <text class="vet-mono-gold">{{fmt.no(index)}}</text>
+              <text class="report-section-label">{{item.label}}</text>
+            </view>
+            <view class="report-section-value">{{item.value}}</view>
+          </view>
+        </block>
+      </block>
     </view>
 
     <!-- 免责声明 -->
@@ -38,13 +72,16 @@
 
     <!-- 底部操作 -->
     <view class="report-actions">
-      <view class="report-btn-secondary" bindtap="goHistory">查看记录</view>
-      <view class="report-btn-primary" bindtap="onBack">返回对话</view>
+      <view class="vet-btn vet-btn-secondary report-btn" bindtap="goHistory">查看记录</view>
+      <view class="vet-btn vet-btn-primary report-btn" bindtap="onBack">返回对话</view>
     </view>
   </block>
 
-  <view class="report-empty" wx:elif="{{notFound}}">
-    <view class="report-empty-text">报告不存在或已被删除</view>
-    <view class="report-btn-primary" bindtap="onBack">返回</view>
+  <view class="report-empty-wrap" wx:elif="{{notFound}}">
+    <view class="vet-empty">
+      <text class="vet-empty-title">报告不存在</text>
+      <text>报告不存在或已被删除</text>
+    </view>
+    <view class="vet-btn vet-btn-primary report-empty-btn" bindtap="onBack">返回</view>
   </view>
 </view>

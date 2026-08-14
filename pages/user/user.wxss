@@ -153,14 +153,16 @@
   border-top: 3rpx solid var(--faint);
   border-right: 3rpx solid var(--faint);
   transform: rotate(45deg);
-  transition: transform 200ms ease;
+  transition: transform var(--dur-base) var(--ease-standard);
 }
 
 .flat-chevron.open { transform: rotate(135deg); }
 
+/* 展开面板：wx:if 挂载时用入场动画替代瞬时切换 */
 .flat-detail {
   padding: var(--sp-2) 0 var(--sp-3);
   border-bottom: 1rpx solid var(--line);
+  animation: vetFadeUp var(--dur-base) var(--ease-out) both;
 }
 
 .flat-detail-text {
@@ -262,8 +264,8 @@
   margin-top: var(--sp-6);
   padding: var(--sp-3);
   border-radius: var(--r-md);
-  background: rgba(201, 85, 62, 0.07);
-  border: 2rpx dashed rgba(201, 85, 62, 0.4);
+  background: var(--accent-mist);
+  border: 2rpx dashed var(--accent-line);
   font-size: var(--fs-caption);
   line-height: 1.65;
   color: var(--body);
@@ -274,7 +276,7 @@
 .emergency-link {
   color: var(--accent);
   font-weight: 700;
-  border-bottom: 2rpx solid rgba(201, 85, 62, 0.5);
+  border-bottom: 2rpx solid var(--accent-line);
 }
 
 /* ── 鎏金印章收尾 ── */

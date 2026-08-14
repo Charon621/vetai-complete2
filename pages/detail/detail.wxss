@@ -31,12 +31,40 @@
   letter-spacing: 4rpx;
 }
 
+.archive-head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.archive-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--sp-2);
+  height: 64rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid var(--accent-line);
+  background: var(--accent-mist);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.archive-clear-btn:active { opacity: 0.7; }
+
+.archive-clear-text {
+  font-size: var(--fs-mini);
+  font-weight: 600;
+  color: var(--accent);
+}
+
 .archive-search-toggle {
   width: 64rpx;
   height: 64rpx;
   border-radius: 50%;
   background: var(--card);
   border: 1rpx solid var(--line);
+  color: var(--muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -63,35 +91,9 @@
   box-shadow: none;
 }
 
-.search-icon {
-  position: relative;
-  width: 32rpx;
-  height: 32rpx;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.search-icon-circle {
-  width: 20rpx;
-  height: 20rpx;
-  border: 3rpx solid var(--muted);
-  border-radius: 50%;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.search-icon-line {
-  width: 10rpx;
-  height: 3rpx;
-  border-radius: 3rpx;
-  background: var(--muted);
-  position: absolute;
-  right: 0;
-  bottom: 4rpx;
-  transform: rotate(45deg);
+/* 搜索图标用全局 .vic-search，此处仅给颜色 */
+.search-bar-icon {
+  color: var(--muted);
 }
 
 .search-input {
@@ -119,9 +121,7 @@
 
 .clear-icon {
   color: var(--muted);
-  font-size: var(--fs-body);
-  font-weight: 600;
-  line-height: 1;
+  transform: scale(0.6); /* 全局 28rpx 叉号在 40rpx 小钮内光学缩小 */
 }
 
 /* ── 宠物切换行 ── */
@@ -187,7 +187,7 @@
 }
 
 .pet-chip-sw.on .pet-chip-name { color: var(--on-brand); }
-.pet-chip-sw.on .pet-chip-meta { color: rgba(242, 247, 239, 0.7); font-family: var(--font-mono); }
+.pet-chip-sw.on .pet-chip-meta { color: var(--on-brand-muted); font-family: var(--font-mono); }
 
 .pet-chip-add {
   width: 60rpx;
@@ -198,8 +198,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
-  font-weight: 300;
   flex-shrink: 0;
 }
 
@@ -226,20 +224,22 @@
 
 .stat-line-edit {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
   color: var(--brand);
   font-weight: 700;
   border-bottom: 2rpx solid var(--lime);
   padding-bottom: 2rpx;
 }
 
-/* ── 空状态 ── */
+.stat-line-arrow {
+  transform: scale(0.7) rotate(45deg); /* 全局箭头在行内光学缩小 */
+}
+
+/* ── 空状态（容器/标题复用全局 .vet-empty / .vet-empty-title） ── */
 .empty-panel {
   margin-top: var(--sp-4);
-  padding: var(--sp-8) var(--sp-4);
-  border-radius: var(--r-md);
-  background: var(--card);
-  border: 1rpx solid var(--line-light);
-  text-align: center;
 }
 
 .empty-icon-wrap {
@@ -354,13 +354,6 @@
   opacity: 0.4;
 }
 
-.empty-title {
-  color: var(--text);
-  font-family: var(--font-serif);
-  font-size: var(--fs-title);
-  font-weight: 700;
-}
-
 .empty-desc {
   max-width: 520rpx;
   margin: var(--sp-2) auto var(--sp-4);
@@ -408,10 +401,8 @@
 }
 
 .tl-del-icon {
-  font-size: 34rpx;
-  line-height: 1;
   color: var(--ghost);
-  font-weight: 700;
+  transform: scale(0.75); /* 全局 28rpx 叉号在 52rpx 删除钮内光学缩小 */
 }
 
 .tl-date {

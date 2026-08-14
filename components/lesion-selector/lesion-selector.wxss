@@ -16,7 +16,7 @@
   z-index: 1000;
   display: flex;
   align-items: flex-end;
-  background: rgba(0, 0, 0, 0.72);
+  background: var(--overlay);
 }
 
 .lesion-sheet {
@@ -95,7 +95,7 @@
   flex: 1;
   min-height: 320rpx;
   border-radius: var(--r-md);
-  background: #1A1A1A;
+  background: var(--stage-dark);
 }
 
 .lesion-image,
@@ -112,8 +112,8 @@
 
 .lesion-grid {
   background:
-    linear-gradient(90deg, rgba(255,255,255,0.06) 1rpx, transparent 1rpx),
-    linear-gradient(0deg, rgba(255,255,255,0.06) 1rpx, transparent 1rpx);
+    linear-gradient(90deg, var(--grid-line-onstage) 1rpx, transparent 1rpx),
+    linear-gradient(0deg, var(--grid-line-onstage) 1rpx, transparent 1rpx);
   background-size: 20% 20%;
 }
 
@@ -152,6 +152,6 @@
 /* ── Dark Mode 适配 ── */
 @media (prefers-color-scheme: dark) {
   .lesion-stage {
-    background: #0D0D0D;
+    background: var(--stage-dark);
   }
 }

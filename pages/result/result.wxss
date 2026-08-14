@@ -8,6 +8,28 @@
 }
 
 /* ═══════════════════════════════════════
+   0. 骨架屏（记录载入前占位）
+   ═══════════════════════════════════════ */
+.report-skeleton {
+  margin-top: var(--sp-2);
+}
+
+.sk-hero {
+  height: 220rpx;
+  border-radius: var(--r-md);
+}
+
+.sk-line {
+  height: 40rpx;
+  margin-top: var(--sp-2);
+  border-radius: var(--r-sm);
+}
+
+.sk-short {
+  width: 60%;
+}
+
+/* ═══════════════════════════════════════
    1. 顶部结论区（结论前置）
    ═══════════════════════════════════════ */
 .conclusion {
@@ -152,8 +174,8 @@
 
 .dx-thumb-lesion {
   position: absolute;
-  border: 2rpx dashed var(--accent);
-  background: rgba(201, 85, 62, 0.1);
+  border: 2rpx dashed var(--accent-line);
+  background: var(--accent-mist);
   border-radius: 4rpx;
   box-sizing: border-box;
 }
@@ -401,7 +423,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--fs-mini);
+}
+
+.feedback-done-check {
+  transform: scale(0.55) rotate(-45deg); /* 全局对勾在 34rpx 圆徽内光学缩小 */
 }
 
 .feedback-done-text { color: var(--body); }

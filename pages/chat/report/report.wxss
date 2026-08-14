@@ -2,63 +2,107 @@
   min-height: 100vh;
   background: var(--bg);
   padding: var(--sp-3) var(--sp-3) calc(var(--sp-4) + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
-/* ── 报告头 ─────────────────────────────── */
-.report-header {
+/* ── 处方笺刊头 ─────────────────────────────── */
+.report-masthead {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--sp-3);
-  background: var(--card);
-  border: 1rpx solid var(--line-light);
-  border-radius: var(--r-md);
-  margin-bottom: var(--sp-2);
+  padding: var(--sp-1) 0 var(--sp-2);
 }
 
-.report-pet-name {
-  font-size: var(--fs-title);
-  font-weight: 700;
-  font-family: var(--font-serif);
-  color: var(--text);
+.report-masthead-badge {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mini);
+  font-weight: 600;
+  letter-spacing: 3rpx;
+  color: var(--gold);
+  border: 1rpx solid var(--gold-line);
+  border-radius: 6rpx; /* 豁免：微型描边徽标的笔画级圆角，不入三档（同 index 刊头徽标） */
+  padding: 4rpx 12rpx;
+}
+
+.report-open-rule {
+  margin-bottom: var(--sp-3);
+}
+
+/* ── 结论区（宠物名 + 鎏金印章） ─────────────── */
+.report-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.report-head-main {
+  flex: 1;
+  min-width: 0;
 }
 
 .report-pet-meta {
   font-size: var(--fs-caption);
   color: var(--muted);
-  margin-top: 4rpx;
+  margin-top: var(--sp-1);
 }
 
-.report-date {
-  font-size: var(--fs-mini);
-  color: var(--faint);
-  font-weight: 600;
+.report-seal {
+  flex: none;
 }
 
-/* ── 紧急程度 ─────────────────────────────── */
-.urgency-banner {
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-sm);
+/* ── 处方笺结论块 ─────────────────────────────── */
+.report-verdict {
+  display: flex;
+  background: var(--card);
+  border: 1rpx solid var(--line-light);
+  border-radius: var(--r-md);
+  overflow: hidden;
   margin-bottom: var(--sp-2);
-  text-align: center;
 }
 
-.urgency-low { background: var(--sev-low-bg); }
-.urgency-low .urgency-label { color: var(--sev-low); }
+.verdict-bar {
+  width: 4rpx;
+  flex: none;
+}
 
-.urgency-moderate { background: var(--sev-mid-bg); }
-.urgency-moderate .urgency-label { color: var(--sev-mid-text); }
+.verdict-body {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-3);
+}
 
-.urgency-urgent { background: var(--sev-urgent-bg); }
-.urgency-urgent .urgency-label { color: var(--sev-urgent); }
-
-.urgency-emergency { background: var(--sev-emergency-bg); }
-.urgency-emergency .urgency-label { color: var(--sev-emergency); }
-
-.urgency-label {
-  font-size: var(--fs-body);
+.verdict-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44rpx;
+  padding: 0 var(--sp-2);
+  border-radius: 999rpx;
+  font-size: var(--fs-mini);
   font-weight: 700;
 }
+
+.verdict-text {
+  margin-top: var(--sp-2);
+  font-family: var(--font-serif);
+  font-size: var(--fs-title);
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.verdict-low .verdict-bar { background: var(--sev-low); }
+.verdict-low .verdict-chip { background: var(--sev-low-bg); color: var(--sev-low); }
+
+.verdict-moderate .verdict-bar { background: var(--sev-mid); }
+.verdict-moderate .verdict-chip { background: var(--sev-mid-bg); color: var(--sev-mid-text); }
+
+.verdict-urgent .verdict-bar { background: var(--sev-urgent); }
+.verdict-urgent .verdict-chip { background: var(--sev-urgent-bg); color: var(--sev-urgent); }
+
+.verdict-emergency .verdict-bar { background: var(--sev-emergency); }
+.verdict-emergency .verdict-chip { background: var(--sev-emergency-bg); color: var(--sev-emergency); }
 
 /* ── 照片 ─────────────────────────────── */
 .report-photos {
@@ -78,29 +122,34 @@
   flex-shrink: 0;
 }
 
-/* ── 诊断信息 ─────────────────────────────── */
+/* ── 诊断信息（鎏金编号区块） ─────────────── */
 .report-sections {
   background: var(--card);
   border: 1rpx solid var(--line-light);
   border-radius: var(--r-md);
-  overflow: hidden;
+  padding: 0 var(--sp-3);
   margin-bottom: var(--sp-3);
 }
 
-.report-section {
-  padding: var(--sp-3);
-  border-bottom: 1rpx solid var(--line-light);
+.report-rule {
+  margin: 0;
 }
 
-.report-section:last-child {
-  border-bottom: none;
+.report-section {
+  padding: var(--sp-3) 0;
+}
+
+.report-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-1);
 }
 
 .report-section-label {
   font-size: var(--fs-mini);
   font-weight: 700;
   color: var(--brand);
-  margin-bottom: var(--sp-1);
 }
 
 .report-section-value {
@@ -126,43 +175,20 @@
   gap: var(--sp-2);
 }
 
-.report-btn-primary {
+.report-btn {
   flex: 1;
-  text-align: center;
-  padding: var(--sp-3) 0;
-  border-radius: var(--r-md);
-  background: var(--brand);
-  color: var(--on-brand);
-  font-size: var(--fs-body);
-  font-weight: 700;
 }
-
-.report-btn-primary:active { opacity: 0.85; }
-
-.report-btn-secondary {
-  flex: 1;
-  text-align: center;
-  padding: var(--sp-3) 0;
-  border-radius: var(--r-md);
-  background: var(--surface);
-  border: 1rpx solid var(--line);
-  color: var(--muted);
-  font-size: var(--fs-body);
-  font-weight: 600;
-}
-
-.report-btn-secondary:active { opacity: 0.85; }
 
 /* ── 空状态 ─────────────────────────────── */
-.report-empty {
+.report-empty-wrap {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   padding-top: 200rpx;
   gap: var(--sp-4);
 }
 
-.report-empty-text {
-  font-size: var(--fs-body);
-  color: var(--muted);
+.report-empty-btn {
+  align-self: center;
+  min-width: 320rpx;
 }

@@ -55,19 +55,11 @@
 
 .head-add-icon {
   color: var(--on-brand);
-  font-size: var(--fs-title);
-  font-weight: 300;
-  line-height: 1;
 }
 
 /* ── 空状态 ───────────────────────────────── */
 .empty-panel {
-  margin-top: var(--sp-3);
-  padding: var(--sp-8) var(--sp-4);
-  border-radius: var(--r-md);
-  background: var(--card);
-  border: 1rpx solid var(--line-light);
-  text-align: center;
+  margin-top: var(--sp-3); /* 容器/标题复用全局 .vet-empty / .vet-empty-title */
 }
 
 .empty-icon-wrap {
@@ -152,13 +144,6 @@
   box-sizing: border-box;
 }
 
-.empty-title {
-  color: var(--text);
-  font-family: var(--font-serif);
-  font-size: var(--fs-title);
-  font-weight: 700;
-}
-
 .empty-desc {
   max-width: 520rpx;
   margin: var(--sp-2) auto var(--sp-4);
@@ -185,7 +170,7 @@
   border-radius: var(--r-md);
   background: var(--card);
   border: 1rpx solid var(--line-light);
-  transition: border-color 200ms ease;
+  transition: border-color var(--dur-base) var(--ease-standard);
 }
 
 .pet-card-active {
@@ -244,6 +229,10 @@
   box-sizing: border-box;
 }
 
+.current-badge-check {
+  transform: scale(0.6) rotate(-45deg); /* 全局对勾在 36rpx 徽章内光学缩小 */
+}
+
 /* 信息区 */
 .pet-info {
   flex: 1;
@@ -290,12 +279,14 @@
   margin-top: var(--sp-2);
 }
 
+/* 信息 chips（与 index 首页 .choice 视觉对齐：同高 52rpx、同圆角、同描边） */
 .info-chip {
   max-width: 100%;
-  min-height: 44rpx;
+  min-height: 52rpx;
   padding: 0 var(--sp-2);
   border-radius: var(--r-sm);
   background: var(--brand-light);
+  border: 1rpx solid var(--line);
   color: var(--brand);
   font-size: var(--fs-caption);
   font-weight: 600;
@@ -360,6 +351,10 @@
   line-height: 1;
 }
 
+.action-icon-close {
+  transform: scale(0.55); /* 全局叉号随文字行光学缩小 */
+}
+
 .action-text {
   font-size: var(--fs-caption);
   font-weight: 600;
@@ -404,9 +399,6 @@
 
 .add-mark-icon {
   color: var(--brand);
-  font-size: var(--fs-title);
-  font-weight: 300;
-  line-height: 1;
 }
 
 .add-copy {
@@ -441,7 +433,7 @@
   z-index: 1000;
   display: flex;
   align-items: flex-end;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay);
 }
 
 .form-drawer {
@@ -453,7 +445,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  animation: slideUp 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: slideUp var(--dur-slow) var(--ease-out) both;
   overflow: hidden;
 }
 
@@ -489,7 +481,6 @@
   background: var(--card);
   border: 1rpx solid var(--line);
   color: var(--muted);
-  font-size: var(--fs-title);
   flex-shrink: 0;
   margin-top: 4rpx;
 }
@@ -544,9 +535,6 @@
 }
 
 .avatar-plus {
-  font-size: var(--fs-title);
-  font-weight: 300;
-  line-height: 1;
   color: var(--muted);
 }
 
@@ -607,7 +595,7 @@
 .vet-textarea:focus {
   border-color: var(--brand);
   background: var(--card);
-  box-shadow: 0 0 0 4rpx rgba(17, 59, 49, 0.08);
+  box-shadow: 0 0 0 4rpx var(--brand-focus-ring);
 }
 
 /* ── 底部按钮区 ──────────────────────────── */

@@ -42,18 +42,43 @@ page {
   --line: #E2DCCB;
   --line-light: #ECE8DC;
   --on-brand: #F2F7EF;
+  --on-brand-muted: rgba(242, 247, 239, 0.7);
 
   /* ── 4. 圆角三档：内容卡 24rpx，舞台级（主卡/抽屉/底栏）40rpx；
-          气泡 28rpx + 8rpx 小角不对称（对话感，不入档）；胶囊 999rpx ── */
+          气泡 28rpx + 8rpx 小角不对称（对话感，独立令牌）；胶囊 999rpx ── */
   --r-sm: 12rpx;
   --r-md: 24rpx;
   --r-lg: 40rpx;
+  --r-bubble: 28rpx;
+  --r-bubble-tip: 8rpx;
 
   /* ── 5. 阴影：只给浮起元素（弹层/底栏）用 ── */
   --shadow-sm: 0 1rpx 4rpx rgba(15, 31, 26, 0.03);
   --shadow-md: 0 4rpx 12rpx rgba(15, 31, 26, 0.05);
   --shadow-lg: 0 8rpx 28rpx rgba(15, 31, 26, 0.08);
   --shadow-bar: 0 -16rpx 40rpx rgba(15, 31, 26, 0.06);
+
+  /* ── 5b. 遮罩与叠加色：浮层/图片上的半透明层一律走这里 ── */
+  --overlay: rgba(15, 31, 26, 0.72);
+  --scrim: rgba(15, 31, 26, 0.55);
+  --brand-overlay: rgba(17, 59, 49, 0.85);
+  --on-overlay: #FFFFFF;
+  --brand-mist: rgba(17, 59, 49, 0.06);
+  --brand-mist-strong: rgba(17, 59, 49, 0.15);
+  --gold-line-onbrand: rgba(217, 175, 98, 0.55);
+  --gold-line-onbrand-inner: rgba(217, 175, 98, 0.45);
+  --accent-mist: rgba(201, 85, 62, 0.07);
+  --accent-line: rgba(201, 85, 62, 0.4);
+  --brand-focus-ring: rgba(17, 59, 49, 0.08);
+  --stage-dark: #1A1A1A;                       /* 圈选/看图的深色舞台底 */
+  --grid-line-onstage: rgba(255, 255, 255, 0.06); /* 深色舞台上的参考网格线 */
+
+  /* ── 5c. 动效令牌：全局统一节奏 ── */
+  --dur-fast: 160ms;
+  --dur-base: 240ms;
+  --dur-slow: 360ms;
+  --ease-standard: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ── 6. 间距：8pt 栅格 ── */
   --sp-1: 8rpx;
@@ -164,6 +189,7 @@ page {
     --line: #2A3A33;
     --line-light: #22312A;
     --on-brand: #F2F7EF;
+    --on-brand-muted: rgba(242, 247, 239, 0.7);
 
     --brand: #1C5546;
     --brand-dark: #2A6B58;
@@ -186,6 +212,20 @@ page {
     --shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.28);
     --shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.36);
     --shadow-bar: 0 -16rpx 40rpx rgba(0, 0, 0, 0.3);
+
+    --overlay: rgba(0, 0, 0, 0.78);
+    --scrim: rgba(0, 0, 0, 0.55);
+    --brand-overlay: rgba(28, 85, 70, 0.88);
+    --on-overlay: #FFFFFF;
+    --brand-mist: rgba(17, 59, 49, 0.04);
+    --brand-mist-strong: rgba(17, 59, 49, 0.12);
+    --gold-line-onbrand: rgba(232, 199, 132, 0.5);
+    --gold-line-onbrand-inner: rgba(232, 199, 132, 0.4);
+    --accent-mist: rgba(219, 123, 100, 0.10);
+    --accent-line: rgba(219, 123, 100, 0.45);
+    --brand-focus-ring: rgba(214, 242, 95, 0.10);
+    --stage-dark: #0D0D0D;
+    --grid-line-onstage: rgba(255, 255, 255, 0.06);
 
     --sev-low: #7BAE93;
     --sev-mid: #D2A05E;
@@ -400,8 +440,8 @@ input, textarea {
   box-sizing: border-box;
   font-size: 30rpx;
   font-weight: 700;
-  transition: transform 160ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              opacity 160ms ease;
+  transition: transform var(--dur-fast) var(--ease-standard),
+              opacity var(--dur-fast) ease;
 }
 
 .vet-btn:active {
@@ -606,6 +646,27 @@ input, textarea {
   padding-bottom: calc(var(--sp-3) + var(--vet-safe-bottom));
 }
 
+/* 统一空状态：淡金雾底，居中提示 */
+.vet-empty {
+  padding: var(--sp-5) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--gold-mist);
+  color: var(--body);
+  font-size: var(--fs-caption);
+  line-height: 1.6;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.vet-empty-title {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: var(--sp-1);
+}
+
 .vet-progress {
   height: 10rpx;
   border-radius: var(--r-sm);
@@ -617,14 +678,40 @@ input, textarea {
   height: 100%;
   border-radius: var(--r-sm);
   background: var(--brand);
-  transition: width 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: width var(--dur-base) var(--ease-standard);
 }
 
 /* ============================================================
  * 动画 / 数字
  * ============================================================ */
 .vet-fade-up {
-  animation: vetFadeUp 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: vetFadeUp var(--dur-slow) var(--ease-out) both;
+}
+
+/* 交错入场：配合 vet-fade-up，区块依次延迟 40ms */
+.vet-stagger-1 { animation-delay: 40ms; }
+.vet-stagger-2 { animation-delay: 80ms; }
+.vet-stagger-3 { animation-delay: 120ms; }
+.vet-stagger-4 { animation-delay: 160ms; }
+.vet-stagger-5 { animation-delay: 200ms; }
+
+/* 骨架屏占位块：surface 底 + 扫光 */
+.vet-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+}
+
+.vet-skeleton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--line-light), transparent);
+  animation: vetShimmer 1.5s ease-in-out infinite;
 }
 
 .text-numeric {
@@ -791,6 +878,193 @@ input, textarea {
   background: currentColor;
   transform: translateY(-50%);
   box-shadow: 8rpx 0 0 currentColor, 16rpx 0 0 currentColor;
+}
+
+/* 左向 chevron —— 替代文本 "‹" */
+.vic-back {
+  width: 20rpx;
+  height: 20rpx;
+  border-left: 4rpx solid currentColor;
+  border-bottom: 4rpx solid currentColor;
+  border-radius: 1rpx;
+  transform: rotate(45deg);
+  box-sizing: border-box;
+  flex: none;
+}
+
+/* 上向箭头 —— 替代文本 "↑"（发送钮） */
+.vic-up {
+  width: 20rpx;
+  height: 20rpx;
+  border-top: 4rpx solid currentColor;
+  border-right: 4rpx solid currentColor;
+  border-radius: 1rpx;
+  transform: rotate(-45deg);
+  box-sizing: border-box;
+  flex: none;
+  margin-top: 4rpx;
+}
+
+/* 关闭 —— 替代文本 "×"，两条 45° 交叉短线 */
+.vic-close {
+  width: 28rpx;
+  height: 28rpx;
+  flex: none;
+}
+
+.vic-close::before,
+.vic-close::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 28rpx;
+  height: 4rpx;
+  border-radius: 2rpx;
+  background: currentColor;
+}
+
+.vic-close::before { transform: translate(-50%, -50%) rotate(45deg); }
+.vic-close::after { transform: translate(-50%, -50%) rotate(-45deg); }
+
+/* 加号 —— 替代文本 "+"，正十字细线 */
+.vic-plus {
+  width: 28rpx;
+  height: 28rpx;
+  flex: none;
+}
+
+.vic-plus::before,
+.vic-plus::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24rpx;
+  height: 3rpx;
+  border-radius: 2rpx;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.vic-plus::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+/* 搜索 —— 圆环 + 45° 短柄 */
+.vic-search {
+  width: 30rpx;
+  height: 30rpx;
+  flex: none;
+}
+
+.vic-search::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 20rpx;
+  height: 20rpx;
+  border: 3rpx solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.vic-search::after {
+  content: "";
+  position: absolute;
+  right: 2rpx;
+  bottom: 2rpx;
+  width: 10rpx;
+  height: 3rpx;
+  border-radius: 2rpx;
+  background: currentColor;
+  transform: rotate(45deg);
+  transform-origin: right bottom;
+}
+
+/* 对勾 —— checklist 完成态 */
+.vic-check {
+  width: 24rpx;
+  height: 14rpx;
+  border-left: 4rpx solid currentColor;
+  border-bottom: 4rpx solid currentColor;
+  border-radius: 1rpx;
+  transform: rotate(-45deg);
+  box-sizing: border-box;
+  flex: none;
+  margin-top: -4rpx;
+}
+
+/* 相机 —— 圆角机身 + 顶部凸起 + 圆形镜头 */
+.vic-camera {
+  width: 36rpx;
+  height: 28rpx;
+  border: 3rpx solid currentColor;
+  border-radius: 8rpx;
+  box-sizing: border-box;
+  flex: none;
+  margin-top: 4rpx;
+}
+
+.vic-camera::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -7rpx;
+  width: 14rpx;
+  height: 7rpx;
+  transform: translateX(-50%);
+  border: 3rpx solid currentColor;
+  border-bottom: none;
+  border-radius: 4rpx 4rpx 0 0;
+  box-sizing: border-box;
+}
+
+.vic-camera::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12rpx;
+  height: 12rpx;
+  transform: translate(-50%, -50%);
+  border: 3rpx solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+/* 分享 —— 向上箭头 + 底部开口托盘 */
+.vic-share {
+  width: 30rpx;
+  height: 30rpx;
+  flex: none;
+}
+
+.vic-share::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 2rpx;
+  width: 12rpx;
+  height: 12rpx;
+  border-top: 3rpx solid currentColor;
+  border-right: 3rpx solid currentColor;
+  transform: translateX(-50%) rotate(-45deg);
+  box-sizing: border-box;
+}
+
+.vic-share::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 30rpx;
+  height: 16rpx;
+  border: 3rpx solid currentColor;
+  border-top: none;
+  border-radius: 0 0 6rpx 6rpx;
+  box-sizing: border-box;
 }
 
 @keyframes vetFadeUp {
