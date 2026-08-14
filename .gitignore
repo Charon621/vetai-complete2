@@ -32,3 +32,5 @@ evaluation/dataset_reference_set/images/
 .hermes/
 __pycache__/
 *.pyc
+.preview/
+IDEA.md
