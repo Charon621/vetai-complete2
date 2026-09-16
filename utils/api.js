@@ -1589,6 +1589,11 @@ function diagnoseWithParallelPrecheck(images, petInfo, providerName, providerCfg
       // 快路径（BUG-G8 已启用）：强命中时提前出报告，未命中则等完整诊断
       if (config.VISION_RAG_FAST_PATH !== false) {
         var results = kb.search(buildVisionRagQuery(petInfo, featureData))
+        if (config.VISION_RAG_TRACE) {
+          console.log('[VetAI] kb results:', JSON.stringify((results || []).slice(0, 3).map(function (r) {
+            return { name: r.name, score: r.score, matched: r.matched || [] }
+          })))
+        }
         if (isStrongVisionRagHit(results)) {
           settled = true
           var data = buildFastRagDiagnosis(results, featureData, providerName, providerCfg, petInfo)

@@ -25,7 +25,7 @@ module.exports = {
   // score≥8 + 症状匹配≥2 + top2 间隔≥3 + 组合规则/别名/3 个非泛词视觉特征。
   // 未达强命中标准时仍走完整诊断，行为与之前一致。
   VISION_RAG_FAST_PATH: true,
-  VISION_RAG_TRACE: false,
+  VISION_RAG_TRACE: true,
   VISION_RAG_MAX_IMAGES: 2,
   VISION_RAG_MIN_SCORE: 8,
   VISION_RAG_MIN_SYMPTOM_MATCHES: 2,
