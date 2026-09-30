@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   Lesion Selector Component — VetAI DS v5
+   Lesion Selector Component — VetAI DS v7
    患处圈选浮层（index / chat 共用）
    ═══════════════════════════════════════════ */
 
@@ -38,19 +38,30 @@
   flex-shrink: 0;
 }
 
+/* 热区 88rpx，视觉圆仍是 56rpx（BUG-UI5） */
 .lesion-close {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: var(--r-md);
+  width: 88rpx;
+  height: 88rpx;
+  margin: -16rpx -16rpx 0 0;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--card);
-  border: 1rpx solid var(--line-light);
-  color: var(--body);
-  font-size: var(--fs-title);
   flex-shrink: 0;
 }
+
+.lesion-close::before {
+  content: "";
+  position: absolute;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: var(--card);
+}
+
+.lesion-close image { position: relative; }
+
+.lesion-close:active { opacity: 0.7; }
 
 .lesion-toolbar {
   display: flex;
@@ -60,31 +71,32 @@
   flex-shrink: 0;
 }
 
+/* 用设计系统的 --dur-fast/--ease-standard，不再写裸的 0.15s ease（BUG-UI42） */
 .tool-chip {
-  padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--r-sm);
-  background: var(--card);
-  border: 1rpx solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  min-height: 60rpx;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-xs);
+  background: var(--surface);
   color: var(--body);
   font-size: var(--fs-caption);
-  font-weight: 600;
-  transition: all 0.15s ease;
+  transition: background var(--dur-fast) var(--ease-standard),
+              color var(--dur-fast) var(--ease-standard);
 }
 
+.tool-chip:active { opacity: 0.8; }
+
 .tool-chip-on {
-  background: var(--brand);
-  border-color: var(--brand);
-  color: var(--on-brand);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-weight: 600;
 }
 
 .tool-stat {
   padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--r-sm);
-  background: var(--card);
-  border: 1rpx solid var(--line);
   color: var(--muted);
   font-size: var(--fs-caption);
-  font-weight: 600;
   margin-left: auto;
 }
 
@@ -132,7 +144,7 @@
 }
 
 .lesion-tip text:first-child {
-  color: var(--brand);
+  color: var(--brand-dark);
   font-weight: 700;
 }
 
@@ -143,15 +155,15 @@
   flex-shrink: 0;
 }
 
+/* 主按钮走 .vet-btn 的 96rpx 基线，不再单独压到 88rpx（BUG-UI43） */
 .lesion-save-main {
   grid-column: 1 / -1;
   width: 100%;
-  min-height: 88rpx;
 }
 
-/* ── Dark Mode 适配 ── */
-@media (prefers-color-scheme: dark) {
-  .lesion-stage {
-    background: var(--stage-dark);
-  }
+/* 未圈出有效区域时按钮降级，不再是一颗看着能点的实心陶土主按钮（BUG-UI44） */
+.lesion-save-main[disabled] {
+  background: var(--surface-strong);
+  color: var(--muted);
+  opacity: 1;
 }

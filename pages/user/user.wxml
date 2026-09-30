@@ -12,25 +12,41 @@
         <view class="account-rename" wx:if="{{user}}" bindtap="onRenameSpace">改名</view>
       </view>
       <view class="account-desc">数据只保存在这台手机上，不上传</view>
+      <!-- 本机空间入口：原先只挂在开发者选项里，普通用户点得到头像却找不到建空间的地方 -->
+      <view class="account-space-link" bindtap="switchSpace">
+        <text>{{user ? '切换 / 新建空间' : '新建本机空间'}}</text>
+        <image class="account-space-arrow" src="/assets/icons/caret-right-bold-clay.svg" />
+      </view>
     </view>
   </view>
 
-  <!-- 统计一行细线 -->
-  <view class="stat-line vet-fade-up">
-    <text class="stat-line-item"><text class="stat-line-num text-numeric">{{recordsCount}}</text> 次检查</text>
-    <text class="stat-line-item"><text class="stat-line-num text-numeric">{{profilesCount}}</text> 个宠物档案</text>
-    <text class="stat-line-recent">最近 {{recentText}}</text>
+  <!-- 统计三格 -->
+  <view class="stat-grid vet-fade-up">
+    <view class="stat-cell">
+      <text class="stat-num">{{recordsCount}}</text>
+      <text class="stat-label">次检查</text>
+    </view>
+    <view class="stat-cell">
+      <text class="stat-num">{{profilesCount}}</text>
+      <text class="stat-label">个宠物档案</text>
+    </view>
+    <view class="stat-cell">
+      <text class="stat-num stat-num-sm">{{recentText}}</text>
+      <text class="stat-label">最近一次</text>
+    </view>
   </view>
+  <!-- BUG-UI40：统计为 0 时给一句解释和一个去处，避免只看到 0 / 0 / -- -->
+  <view class="stat-empty-hint" wx:if="{{recordsCount === 0}}">还没有检查记录，回到首页拍一张就能生成初筛报告。</view>
 
   <!-- 设置（细线组） -->
   <view class="settings-flat vet-fade-up">
-    <view class="section-eyebrow">设置 / SETTINGS</view>
+    <view class="section-eyebrow">设置</view>
 
     <!-- 数据与隐私 -->
     <view class="flat-item" bindtap="toggleSection" data-key="privacy">
       <text class="flat-title">数据与隐私</text>
       <text class="flat-note">只存本机</text>
-      <view class="flat-chevron {{expandedSection === 'privacy' ? 'open' : ''}}"></view>
+      <image class="flat-chevron {{expandedSection === 'privacy' ? 'open' : ''}}" src="/assets/icons/caret-down-light-mute.svg" />
     </view>
     <view class="flat-detail" wx:if="{{expandedSection === 'privacy'}}">
       <view class="flat-detail-text">当前空间：{{currentSpaceName}}
@@ -45,7 +61,7 @@
     <!-- 备份与导出 -->
     <view class="flat-item" bindtap="toggleSection" data-key="backup">
       <text class="flat-title">备份与导出</text>
-      <view class="flat-chevron {{expandedSection === 'backup' ? 'open' : ''}}"></view>
+      <image class="flat-chevron {{expandedSection === 'backup' ? 'open' : ''}}" src="/assets/icons/caret-down-light-mute.svg" />
     </view>
     <view class="flat-detail" wx:if="{{expandedSection === 'backup'}}">
       <view class="flat-detail-text">把宠物档案和问诊记录复制成文本，便于自行备份或发给兽医。</view>
@@ -58,7 +74,7 @@
     <view class="flat-item" bindtap="toggleSection" data-key="quality">
       <text class="flat-title">拍照小技巧</text>
       <text class="flat-note">照片越清楚，判断越准</text>
-      <view class="flat-chevron {{expandedSection === 'quality' ? 'open' : ''}}"></view>
+      <image class="flat-chevron {{expandedSection === 'quality' ? 'open' : ''}}" src="/assets/icons/caret-down-light-mute.svg" />
     </view>
     <view class="flat-detail" wx:if="{{expandedSection === 'quality'}}">
       <view class="flat-detail-text">光线充足、对焦清晰，尽量拍到整体部位和近景细节，必要时圈选患处，AI 判断会更准。</view>
@@ -67,7 +83,7 @@
     <!-- 免责声明 -->
     <view class="flat-item" bindtap="toggleSection" data-key="disclaimer">
       <text class="flat-title">免责声明</text>
-      <view class="flat-chevron {{expandedSection === 'disclaimer' ? 'open' : ''}}"></view>
+      <image class="flat-chevron {{expandedSection === 'disclaimer' ? 'open' : ''}}" src="/assets/icons/caret-down-light-mute.svg" />
     </view>
     <view class="flat-detail" wx:if="{{expandedSection === 'disclaimer'}}">
       <view class="flat-detail-text">1. 本工具结果仅供参考，不构成医疗诊断。
@@ -80,7 +96,7 @@
     <view class="flat-item" bindtap="toggleSection" data-key="about">
       <text class="flat-title">关于 VetAI</text>
       <text class="flat-note text-numeric">v{{appVersion}}</text>
-      <view class="flat-chevron {{expandedSection === 'about' ? 'open' : ''}}"></view>
+      <image class="flat-chevron {{expandedSection === 'about' ? 'open' : ''}}" src="/assets/icons/caret-down-light-mute.svg" />
     </view>
     <view class="flat-detail" wx:if="{{expandedSection === 'about'}}">
       <view class="flat-detail-text">VetAI 宠物皮肤初筛 v{{appVersion}}
@@ -88,23 +104,23 @@
 用于整理宠物皮肤照片、症状描述和就医沟通参考。结果仅供初步观察，不能替代线下兽医诊断。</view>
     </view>
 
-    <!-- 开发者选项 -->
+    <!-- 开发者选项（BUG-UI38：由 config.SHOW_DEV_PANEL 门禁，普通用户不可见） -->
+    <block wx:if="{{isDev}}">
     <view class="flat-item flat-item-dev" bindtap="toggleSection" data-key="dev">
       <text class="flat-title dev">开发者选项</text>
-      <text class="flat-note">反馈分析<text class="mid-dot"></text>埋点导出</text>
-      <view class="flat-chevron {{expandedSection === 'dev' ? 'open' : ''}}"></view>
+      <text class="flat-note">反馈分析和埋点导出</text>
+      <image class="flat-chevron {{expandedSection === 'dev' ? 'open' : ''}}" src="/assets/icons/caret-down-light-mute.svg" />
     </view>
     <view class="flat-detail" wx:if="{{expandedSection === 'dev'}}">
       <view class="flat-detail-actions">
         <view class="flat-action" bindtap="exportFeedbackData">导出反馈日志</view>
         <view class="flat-action" bindtap="exportAnalyticsEvents">导出埋点日志</view>
-        <view class="flat-action" bindtap="switchSpace">切换 / 新建本机空间</view>
         <view wx:if="{{user}}" class="flat-action" bindtap="logout">切回本机访客</view>
       </view>
 
       <!-- 反馈分析（仅开发者可见） -->
       <view class="dev-analysis" wx:if="{{feedbackSummary}}">
-        <view class="dev-analysis-title">反馈分析<text class="mid-dot"></text>基于 {{feedbackSummary.total}} 条</view>
+        <view class="dev-analysis-title">反馈分析（共 {{feedbackSummary.total}} 条）</view>
         <view class="dev-stat-row"><text>有帮助率</text><text class="text-numeric">{{feedbackSummary.helpfulRate}}%</text></view>
         <view class="dev-stat-row"><text>有帮助 / 无帮助</text><text class="text-numeric">{{feedbackSummary.helpful}} / {{feedbackSummary.notHelpful}}</text></view>
         <view class="dev-stat-row"><text>已就医 / 未就医</text><text class="text-numeric">{{feedbackSummary.wentVet}} / {{feedbackSummary.notVet}}</text></view>
@@ -129,7 +145,8 @@
         </block>
 
         <block wx:if="{{kbAccuracyList.length > 0}}">
-          <view class="dev-analysis-sub">知识库匹配反馈</view>
+          <!-- BUG-UI41：用户可见文案不得出现「知识库」等内部机制词 -->
+          <view class="dev-analysis-sub">匹配效果反馈</view>
           <view class="dev-stat-row" wx:for="{{kbAccuracyList}}" wx:key="name">
             <text>{{item.name}}</text>
             <text class="kb-detail-text">有帮助率 {{item.helpfulRate}}%，无帮助 {{item.notHelpful}}</text>
@@ -137,22 +154,19 @@
         </block>
       </view>
     </view>
+    </block>
   </view>
 
   <!-- 底部紧急提示条 -->
   <view class="emergency-strip vet-fade-up" bindtap="findHospital">
     <text class="emergency-strong">紧急情况？</text>
     <text>严重外伤、误食、呼吸困难请不要等 AI —— </text>
-    <text class="emergency-link">立刻查找附近宠物医院 →</text>
+    <text class="emergency-link">立刻查找附近宠物医院</text>
   </view>
 
-  <!-- 鎏金印章收尾 -->
-  <view class="user-seal-wrap vet-fade-up">
-    <view class="vet-seal">
-      <view class="seal-stack">
-        <text>兽医级</text>
-        <text class="vet-seal-sub">VETAI</text>
-      </view>
-    </view>
+  <!-- 品牌收尾 -->
+  <view class="user-brand vet-fade-up">
+    <text class="user-brand-word">Vet<text class="user-brand-ai">AI</text></text>
+    <text class="user-brand-sub">宠物皮肤初筛 v{{appVersion}}</text>
   </view>
 </view>

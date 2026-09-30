@@ -3,6 +3,7 @@ var config = require('../../utils/config')
 var storage = require('../../utils/storage')
 var imageUtil = require('../../utils/image')
 var analytics = require('../../utils/analytics')
+var greetingUtil = require('../../utils/greeting')
 
 var IMAGE_ROLES = [
   { value: '', label: '' },
@@ -23,8 +24,6 @@ var URGENCY_STATUS = {
 
 var WEEKDAYS = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
 
-var WEEKDAYS_EN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
-
 var URGENCY_CARE = {
   low: '按报告建议居家护理，症状有变化随时再拍一张对比',
   moderate: '按报告建议护理患处，观察症状有没有减轻',
@@ -36,7 +35,7 @@ Page({
   data: {
     step: 'home',
     todayText: '',
-    todayMono: '',
+    greeting: null,
     profiles: [],
     displayProfiles: [],
     hasSelectedPet: false,
@@ -75,6 +74,7 @@ Page({
     lesionCount: 0,
     formProgress: 0,
     formProgressText: '0/3',
+    formCompleted: 0,
     submitHint: '请先补充病例信息',
     petTypeOptions: [
       { value: 'dog', label: '犬' },
@@ -112,37 +112,57 @@ Page({
   onLoad: function () {
     // base64 只存实例变量，不进 setData：5 张 MB 级字符串进 data 会卡渲染（BUG-B2）
     this._imageBase64List = []
-    this.setData({
-      todayText: this._buildTodayText(),
-      todayMono: this._buildTodayMono()
-    })
+    this.setData({ todayText: this._buildTodayText() })
     this.checkNetwork()
   },
 
   onShow: function () {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 0 })
+      this.getTabBar().syncSelected(0)
     }
+    // 回到本页时按当前 step 同步底栏显隐（BUG-UI56）
+    this._syncTabBar()
     this.loadProfiles()
     this.loadLastCheck()
+    this.refreshGreeting()
+  },
+
+  // 拍照初筛流程是页内 step、不切页，底栏原本一直压着提交按钮；
+  // 进入流程收起底栏，回到首页再显示（BUG-UI56）
+  _syncTabBar: function () {
+    if (typeof this.getTabBar !== 'function' || !this.getTabBar()) return
+    var hidden = this.data.step === 'capture'
+    if (this.getTabBar().data.hidden !== hidden) {
+      this.getTabBar().setData({ hidden: hidden })
+    }
   },
 
   _buildTodayText: function () {
     var d = new Date()
-    return (d.getMonth() + 1) + '月' + d.getDate() + '日 · ' + WEEKDAYS[d.getDay()]
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日　' + WEEKDAYS[d.getDay()]
   },
 
-  _buildTodayMono: function () {
-    var d = new Date()
-    function pad (n) { return ('0' + n).slice(-2) }
-    return pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + WEEKDAYS_EN[d.getDay()]
+  // 首页问候语随选中宠物的最近一次检查变化（首检 / 复查追问 / 默认）
+  refreshGreeting: function () {
+    var profileId = this.data.selectedProfileId
+    var hist = storage.getHistory() || []
+    var record = profileId
+      ? hist.filter(function (r) { return r.profileId === profileId })[0]
+      : hist[0]
+    this.setData({
+      greeting: greetingUtil.buildGreeting({
+        petName: this.data.selectedPetName,
+        record: record || null
+      })
+    })
   },
 
   loadProfiles: function () {
     var profiles = storage.getPetProfiles() || []
     var activeId = storage.getActiveProfileId ? storage.getActiveProfileId() : ''
     var displayProfiles = profiles.slice(0, 3).map(function (p) {
-      return { id: p.id || '', initial: (p.petName || '宠').charAt(0) }
+      // BUG-UI69：首页宠物头像优先显示已保存照片
+      return { id: p.id || '', initial: (p.petName || '宠').charAt(0), name: p.petName || '未命名', avatar: p.avatar || '' }
     })
     this.setData({ profiles: profiles, displayProfiles: displayProfiles })
     // 首次进入且用户未手动选过宠物时，自动带入当前档案
@@ -160,9 +180,11 @@ Page({
     }
     var r = hist[0]
     var urgency = r.urgency || 'moderate'
+    var d = new Date(typeof r.createdAt === 'number' ? r.createdAt : (r.generatedAt || r.timestamp))
     this.setData({
       lastCheck: {
         dateShort: this._formatShortDate(r.createdAt || r.timestamp),
+        dateText: isNaN(d.getTime()) ? '' : (d.getMonth() + 1) + '月' + d.getDate() + '日',
         disease: r.disease || r.lesionNameCn || r.primaryDiagnosis || '初筛结果',
         urgency: urgency,
         statusText: URGENCY_STATUS[urgency] || '已完成',
@@ -180,11 +202,14 @@ Page({
   },
 
   startCapture: function () {
-    this.setData({ step: 'capture' }, this.refreshUiState.bind(this))
+    this.setData({ step: 'capture' }, function () {
+      this.refreshUiState()
+      this._syncTabBar()
+    }.bind(this))
   },
 
   backHome: function () {
-    this.setData({ step: 'home' })
+    this.setData({ step: 'home' }, this._syncTabBar.bind(this))
   },
 
   goRecords: function () {
@@ -233,6 +258,7 @@ Page({
   _applyProfile: function (p) {
     if (!p) return
     var name = p.petName || '未命名'
+    var self = this
     this.setData({
       hasSelectedPet: true,
       selectedPetName: name,
@@ -245,7 +271,10 @@ Page({
       quickGenderLabel: p.genderLabel || '',
       quickAge: p.age || '',
       quickAgeLabel: p.ageLabel || ''
-    }, this.refreshUiState.bind(this))
+    }, function () {
+      self.refreshUiState()
+      self.refreshGreeting()
+    })
   },
 
   _clearSelectedProfile: function () {
@@ -255,7 +284,7 @@ Page({
       selectedPetInitial: '',
       selectedProfileId: '',
       selectedBreed: ''
-    })
+    }, this.refreshGreeting.bind(this))
   },
 
   checkNetwork: function () {
@@ -348,6 +377,15 @@ Page({
     }
 
     doChooseImage()
+  },
+
+  // BUG-UI25：拍完的照片原先不能点开看大图，用户无法确认是否拍清楚
+  previewImage: function (e) {
+    var paths = this.data.imagePaths || []
+    if (!paths.length) return
+    var idx = parseInt(e.currentTarget.dataset.index, 10)
+    if (isNaN(idx) || idx < 0 || idx >= paths.length) idx = 0
+    wx.previewImage({ current: paths[idx], urls: paths })
   },
 
   removeImage: function (e) {
@@ -512,6 +550,7 @@ Page({
       lesionCount: lesionCount,
       formProgress: Math.round((completed / 3) * 100),
       formProgressText: completed + '/3',
+      formCompleted: completed,
       submitHint: submitHint,
       previewItems: this.data.imagePaths.map(function (path, i) {
         var role = self.data.imageRoles[i] || ''

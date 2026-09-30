@@ -87,7 +87,8 @@ Page({
     monthGroups: [],
     pets: [],
     activeProfileId: '',
-    searchOpen: false
+    searchOpen: false,
+    searchFocus: false
   },
 
   onLoad: function () {
@@ -97,13 +98,23 @@ Page({
 
   onShow: function () {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 1 })
+      this.getTabBar().syncSelected(1)
     }
     if (this._loaded) {
       this.loadPets()
       this.loadRecords()
     }
     this._loaded = true
+  },
+
+  onHide: function () {
+    if (this._searchFocusTimer) clearTimeout(this._searchFocusTimer)
+    this._searchFocusTimer = null
+    if (this.data.searchFocus) this.setData({ searchFocus: false })
+  },
+
+  onUnload: function () {
+    if (this._searchFocusTimer) clearTimeout(this._searchFocusTimer)
   },
 
   loadPets: function () {
@@ -115,7 +126,9 @@ Page({
           id: p.id,
           petName: p.petName || '未命名',
           initial: (p.petName || '宠').charAt(0),
-          meta: [p.petTypeLabel, p.breed, p.ageLabel].filter(Boolean).join(' · ')
+          // BUG-UI69：健康档案与首页一致显示宠物真实头像
+          avatar: p.avatar || '',
+          meta: [p.petTypeLabel, p.breed, p.ageLabel].filter(Boolean).join('，')
         }
       }),
       activeProfileId: activeId
@@ -131,6 +144,9 @@ Page({
     }
     if (storage.setActiveProfileId) storage.setActiveProfileId(id)
     this.setData({ activeProfileId: id })
+    // BUG-UI49：此前只改了高亮，列表仍是全量记录，看着像筛选其实没筛；
+    // 现在切换宠物会按 profileId 重新过滤记录与统计。
+    this.loadRecords()
     wx.showToast({ title: '已切换宠物', icon: 'none' })
   },
 
@@ -138,14 +154,32 @@ Page({
     wx.navigateTo({ url: '/pages/profile/profile' })
   },
 
+  // BUG-UI50：搜索栏收起后过滤仍然生效，输入框却没了，记录看起来像凭空少了；
+  // 关闭搜索即清空关键词。
   toggleSearch: function () {
-    this.setData({ searchOpen: !this.data.searchOpen })
+    if (this._searchFocusTimer) clearTimeout(this._searchFocusTimer)
+    if (this.data.searchOpen) {
+      this.setData({ searchOpen: false, searchFocus: false })
+      this.onSearchClear()
+      return
+    }
+    this.setData({ searchOpen: true })
+    var self = this
+    this._searchFocusTimer = setTimeout(function () {
+      self._searchFocusTimer = null
+      if (self.data.searchOpen) self.setData({ searchFocus: true })
+    }, 270)
   },
 
   getRecordTime: getRecordTime,
 
+  // BUG-UI49：记录按当前档案过滤；未归属档案的临时问诊始终保留
   loadRecords: function () {
-    var records = storage.getHistory()
+    var activeId = this.data.activeProfileId
+    var all = storage.getHistory()
+    var records = activeId
+      ? all.filter(function (item) { return item.profileId === activeId || !item.profileId })
+      : all
     var monthlyCount = 0
     var attentionCount = 0
     for (var i = 0; i < records.length; i++) {
@@ -155,6 +189,7 @@ Page({
     var recentText = records.length > 0 ? getDateShort(records[0]) || '最近' : '--'
     this.setData({
       records: records,
+      totalCount: all.length,
       currentPage: 1,
       monthlyCount: monthlyCount,
       attentionCount: attentionCount,
@@ -248,6 +283,9 @@ Page({
 
     var trendMap = self.buildTrendMap(self.data.searchText ? self.data.filteredRecords : self.data.records)
 
+    // 未按档案过滤时（"全部"或含临时问诊）才在 meta 行展示宠物名
+    var showPetName = !this.data.activeProfileId
+
     source.sort(function (a, b) {
       var cmp = 0
       if (sortField === 'date') {
@@ -271,11 +309,15 @@ Page({
       var disease = cleanText(r.disease || r.primaryDiagnosis || r.lesionNameCn || '')
       var summary = cleanText(r.possibleMeaning || r.explanation || r.observations || r.careSuggestion || '')
       var matchText = confidenceLevelText(confidence)
+      // BUG-UI49：列表里混装多只宠物（含临时问诊）时，每条都要标出宠物名，
+      // 否则用户无法判断这条记录属于谁；已按单一档案过滤时不再重复宠物名。
+      var petLabel = cleanText(r.petName) || '临时问诊'
       var metaLine = [
+        showPetName ? petLabel : '',
         cleanText(r.bodyPartLabel),
         r.source === 'chat' ? '对话问诊' : '拍照初筛',
         matchText
-      ].filter(Boolean).join(' · ')
+      ].filter(Boolean).join('，')
       return Object.assign({}, r, {
         petName: cleanText(r.petName) || '临时问诊',
         disease: disease,
@@ -338,8 +380,17 @@ Page({
     })
   },
 
+  // BUG-UI66：每次新手势清理长按标记，长按后的松手不触发详情跳转
+  onRecordTouchStart: function () {
+    this._longPressedRecordId = ''
+  },
+
   onRecordTap: function (e) {
     var id = e.currentTarget.dataset.id
+    if (this._longPressedRecordId === id) {
+      this._longPressedRecordId = ''
+      return
+    }
     var record = storage.getRecordById(id)
     analytics.track('page_view', { page: 'result_from_history', recordId: id })
     // 对话式问诊的记录跳简要报告页，其他跳完整报告页
@@ -359,12 +410,29 @@ Page({
       title: '删除记录',
       content: '确定删除这条问诊记录吗？删除后不可恢复。',
       confirmText: '删除',
-      confirmColor: '#c76f5a',
+      confirmColor: '#9C3A25',
       success: function (res) {
         if (!res.confirm) return
         storage.deleteRecord(id)
         self.loadRecords()
         wx.showToast({ title: '已删除', icon: 'success' })
+      }
+    })
+  },
+
+  // BUG-UI66：删除移入长按菜单，二次确认沿用现有删除逻辑
+  onRecordLongPress: function (e) {
+    var self = this
+    var id = e.currentTarget.dataset.id
+    if (!id) return
+    this._longPressedRecordId = id
+    wx.showActionSheet({
+      itemList: ['删除这条记录'],
+      itemColor: '#9C3A25',
+      success: function (res) {
+        if (res.tapIndex === 0) {
+          self.onDeleteRecord({ currentTarget: { dataset: { id: id } } })
+        }
       }
     })
   },
@@ -375,7 +443,7 @@ Page({
       title: '清空记录',
       content: '将删除当前本机空间下的全部问诊记录。',
       confirmText: '清空',
-      confirmColor: '#c76f5a',
+      confirmColor: '#9C3A25',
       success: function (res) {
         if (!res.confirm) return
         storage.clearHistory()

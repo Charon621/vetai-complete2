@@ -1,9 +1,9 @@
 <view class="chat-page">
   <!-- 档案选择器 -->
-  <view class="profile-picker-mask" wx:if="{{showProfilePicker}}" bindtap="closeProfilePicker">
-    <view class="profile-picker-sheet" catchtap="noop">
+  <view class="profile-picker-mask {{pickerClosing ? 'is-closing' : ''}}" wx:if="{{showProfilePicker}}" bindtap="closeProfilePicker">
+    <view class="profile-picker-sheet {{pickerClosing ? 'is-closing' : ''}}" catchtap="noop">
       <view class="profile-picker-title">选择宠物档案</view>
-      <view class="profile-picker-sub">选择已有档案继续问诊，或新建档案</view>
+      <view class="profile-picker-sub">选择已有档案继续问诊，或直接开始新对话</view>
       <view class="profile-picker-list">
         <view class="profile-picker-item" wx:for="{{profiles}}" wx:key="id" data-id="{{item.id}}" bindtap="onPickProfile">
           <view class="profile-picker-avatar">
@@ -14,12 +14,12 @@
             <view class="profile-picker-name">{{item.petName}}</view>
             <view class="profile-picker-meta">{{item.petTypeLabel}}{{item.breed ? '，' + item.breed : ''}}{{item.ageLabel ? '，' + item.ageLabel : ''}}</view>
           </view>
-          <view class="profile-picker-arrow vic vic-arrow"></view>
+          <image class="vet-icon" src="/assets/icons/caret-right-light-mute.svg" />
         </view>
       </view>
       <view class="profile-picker-new" bindtap="onPickNewProfile">
-        <view class="profile-picker-new-icon vic vic-plus"></view>
-        <text>新建档案</text>
+        <image class="vet-icon" src="/assets/icons/plus-light-clay.svg" />
+        <text>直接开始咨询</text>
       </view>
     </view>
   </view>
@@ -28,18 +28,14 @@
   <view class="chat-header" style="padding-top: {{statusBarHeight * 2}}rpx; padding-right: {{menuRight}}px;">
     <view class="chat-header-left">
       <view class="chat-back-btn" bindtap="onBackTap" aria-label="返回">
-        <view class="vic vic-back"></view>
-      </view>
-      <view class="chat-doctor-avatar">
-        <view class="vic vic-cross"></view>
+        <image class="vet-icon-lg" src="/assets/icons/caret-left-light-ink.svg" />
       </view>
       <view class="chat-header-info">
         <view class="chat-header-title">AI 兽医助手</view>
         <view class="chat-header-sub">
-          <text class="chat-status-dot"></text>
           <block wx:if="{{isAnalyzing}}"><text>正在分析中…</text></block>
-          <block wx:elif="{{draftPetName}}"><text>在线</text><text class="mid-dot"></text><text>正在问诊{{draftPetName}}</text></block>
-          <block wx:else><text>在线问诊</text></block>
+          <block wx:elif="{{draftPetName}}"><text>正在问诊{{draftPetName}}</text></block>
+          <block wx:else><text>初步问诊，不替代兽医</text></block>
         </view>
       </view>
     </view>
@@ -53,6 +49,11 @@
     </view>
   </view>
 
+  <!-- 问诊进度（原位于消息流内，移到标题下方做成居中小标签） -->
+  <view class="chat-progress" wx:if="{{showProgress}}">
+    <text>{{progressText}}</text>
+  </view>
+
   <!-- 恢复草稿提示 -->
   <view class="restored-notice" wx:if="{{restoredNotice}}" bindtap="dismissRestoredNotice">
     <text>已恢复上次的对话进度，点击关闭</text>
@@ -61,31 +62,23 @@
   <!-- 消息列表 -->
   <scroll-view class="chat-messages" scroll-y scroll-into-view="{{scrollIntoView}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
     <block wx:for="{{messages}}" wx:key="id">
-      <view class="msg-time-divider" wx:if="{{item.showTime}}">— {{item.timeText}} —</view>
+      <view class="msg-time-divider" wx:if="{{item.showTime}}">{{item.timeText}}</view>
       <view class="msg-row vet-fade-up {{item.isUser ? 'msg-row-user' : 'msg-row-doctor'}}">
-        <view class="msg-avatar" wx:if="{{item.isDoctor}}">
-          <view class="vic vic-cross"></view>
-        </view>
-        <view class="msg-avatar msg-avatar-user" wx:if="{{item.isUser}}">
-          <view class="vic vic-user"></view>
-        </view>
         <view class="msg-content">
           <view class="msg-bubble {{item.isUser ? 'msg-bubble-user' : 'msg-bubble-doctor'}}" wx:if="{{item.text}}">
             <text class="msg-text">{{item.text}}</text>
           </view>
           <view class="msg-images" wx:if="{{item.images.length > 0}}">
-            <image wx:for="{{item.images}}" wx:key="*this" wx:for-item="img" src="{{img}}" mode="aspectFill" class="msg-image" />
+            <image wx:for="{{item.images}}" wx:key="*this" wx:for-item="img" src="{{img}}" mode="aspectFill"
+              class="msg-image" aria-label="对话中的照片" bindtap="onPreviewMessageImage" data-src="{{img}}" />
           </view>
           <view class="msg-image-wrap" wx:elif="{{item.image}}">
-            <image src="{{item.image}}" mode="aspectFill" class="msg-image" />
+            <image src="{{item.image}}" mode="aspectFill" class="msg-image"
+              aria-label="对话中的照片" bindtap="onPreviewMessageImage" data-src="{{item.image}}" />
           </view>
         </view>
       </view>
     </block>
-    <view class="chat-progress" wx:if="{{showProgress}}">
-      <view class="chat-progress-dot"></view>
-      <text>{{progressText}}</text>
-    </view>
     <view id="msg-bottom" class="msg-bottom-anchor"></view>
   </scroll-view>
 
@@ -93,8 +86,9 @@
   <view class="photo-preview-bar" wx:if="{{uploadedPhotos.length > 0 && showPhotoActions}}">
     <view class="photo-preview-list">
       <view class="photo-preview-item" wx:for="{{uploadedPhotos}}" wx:key="*this" data-index="{{index}}">
-        <image src="{{item}}" mode="aspectFill" class="photo-preview-img" />
-        <view class="photo-preview-remove" catchtap="onRemovePhoto" data-index="{{index}}"><view class="vic vic-close"></view></view>
+        <image src="{{item}}" mode="aspectFill" class="photo-preview-img" aria-label="待上传的患处照片"
+          bindtap="onPreviewPhoto" data-index="{{index}}" />
+        <view class="photo-preview-remove" catchtap="onRemovePhoto" data-index="{{index}}" aria-label="移除这张照片"><image class="photo-preview-remove-icon" src="/assets/icons/x-bold-white.svg" /></view>
         <view class="photo-preview-circle" catchtap="onOpenLesionSelector" data-index="{{index}}">圈选</view>
       </view>
     </view>
@@ -107,22 +101,33 @@
 
   <!-- 底部输入区 -->
   <view class="chat-input-area" wx:if="{{!showPhotoActions}}">
-    <scroll-view class="quick-replies" scroll-x wx:if="{{quickReplies.length > 0 || showProgress}}" show-scrollbar="{{false}}">
+    <!-- BUG-UI46：「跳过」原先排在横向滚动行末尾，首问 6 个选项后就出屏，
+         用户看不到这个出口；改为固定在输入框上方右侧。 -->
+    <view class="skip-row" wx:if="{{showSkip}}">
+      <view class="skip-btn" bindtap="onSkipQuestion">跳过这题</view>
+    </view>
+
+    <scroll-view class="quick-replies" scroll-x wx:if="{{quickReplies.length > 0}}" show-scrollbar="{{false}}">
       <view class="qr-row">
         <view class="qr-chip {{item.field}}" wx:for="{{quickReplies}}" wx:key="key" data-index="{{index}}" bindtap="onQuickReplyTap">
           {{item.label}}
         </view>
-        <view class="qr-chip qr-skip" wx:if="{{showProgress}}" bindtap="onSkipQuestion">跳过</view>
       </view>
     </scroll-view>
 
-    <view class="input-row" wx:if="{{inputType !== 'analyzing' && inputType !== 'result'}}">
-      <view class="input-plus-btn" bindtap="onUploadPhoto">
-        <view class="vic vic-plus"></view>
-      </view>
-      <input class="chat-input" value="{{inputText}}" placeholder="{{placeholder || '输入消息…'}}" bindinput="onInput" confirm-type="send" bindconfirm="onSendText" adjust-position />
-      <view class="send-btn {{inputText ? 'send-btn-active' : ''}}" bindtap="onSendText">
-        <view class="vic vic-up"></view>
+    <view class="composer {{composerFocused ? 'is-focused' : ''}}" wx:if="{{inputType !== 'analyzing' && inputType !== 'result'}}">
+      <!-- BUG-UI47：补 maxlength 与 cursor-spacing，原先静默截断 140 字且键盘会贴近输入框 -->
+      <input class="chat-input" value="{{inputText}}" maxlength="500"
+        placeholder="{{placeholder || '输入消息…'}}" placeholder-class="chat-input-placeholder"
+        bindinput="onInput" bindfocus="onInputFocus" bindblur="onInputBlur" confirm-type="send" bindconfirm="onSendText"
+        adjust-position cursor-spacing="24" />
+      <view class="composer-bar">
+        <view class="input-plus-btn" bindtap="onUploadPhoto" aria-label="上传照片">
+          <image class="vet-icon-lg" src="/assets/icons/image-light-body.svg" />
+        </view>
+        <view class="send-btn {{inputText ? 'send-btn-active' : ''}}" bindtap="onSendText" aria-label="发送">
+          <image class="send-icon" src="/assets/icons/arrow-up-bold-paper.svg" />
+        </view>
       </view>
     </view>
 

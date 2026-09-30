@@ -99,6 +99,7 @@ Page({
     }
 
     return {
+      id: d.id || '',
       petName: d.petName || '宠物',
       petTypeLabel: d.petTypeLabel || '',
       breed: d.breed || '',
@@ -111,12 +112,24 @@ Page({
   },
 
   onBack: function () {
-    wx.navigateBack()
+    // BUG-UI24：作为入口页（冷启动/被微信恢复）时没有上一页，navigateBack 无反应
+    if (getCurrentPages().length > 1) {
+      wx.navigateBack()
+    } else {
+      wx.switchTab({ url: '/pages/index/index' })
+    }
+  },
+
+  // BUG-UI25：患处照片原先不可点开，用户无法确认自己拍清楚没有
+  onPreviewPhoto: function (e) {
+    var d = this.data.displayRecord
+    if (!d || !d.photos || d.photos.length === 0) return
+    var index = parseInt(e.currentTarget.dataset.index, 10)
+    if (isNaN(index) || index < 0 || index >= d.photos.length) index = 0
+    wx.previewImage({ current: d.photos[index], urls: d.photos })
   },
 
   goHistory: function () {
     wx.switchTab({ url: '/pages/detail/detail' })
-  },
-
-  noop: function () {}
+  }
 })

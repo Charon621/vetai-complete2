@@ -1,220 +1,199 @@
-<view class="vet-page triage-page {{step === 'capture' ? 'has-submit-bar' : ''}}">
+<view class="vet-page triage-page {{step === 'capture' ? 'has-submit-bar' : 'is-home'}}">
 
-  <!-- ════════ HOME 态：刊头 + 双入口 + 上次检查 ════════ -->
+  <!-- ════════ HOME 态：合影 + 动态问候 + 主入口 + 对话 / 上次检查 ════════ -->
   <block wx:if="{{step === 'home'}}">
 
-    <!-- 刊头：鎏金日期 + 品牌徽标 -->
-    <view class="home-masthead vet-fade-up vet-stagger-1">
-      <text class="masthead-date">{{todayMono}}</text>
-      <text class="masthead-brand">VETAI</text>
-    </view>
+    <!-- 温暖的猫狗合影，向下渐隐进纸色 -->
+    <image class="home-photo" src="/assets/home-warm-pets.jpg" mode="aspectFill" />
+    <view class="home-photo-fade"></view>
 
-    <!-- 宋体大标题 + 青柠划线 -->
-    <view class="greet-title vet-fade-up vet-stagger-2">
-      <text>今天</text><text class="vet-hl-lime">还好吗？</text>
-    </view>
-    <view class="greet-sub">选一只宠物，开始今天的检查</view>
+    <view class="home-body">
+      <view class="home-top">
+        <view class="home-brand vet-fade-up">
+          <text class="brand-word">Vet<text class="brand-ai">AI</text></text>
+          <text class="brand-date">{{todayText}}</text>
+        </view>
 
-    <!-- 宠物行 -->
-    <view class="pet-row vet-fade-up vet-stagger-3">
-      <view class="pet-avatar {{selectedProfileId === item.id ? 'active' : ''}}"
-        wx:for="{{displayProfiles}}" wx:key="id" bindtap="onSelectPet">{{item.initial}}</view>
-      <view class="pet-avatar pet-avatar-add" bindtap="addPet">+</view>
-      <text class="pet-count">{{displayProfiles.length}} PETS</text>
-    </view>
+        <!-- 标题固定，最近一次检查的提示只放在副标题 -->
+        <view class="greet vet-fade-up vet-stagger-1">今天怎么样？</view>
+        <view class="greet-sub vet-fade-up vet-stagger-1" wx:if="{{greeting}}">{{greeting.sub}}</view>
 
-    <!-- 01 / PHOTO 拍照初筛（墨绿主卡） -->
-    <view class="photo-card vet-fade-up vet-stagger-4" bindtap="startCapture">
-      <view class="vet-seal photo-seal">
-        <view class="seal-stack">
-          <text>兽医级</text>
-          <text class="vet-seal-sub">VETAI</text>
+        <!-- 宠物行 -->
+        <view class="pet-row vet-fade-up vet-stagger-2">
+          <view class="pet {{selectedProfileId === item.id ? 'active' : ''}}"
+            wx:for="{{displayProfiles}}" wx:key="id" bindtap="onSelectPet">
+            <view class="pet-avatar">
+              <image wx:if="{{item.avatar}}" class="pet-avatar-img" src="{{item.avatar}}" mode="aspectFill" />
+              <block wx:else>{{item.initial}}</block>
+            </view>
+            <text class="pet-name">{{item.name}}</text>
+          </view>
+          <view class="pet" bindtap="addPet">
+            <view class="pet-avatar pet-avatar-add">
+              <image class="vet-icon" src="/assets/icons/plus-light-mute.svg" />
+            </view>
+            <text class="pet-name">添加</text>
+          </view>
+        </view>
+
+        <!-- 拍照初筛主卡：陶土底 + 拱形取景窗 -->
+        <view class="photo-card vet-fade-up vet-stagger-3" bindtap="startCapture">
+          <text class="photo-kicker">皮肤观察</text>
+          <view class="photo-title">拍照初筛</view>
+          <view class="photo-desc">拍摄患处，获取一份初步观察报告</view>
+          <view class="photo-go">
+            <text>开始拍照</text>
+            <image class="vet-icon-sm" src="/assets/icons/arrow-right-bold-claydk.svg" />
+          </view>
+          <view class="photo-arch">
+            <image class="photo-arch-icon" src="/assets/icons/camera-light-paper.svg" />
+          </view>
+        </view>
+
+        <view class="photo-guide vet-fade-up vet-stagger-4">
+          <text class="photo-guide-title">拍照时，试着留意三个角度</text>
+          <view class="photo-guide-row">
+            <text>整体位置</text>
+            <text>患处近景</text>
+            <text>大小参照</text>
+          </view>
         </view>
       </view>
-      <text class="card-no card-no-lime">01 / PHOTO</text>
-      <view class="photo-title">拍照初筛</view>
-      <view class="photo-desc">拍几张患处照片，AI 帮你分析皮肤情况</view>
-      <view class="photo-foot">
-        <view class="vet-action-dot"><view class="vic-arrow"></view></view>
-      </view>
-    </view>
 
-    <!-- 02 / CHAT 对话问诊（墨线描边卡） -->
-    <view class="chat-card vet-fade-up vet-stagger-5" bindtap="goChat">
-      <view class="chat-card-body">
-        <text class="card-no card-no-gold">02 / CHAT</text>
-        <view class="chat-card-title">对话问诊</view>
-        <view class="chat-card-sub">说不清楚？让 AI 一步步问你</view>
-      </view>
-      <view class="vet-action-dot vet-action-dot-outline"><view class="vic-arrow"></view></view>
-    </view>
-
-    <!-- 上次检查 -->
-    <view class="last-check vet-fade-up vet-stagger-5" wx:if="{{lastCheck}}">
-      <view class="last-head">
-        <text class="last-title">上次检查</text>
-        <text class="last-all" bindtap="goRecords">全部 →</text>
-      </view>
-      <view class="last-row" bindtap="goLastRecord">
-        <text class="last-date">{{lastCheck.dateShort}}</text>
-        <view class="last-info">
-          <view class="last-disease">{{lastCheck.disease}}</view>
+      <!-- 对话问诊 + 上次检查（BUG-UI55：内容短时这一组贴到页面底部，填充留白） -->
+      <view class="home-pair vet-fade-up vet-stagger-4">
+        <view class="pair-card pair-card-chat" bindtap="goChat" aria-role="button" aria-label="进入对话问诊">
+          <view class="pair-title">对话问诊</view>
+          <view class="pair-sub">聊聊症状，理清要观察的事</view>
+          <view class="pair-action">开始对话</view>
         </view>
-        <text class="last-status sev-{{lastCheck.urgency}}">{{lastCheck.statusText}}</text>
-      </view>
-      <view class="care-tip" wx:if="{{lastCheck.careTip}}">
-        <text class="care-tip-label">今日护理</text>
-        <text class="mid-dot"></text>
-        <text>{{lastCheck.careTip}}</text>
-      </view>
-    </view>
 
-    <view class="vet-empty home-empty" wx:else>
-      还没有检查记录。点上面的「拍照初筛」，为TA做第一次检查吧。
+        <view class="pair-card pair-card-record" wx:if="{{lastCheck}}" bindtap="goLastRecord" aria-role="button" aria-label="查看上次检查记录">
+          <view class="pair-title">检查记录</view>
+          <view class="pair-sub pair-disease">{{lastCheck.disease}}</view>
+          <view class="pair-meta">{{lastCheck.dateText}}</view>
+          <view class="pair-foot">
+            <view class="vet-status sev-{{lastCheck.urgency}}">{{lastCheck.statusText}}</view>
+            <text class="pair-link" catchtap="goRecords">全部</text>
+          </view>
+        </view>
+
+        <view class="pair-card pair-card-record pair-card-empty" wx:else bindtap="startCapture" aria-role="button" aria-label="暂无检查记录，开始首次初筛">
+          <view class="pair-title">检查记录</view>
+          <view class="pair-sub">完成初筛后，记录会保存在这里</view>
+          <view class="pair-action">开始初筛</view>
+        </view>
+      </view>
+
+      <view class="care-tip vet-fade-up vet-stagger-5" wx:if="{{lastCheck && lastCheck.careTip}}">
+        <text class="care-tip-label">今日护理</text>{{lastCheck.careTip}}
+      </view>
     </view>
   </block>
-
   <!-- ════════ CAPTURE 态：拍照初筛分步流程 ════════ -->
   <block wx:if="{{step === 'capture'}}">
     <view class="capture-topbar">
       <view class="capture-back" bindtap="backHome">
-        <view class="capture-back-arrow"></view>
+        <image class="vet-icon" src="/assets/icons/caret-left-light-body.svg" />
         <text>返回</text>
       </view>
       <text class="capture-topbar-title">拍照初筛</text>
       <view class="capture-topbar-spacer"></view>
     </view>
 
-    <!-- 影像采集区 -->
-    <view class="evidence-board">
-      <view class="board-head">
-        <view class="board-head-left">
-          <view>
-            <view class="board-title">影像采集</view>
-            <view class="board-desc">建议上传整体、近景和参照照片，最多 5 张</view>
-          </view>
-        </view>
-        <view class="board-count-badge">{{imagePaths.length}}<text class="board-count-sep">/</text>5</view>
-      </view>
+    <!-- 1 拍下患处 -->
+    <view class="step-head">
+      <text class="vet-no step-no">1</text>
+      <text class="step-title">拍下患处</text>
+      <text class="step-side">{{imagePaths.length}} / 5 张</text>
+    </view>
+    <view class="step-desc">整体、近景、参照各一张，判断会更准</view>
 
-      <!-- 无图时：温暖引导区 -->
-      <view class="capture-hero" bindtap="chooseImage" wx:if="{{imagePaths.length === 0}}">
-        <view class="capture-hero-bg"></view>
-        <view class="capture-hero-inner">
-          <view class="capture-hero-icon">
-            <view class="capture-hero-camera"></view>
-          </view>
-          <view class="capture-hero-title">为TA拍一张，AI 帮你看看</view>
-          <view class="capture-hero-desc">光线充足、对焦清晰，尽量包含患处所在部位</view>
-          <view class="capture-hero-btn">
-            <text>拍照 / 相册上传</text>
-          </view>
-        </view>
-        <view class="capture-hero-tags">
-          <view class="capture-tag">整体</view>
-          <view class="capture-tag">近景</view>
-          <view class="capture-tag">参照</view>
+    <!-- 无图时：用构图示意帮助拍摄，不冒充实时相机预览 -->
+    <view class="capture-hero" bindtap="chooseImage" wx:if="{{imagePaths.length === 0}}">
+      <view class="capture-frame">
+        <view class="capture-frame-inner">
+          <text class="capture-frame-label">参考构图</text>
+          <text class="capture-frame-guide">让患处位于画面中央</text>
         </view>
       </view>
+      <view class="capture-hero-title">先拍一张清晰的患处照片</view>
+      <view class="capture-hero-desc">在明亮处拍摄，保留一点周围皮肤，便于观察位置与范围</view>
+      <view class="capture-hero-btn">拍照 / 相册上传</view>
+    </view>
 
-      <!-- 有图时：精致图片列表 -->
-      <view class="evidence-list" wx:else>
-        <view class="evidence-item" wx:for="{{previewItems}}" wx:key="path">
-          <view class="evidence-img-wrap">
-            <image src="{{item.path}}" mode="aspectFill" class="evidence-image" />
-            <view class="evidence-img-badge {{item.hasBox ? 'has-box' : ''}}">{{item.hasBox ? '已圈选' : '未圈选'}}</view>
+    <!-- 有图时：三列照片卡 -->
+    <view class="shot-grid" wx:else>
+      <view class="shot" wx:for="{{previewItems}}" wx:key="path">
+        <view class="shot-photo">
+          <image src="{{item.path}}" mode="aspectFill" class="shot-image" aria-label="已拍摄的患处照片"
+            bindtap="previewImage" data-index="{{index}}" />
+          <view class="shot-badge {{item.hasBox ? 'is-boxed' : ''}}">{{item.hasBox ? '已圈选' : '未圈选'}}</view>
+          <view class="shot-remove" catchtap="removeImage" data-index="{{index}}" aria-label="移除这张照片">
+            <image class="shot-remove-icon" src="/assets/icons/x-bold-white.svg" />
           </view>
-          <view class="evidence-info">
-            <view class="evidence-top">
-              <view>
-                <view class="evidence-label">照片 {{item.indexLabel}}</view>
-                <view class="evidence-state {{item.hasBox ? 'saved' : ''}}">{{item.hasBox ? '已保存圈选' : '未圈选患处'}}</view>
-              </view>
-              <view class="remove-btn" catchtap="removeImage" data-index="{{index}}">
-                <view class="remove-x"></view>
-              </view>
-            </view>
-            <view class="evidence-actions">
-              <view class="action-chip {{item.role ? 'active' : ''}}" catchtap="cycleImageRole" data-index="{{index}}">
-                {{item.roleLabel || '设置视角'}}
-              </view>
-              <view class="action-chip warning" wx:if="{{item.qualityText}}">{{item.qualityText}}</view>
-              <view class="action-chip primary" catchtap="openLesionSelector" data-index="{{index}}">
-                {{item.hasBox ? '重新圈选' : '圈选患处'}}
-              </view>
-            </view>
-          </view>
+          <view class="shot-quality" wx:if="{{item.qualityText}}">{{item.qualityText}}</view>
         </view>
-        <view class="append-photo" bindtap="chooseImage" wx:if="{{canAddMore}}">
-          <view class="vic vic-plus"></view>
-          <text>继续添加照片</text>
+        <view class="shot-actions">
+          <text class="shot-role {{item.role ? 'is-set' : ''}}" catchtap="cycleImageRole" data-index="{{index}}">{{item.roleLabel || '设视角'}}</text>
+          <text class="shot-lasso" catchtap="openLesionSelector" data-index="{{index}}">{{item.hasBox ? '重圈' : '圈选患处'}}</text>
         </view>
+      </view>
+      <view class="shot-add" bindtap="chooseImage" wx:if="{{canAddMore}}">
+        <image class="vet-icon-lg" src="/assets/icons/plus-light-mute.svg" />
+        <text>继续添加</text>
       </view>
     </view>
 
-    <!-- 宠物信息区 -->
-    <view class="case-section">
-      <view class="section-title-row">
-        <view>
-          <view class="section-title">宠物信息</view>
-          <view class="section-desc">可临时填写，也可以带入宠物档案</view>
-        </view>
+    <!-- 2 宠物信息 -->
+    <view class="step-head">
+      <text class="vet-no step-no">2</text>
+      <text class="step-title">宠物信息</text>
+      <text class="step-side step-side-link" bindtap="onSelectPet">从档案带入</text>
+    </view>
+    <view class="form-row">
+      <!-- BUG-UI52：原先首页叫「物种」、档案页叫「种类」，指向同一份数据，统一为「种类」 -->
+      <text class="form-label">种类</text>
+      <view class="choice-row">
+        <view class="choice {{quickPetType === item.value ? 'selected' : ''}}" wx:for="{{petTypeOptions}}" wx:key="value" bindtap="onQuickPetTypeTap" data-index="{{index}}">{{item.label}}</view>
       </view>
-
-      <view class="input-panel">
-        <view class="field-block">
-          <view class="field-title">物种</view>
-          <view class="choice-row">
-            <view class="choice {{quickPetType === item.value ? 'selected' : ''}}" wx:for="{{petTypeOptions}}" wx:key="value" bindtap="onQuickPetTypeTap" data-index="{{index}}">{{item.label}}</view>
-          </view>
-        </view>
-        <view class="field-block">
-          <view class="field-title">性别</view>
-          <view class="choice-row">
-            <view class="choice {{quickGender === item.value ? 'selected' : ''}}" wx:for="{{genderOptions}}" wx:key="value" bindtap="onQuickGenderTap" data-index="{{index}}">{{item.label}}</view>
-          </view>
-        </view>
-        <view class="field-block">
-          <view class="field-title">年龄阶段</view>
-          <view class="choice-row">
-            <view class="choice {{quickAge === item.value ? 'selected' : ''}}" wx:for="{{ageOptions}}" wx:key="value" bindtap="onQuickAgeTap" data-index="{{index}}">{{item.label}}</view>
-          </view>
-        </view>
+    </view>
+    <view class="form-row">
+      <text class="form-label">性别</text>
+      <view class="choice-row">
+        <view class="choice {{quickGender === item.value ? 'selected' : ''}}" wx:for="{{genderOptions}}" wx:key="value" bindtap="onQuickGenderTap" data-index="{{index}}">{{item.label}}</view>
+      </view>
+    </view>
+    <view class="form-row">
+      <text class="form-label">年龄阶段</text>
+      <view class="choice-row">
+        <view class="choice {{quickAge === item.value ? 'selected' : ''}}" wx:for="{{ageOptions}}" wx:key="value" bindtap="onQuickAgeTap" data-index="{{index}}">{{item.label}}</view>
       </view>
     </view>
 
-    <!-- 患处与症状区 -->
-    <view class="case-section">
-      <view class="section-title-row">
-        <view>
-          <view class="section-title">患处与症状</view>
-          <view class="section-desc">补充病程、瘙痒、掉毛、抓挠、结痂或渗出</view>
-        </view>
-      </view>
-
-      <view class="input-panel">
-        <view class="field-block">
-          <view class="field-title">患处部位</view>
-          <view class="choice-row body-row">
-            <view class="choice {{bodyPart === item.value ? 'selected' : ''}}" wx:for="{{bodyPartOptions}}" wx:key="value" bindtap="onBodyPartTap" data-index="{{index}}">{{item.label}}</view>
-          </view>
-        </view>
-        <view class="field-block">
-          <view class="field-title">症状描述（可选）</view>
-          <textarea class="clinical-textarea" value="{{complaint}}" maxlength="500"
-            placeholder="发现多久了？是否瘙痒、掉毛、抓挠、结痂或渗出？"
-            bindinput="onComplaintInput" />
-        </view>
-      </view>
+    <!-- 3 患处与症状 -->
+    <view class="step-head">
+      <text class="vet-no step-no">3</text>
+      <text class="step-title">患处与症状</text>
     </view>
+    <view class="part-grid">
+      <view class="choice {{bodyPart === item.value ? 'selected' : ''}}" wx:for="{{bodyPartOptions}}" wx:key="value" bindtap="onBodyPartTap" data-index="{{index}}">{{item.label}}</view>
+    </view>
+    <!-- BUG-UI34：键盘弹起时给 textarea 留出空间，避免被 fixed 提交栏盖住 -->
+    <textarea class="clinical-textarea" value="{{complaint}}" maxlength="500"
+      placeholder="发现多久了？是否瘙痒、掉毛、抓挠、结痂或渗出？（可选）"
+      placeholder-class="textarea-placeholder"
+      bindinput="onComplaintInput"
+      adjust-position cursor-spacing="140" />
 
     <!-- 底部提交栏 -->
     <view class="submit-area">
       <view class="submit-progress-row">
-        <view class="submit-progress-bar">
-          <view class="submit-progress-fill" style="width: {{formProgress}}%"></view>
+        <view class="submit-steps">
+          <view class="submit-step {{formCompleted >= 1 ? 'on' : ''}}"></view>
+          <view class="submit-step {{formCompleted >= 2 ? 'on' : ''}}"></view>
+          <view class="submit-step {{formCompleted >= 3 ? 'on' : ''}}"></view>
         </view>
-        <text class="submit-progress-text">{{formProgressText}}</text>
         <text class="submit-hint-inline">{{submitHint}}</text>
       </view>
       <button class="vet-btn vet-btn-primary submit-btn" bindtap="onSubmit" disabled="{{!canSubmitActive || isAnalyzing}}">
@@ -224,11 +203,20 @@
     </view>
   </block>
 
-  <!-- 分析中遮罩 -->
+  <!-- BUG-UI67：沿用已有阶段计时器，展示照片与四步清单 -->
   <view class="analyzing-mask" wx:if="{{isAnalyzing}}">
     <view class="vet-loading-card analyzing-card">
+      <image wx:if="{{imagePaths.length}}" class="analyzing-photo" src="{{imagePaths[0]}}" mode="aspectFill" />
       <view class="vet-title-md">正在生成初筛报告</view>
-      <view class="analyzing-desc-text">{{analyzingStepText}}</view>
+      <view class="analyzing-steps">
+        <!-- BUG-UI73：两行视窗内上下往返，四个阶段均可依次看到 -->
+        <view class="analyzing-steps-track">
+        <view class="analyzing-step {{analyzingStep > 0 ? 'is-done' : 'is-current'}}">识别皮损特征</view>
+        <view class="analyzing-step {{analyzingStep > 1 ? 'is-done' : (analyzingStep === 1 ? 'is-current' : '')}}">比对临床特征</view>
+        <view class="analyzing-step {{analyzingStep > 2 ? 'is-done' : (analyzingStep === 2 ? 'is-current' : '')}}">综合分析</view>
+        <view class="analyzing-step {{analyzingStep === 3 ? 'is-current' : ''}}">整理报告</view>
+        </view>
+      </view>
       <view class="vet-loading-line"></view>
     </view>
   </view>

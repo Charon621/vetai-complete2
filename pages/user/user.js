@@ -2,6 +2,7 @@ var storage = require('../../utils/storage')
 var analytics = require('../../utils/analytics')
 var chatDoctor = require('../../utils/chatDoctor')
 var imageUtil = require('../../utils/image')
+var config = require('../../utils/config')
 
 var ISSUE_LABELS = {
   diagnosis_wrong: '诊断方向不准',
@@ -42,11 +43,12 @@ function mapToList(map, labels) {
 
 function recentText(records) {
   if (!records || !records.length) return '--'
-  var raw = records[0].timestamp || records[0].dateStr || ''
-  var parsed = Date.parse(String(raw))
+  // 优先用数字时间戳 createdAt；旧记录回退解析本地化字符串
+  var raw = records[0].createdAt || records[0].timestamp || records[0].dateStr || ''
+  var parsed = typeof raw === 'number' ? raw : Date.parse(String(raw))
   if (!isNaN(parsed)) {
     var d = new Date(parsed)
-    return (d.getMonth() + 1) + '/' + d.getDate()
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日'
   }
   return '最近'
 }
@@ -66,7 +68,10 @@ Page({
     storageModeText: '仅本机保存',
     recentText: '--',
     isDarkMode: false,
-    appVersion: '2.0',
+    // BUG-UI38：开发者面板门禁，默认关闭
+    isDev: !!config.SHOW_DEV_PANEL,
+    // BUG-UI39：版本号原先硬编码 '2.0'，与 package.json 的 3.0.0 矛盾
+    appVersion: config.APP_VERSION || '3.0.0',
     expandedSection: null
   },
 
@@ -79,7 +84,7 @@ Page({
 
   onShow: function () {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 2 })
+      this.getTabBar().syncSelected(2)
     }
     if (this._loaded) this.loadUserData()
     var app = getApp()
@@ -109,36 +114,44 @@ Page({
     })
   },
 
+  // 本机空间切换：入口在账户区，普通用户可见。
+  // showActionSheet 的 itemList 上限 6 项，所以「本机其他空间」最多列 4 个；
+  // 当前所在空间不再重复出现在列表里。
   switchSpace: function () {
     var self = this
-    var knownUsers = storage.getKnownUsers()
-    var items = ['新建本机空间', '切回本机访客'].concat(knownUsers.map(function (u) {
-      return u.nickName || '未命名空间'
-    }))
+    var current = storage.getCurrentUser()
+    var others = storage.getKnownUsers().filter(function (u) {
+      return !current || u.id !== current.id
+    }).slice(0, 4)
+
+    var items = ['新建本机空间']
+    var actions = [function () { self.showNicknameInput() }]
+
+    if (current) {
+      items.push('切回本机访客')
+      actions.push(function () {
+        storage.logoutUser()
+        self.loadUserData()
+        wx.showToast({ title: '已切回访客', icon: 'success' })
+      })
+    }
+
+    others.forEach(function (u) {
+      items.push(u.nickName || '未命名空间')
+      actions.push(function () {
+        storage.loginUser({ nickName: u.nickName, id: u.id, avatarUrl: u.avatarUrl || '' })
+        self.loadUserData()
+        wx.showToast({ title: '已切换空间', icon: 'success' })
+      })
+    })
+
     wx.showActionSheet({
       itemList: items,
       success: function (res) {
-        if (res.tapIndex === 0) {
-          self.showNicknameInput()
-          return
-        }
-        if (res.tapIndex === 1) {
-          storage.logoutUser()
-          self.loadUserData()
-          wx.showToast({ title: '已切回访客', icon: 'success' })
-          return
-        }
-        var selected = knownUsers[res.tapIndex - 2]
-        if (!selected) return
-        storage.loginUser({ nickName: selected.nickName, id: selected.id, avatarUrl: selected.avatarUrl || '' })
-        self.loadUserData()
-        wx.showToast({ title: '已切换空间', icon: 'success' })
+        var fn = actions[res.tapIndex]
+        if (fn) fn()
       }
     })
-  },
-
-  login: function () {
-    this.switchSpace()
   },
 
   // ── 空间资料编辑（BUG-C9：建好空间后改名/换头像）──────────────
@@ -262,7 +275,7 @@ Page({
       title: '切回本机访客',
       content: '将切回默认本机访客空间。其他本机空间的数据仍保留在设备中。',
       confirmText: '切换',
-      confirmColor: '#c76f5a',
+      confirmColor: '#9C3A25',
       success: function (res) {
         if (!res.confirm) return
         storage.logoutUser()
@@ -298,7 +311,7 @@ Page({
       title: '清空记录',
       content: '将删除当前本机空间下的全部问诊记录，宠物档案保留。',
       confirmText: '清空',
-      confirmColor: '#c76f5a',
+      confirmColor: '#9C3A25',
       success: function (res) {
         if (!res.confirm) return
         storage.clearHistory()
@@ -361,7 +374,7 @@ Page({
       title: '清除数据',
       content: '将删除当前本机空间的全部记录、档案、聊天草稿和反馈数据。此操作不可恢复。',
       confirmText: '清除',
-      confirmColor: '#b3261e',
+      confirmColor: '#9C3A25',
       success: function (res) {
         if (!res.confirm) return
         storage.clearHistory()

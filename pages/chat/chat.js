@@ -19,7 +19,8 @@ function formatTime(ts) {
 function formatMessage(msg) {
   if (!msg) return null
   return {
-    id: msg.id, role: msg.role, text: msg.text || '',
+    id: msg.id, role: msg.role,
+    text: msg.role === 'doctor' ? chatDoctor.toPlainDoctorText(msg.text) : (msg.text || ''),
     image: msg.image || '', images: msg.images || [],
     quickReplies: msg.quickReplies || [],
     isUser: msg.role === 'user', isDoctor: msg.role === 'doctor',
@@ -40,11 +41,12 @@ Page({
   data: {
     messages: [], inputText: '', quickReplies: [],
     inputType: 'text', placeholder: '输入消息…',
-    showProfilePicker: false, profiles: [],
+    showProfilePicker: false, pickerClosing: false, profiles: [],
+    composerFocused: false,
     statusBarHeight: 20,
     isAnalyzing: false, draftPetName: '',
-    showProgress: false, progressText: '',
-    showNewBtn: false, restoredNotice: false, scrollIntoView: '',
+    showProgress: false, progressText: '', showSkip: false,
+    restoredNotice: false, scrollIntoView: '',
     menuRight: 0,
     uploadedPhotos: [], uploadedPhotoBoxes: [], showPhotoActions: false,
     selectorVisible: false, selectorImageIndex: -1, selectorImagePath: '',
@@ -88,6 +90,10 @@ Page({
     // 追问阶段回到页面：保持底部输入可用（新问诊/历史按钮常驻顶部）
   },
 
+  onUnload: function () {
+    if (this._pickerTimer) clearTimeout(this._pickerTimer)
+  },
+
   // ── 档案选择 ──────────────────────────────
 
   checkProfilesAndStart: function () {
@@ -101,6 +107,7 @@ Page({
     if (profiles && profiles.length > 0) {
       self.setData({
         showProfilePicker: true,
+        pickerClosing: false,
         profiles: profiles.map(function (p) {
           return {
             id: p.id, petName: p.petName,
@@ -118,18 +125,26 @@ Page({
   onPickProfile: function (e) {
     var id = e.currentTarget.dataset.id
     var profile = storage.getPetProfileById(id)
-    this.setData({ showProfilePicker: false })
-    this.initChat(profile || null)
+    this.dismissProfilePicker(profile || null, true)
   },
 
   onPickNewProfile: function () {
-    this.setData({ showProfilePicker: false })
-    this.initChat(null)
+    this.dismissProfilePicker(null, true)
   },
 
   closeProfilePicker: function () {
-    this.setData({ showProfilePicker: false })
-    if (!this._session) this.initChat(null)
+    this.dismissProfilePicker(null, false)
+  },
+
+  dismissProfilePicker: function (profile, picked) {
+    if (!this.data.showProfilePicker || this.data.pickerClosing) return
+    this.setData({ pickerClosing: true })
+    if (picked || !this._session) this.initChat(profile)
+    var self = this
+    this._pickerTimer = setTimeout(function () {
+      self._pickerTimer = null
+      self.setData({ showProfilePicker: false, pickerClosing: false })
+    }, 240)
   },
 
   // ── 初始化对话 ──────────────────────────────
@@ -175,6 +190,8 @@ Page({
   // ── 输入处理 ──────────────────────────────
 
   onInput: function (e) { this.setData({ inputText: e.detail.value }) },
+  onInputFocus: function () { this.setData({ composerFocused: true }) },
+  onInputBlur: function () { this.setData({ composerFocused: false }) },
 
   onSendText: function () {
     if (this._isProcessing) return
@@ -286,6 +303,7 @@ Page({
       var boxes = self._session.draft.lesionBoxes || []
       while (boxes.length < existingPathCount) boxes.push(null)
       self._session.draft.photoPaths = self._session.draft.photoPaths.concat(finalPaths)
+      self._session.draft.pendingPhotoAnalysis = !self._session.draft.petType
       // photoBase64s 仅保留在内存中用于当次诊断，不持久化
       self._session.draft.photoBase64s = self._session.draft.photoBase64s.concat(photoBatch.map(function (p) { return p.base64 }))
       self._session.draft.lesionBoxes = boxes.concat(finalPaths.map(function (_, i) {
@@ -303,7 +321,7 @@ Page({
       })
       self._scrollToBottom()
 
-      if (self._session.phase !== chatDoctor.PHASE.COMPLAINT && self._session.phase !== chatDoctor.PHASE.GREETING) {
+      if (self._session.draft.petType) {
         var receiveMsg = {
           id: 'doc_' + Date.now(), role: 'doctor',
           text: '收到，我看看照片…',
@@ -324,9 +342,22 @@ Page({
           self._runDiagnosis()
         }, 500)
       } else {
+        self._session.phase = chatDoctor.PHASE.COMPLAINT
+        var askType = {
+          id: 'doc_' + Date.now(), role: 'doctor',
+          text: '照片收到了。先告诉我是猫、狗还是其他动物，我再结合照片分析。',
+          quickReplies: chatDoctor.getReaskQuickReplies(self._session.draft),
+          inputType: 'text', placeholder: '告诉我宠物种类…', timestamp: Date.now()
+        }
+        appendSessionMessage(self._session, askType)
         chatDoctor.saveDraft(self._session)
+        self.setData({
+          messages: self._formatMessages(), quickReplies: askType.quickReplies,
+          inputType: 'text', placeholder: askType.placeholder
+        })
+        self._updateProgress()
+        self._scrollToBottom()
         self._isProcessing = false
-        wx.showToast({ title: '已收到照片，请先描述问题', icon: 'none' })
       }
     }
 
@@ -360,6 +391,22 @@ Page({
   },
 
   // ── 圈选患处 ──────────────────────────────
+
+  // BUG-UI25：待上传的照片原先不能点开看大图，用户无法确认拍清楚没有
+  onPreviewPhoto: function (e) {
+    var photos = this.data.uploadedPhotos || []
+    if (!photos.length) return
+    var idx = parseInt(e.currentTarget.dataset.index, 10)
+    if (isNaN(idx) || idx < 0 || idx >= photos.length) idx = 0
+    wx.previewImage({ current: photos[idx], urls: photos })
+  },
+
+  // BUG-UI25：对话里的照片也支持点开看大图
+  onPreviewMessageImage: function (e) {
+    var src = e.currentTarget.dataset.src
+    if (!src) return
+    wx.previewImage({ current: src, urls: [src] })
+  },
 
   onOpenLesionSelector: function (e) {
     var idx = parseInt(e.currentTarget.dataset.index)
@@ -516,7 +563,9 @@ Page({
         })
         .then(function (result) {
           if (!result || !result.success) {
-            self._handleDiagnosisError((result && result.error) || '分析失败，请重试')
+            // BUG-UI45：统一走 api.friendlyError，避免 raw errMsg（cloud.callFunction:fail 等）
+            // 以及「知识库」这类内部机制词直接出现在用户可见气泡里
+            self._handleDiagnosisError(api.friendlyError((result && result.error) || ''))
             return
           }
           self._session.draft.diagnosisResult = result
@@ -555,9 +604,8 @@ Page({
         })
         .catch(function (err) {
           console.error('[chat] diagnose failed:', err)
-          var errMsg = (err && err.errMsg) || (err && err.message) || '网络异常，请重试'
-          if (errMsg.indexOf('timeout') >= 0) errMsg = '分析超时，请重试'
-          self._handleDiagnosisError(errMsg)
+          // BUG-UI45：同样走友好化，原先只有含 timeout 的串被替换，其余 raw errMsg 直接透出
+          self._handleDiagnosisError(api.friendlyError(err))
         })
     }
 
@@ -579,12 +627,13 @@ Page({
   _handleDiagnosisError: function (errMsg) {
     var self = this
     self._session.draft.diagnosisResult = { success: false, error: errMsg }
-    self._session.phase = chatDoctor.PHASE.RESULT
+    self._session.draft.pendingPhotoAnalysis = false
+    self._session.phase = chatDoctor.PHASE.COMPLAINT
     chatDoctor.saveDraft(self._session)
 
     var resultMsg = {
       id: 'result_' + Date.now(), role: 'doctor',
-      text: '抱歉，分析出了点问题：' + errMsg + '\n\n可以重新拍几张照片试试，或者多描述一些细节。',
+      text: '抱歉，照片分析出了点问题：' + errMsg + '\n\n你可以继续描述或提问，也可以重新添加照片。',
       timestamp: Date.now()
     }
     appendSessionMessage(self._session, resultMsg)
@@ -592,7 +641,7 @@ Page({
     self.setData({
       messages: self._formatMessages(),
       isAnalyzing: false, inputType: 'text',
-      quickReplies: [{ value: 'new', label: '开始新问诊', field: 'action', key: 'act_new' }]
+      quickReplies: [], placeholder: '继续描述或提问…'
     })
     self._updateProgress()
     self._scrollToBottom()
@@ -645,7 +694,7 @@ Page({
     }
     var record = storage.addRecord({
       profileId: draft.profileId || '',
-      petName: draft.petName, petType: draft.petType, petTypeLabel: draft.petTypeLabel,
+      petName: draft.petName || '未命名宠物', petType: draft.petType, petTypeLabel: draft.petTypeLabel,
       species: draft.petType, breed: draft.breed,
       gender: draft.gender, genderLabel: draft.genderLabel,
       age: draft.age, ageLabel: draft.ageLabel,
@@ -724,19 +773,9 @@ Page({
     return out
   },
 
-  // 问诊进度：仅在提问阶段展示「已问 N / 约 5 个问题」
+  // 多轮对话没有固定题数，也不需要“跳过这题”的问卷式入口。
   _updateProgress: function () {
-    var phase = this._session && this._session.phase
-    var questioning = phase === chatDoctor.PHASE.GREETING || phase === chatDoctor.PHASE.COMPLAINT
-    var count = 0
-    var msgs = (this._session && this._session.messages) || []
-    for (var i = 0; i < msgs.length; i++) {
-      if (msgs[i] && msgs[i].role === 'doctor' && (msgs[i].text || '').length) count++
-    }
-    this.setData({
-      showProgress: questioning && count > 0,
-      progressText: '已问 ' + Math.min(count, 5) + ' / 约 5 个问题'
-    })
+    this.setData({ showProgress: false, showSkip: false, progressText: '' })
   },
 
   onSkipQuestion: function () {

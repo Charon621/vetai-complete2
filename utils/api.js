@@ -1825,7 +1825,8 @@ function friendlyError(raw) {
   if (!msg) return '未知错误，请稍后重试'
   if (msg.indexOf('正在分析中') >= 0) return msg
   if (msg.indexOf('full-diagnosis DashScope request timeout') >= 0) return 'AI 完整诊断响应超时，请减少图片数量或稍后重试'
-  if (msg.indexOf('vision-precheck DashScope request timeout') >= 0) return '视觉预检响应超时，已建议关闭知识库后重试'
+  // BUG-UI45：用户可见文案不得提「知识库」等内部机制，也不该建议用户去关一个界面上不存在的开关
+  if (msg.indexOf('vision-precheck DashScope request timeout') >= 0) return '分析服务响应超时，请重试'
   if (msg.indexOf('DashScope request timeout') >= 0) return 'AI 模型响应超时，请减少图片数量或稍后重试'
   if (msg.indexOf('云端返回为空') >= 0 || msg.indexOf('格式不匹配') >= 0) return '服务响应异常，请稍后重试'
   if (msg.indexOf('云函数调用失败') >= 0) {

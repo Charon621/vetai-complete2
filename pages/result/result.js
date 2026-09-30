@@ -140,6 +140,9 @@ function buildSourceList(value) {
       item.url = typeof source.url === 'string' ? source.url : ''
       item.tier = typeof source.tier === 'string' ? source.tier : ''
     }
+    // BUG-UI64：来源只展示域名，完整链接字段保留
+    var hostMatch = /^https?:\/\/([^\/?#:]+)/i.exec(item.url || '')
+    item.domain = hostMatch ? hostMatch[1].replace(/^www\./i, '') : ''
     if (!item.title) continue
     var key = item.url || item.title
     if (seen[key]) continue
@@ -195,9 +198,11 @@ Page({
     this._loadLesionOverlays(Array.isArray(record.lesionBoxes) ? record.lesionBoxes : [])
   },
 
-  // 圈选坐标（0-1 归一化，相对完整原图）映射到 aspectFill 方形裁切容器
+  // 圈选坐标（0-1 归一化，相对完整原图）映射到 aspectFill 裁切容器。
+  // 容器是报告页拱窗照片（.dx-arch 168×208rpx），宽高比不是 1，需按容器比例计算裁切
   _loadLesionOverlays: function (lesionBoxes) {
     var self = this
+    var containerAspect = 168 / 208
     var items = (this.data.record.imageItems || []).slice()
     var pending = 0
     var changed = false
@@ -211,9 +216,10 @@ Page({
           var iw = info.width
           var ih = info.height
           if (!iw || !ih) return
-          // aspectFill：缩放后短边贴满容器，长边居中裁切
-          var dwF = Math.max(1, iw / ih)
-          var dhF = Math.max(1, ih / iw)
+          // aspectFill：图片等比缩放到恰好盖满容器，超出的一边居中裁切
+          var imageAspect = iw / ih
+          var dwF = Math.max(1, imageAspect / containerAspect)
+          var dhF = Math.max(1, containerAspect / imageAspect)
           var oxF = (1 - dwF) / 2
           var oyF = (1 - dhF) / 2
           var left = (oxF + box.x * dwF) * 100
@@ -293,18 +299,18 @@ Page({
     // 报告编号：取记录 ID 尾部 8 位字母数字，单据化呈现
     var reportNo = String(record.id || '').replace(/[^a-zA-Z0-9]/g, '').slice(-8).toUpperCase() || '--'
 
-    // 顶部一行 meta：宠物 · 部位 · 日期
+    // 顶部 meta：宠物、部位与日期
     var petLabel = (record.petName && record.petName !== '临时问诊')
       ? record.petName : (record.petTypeLabel || '本次问诊')
     var shortDate = formatMonthDay(record.createdAt || record.generatedAt || record.timestamp)
-    var metaLine = [petLabel, record.bodyPartLabel, shortDate].filter(Boolean).join(' · ')
+    var metaLine = [petLabel, record.bodyPartLabel].filter(Boolean).join('，')
 
     // 次要可能：鉴别列表第 2 项起，文字化匹配度
     var secondaryText = ''
     if (diseaseList.length > 1) {
       secondaryText = '次要可能：' + diseaseList.slice(1).map(function (d) {
         return d.name + '（' + d.levelText + '）'
-      }).join(' · ')
+      }).join('；')
     }
 
     // 主病名副标题：有 lesionNameCn 且与主名不同时作为倾向说明
@@ -348,7 +354,9 @@ Page({
       diseaseSub: diseaseSub,
       secondaryText: secondaryText,
       metaLine: metaLine,
+      shortDate: shortDate,
       severityChip: action.chip,
+      severityLevel: ({ low: 1, moderate: 2, urgent: 3, emergency: 4 })[urgency] || 2,
       actionConclusion: action.conclusion,
       actionNote: action.note,
       diagnosisProbabilityNote: sanitizeReportText(record.diagnosisProbabilityNote || SCORE_NOTE),
@@ -363,7 +371,7 @@ Page({
       vetList: splitAdvice(record.whenToSeeVet || record.vetWarning, '如出现快速扩散、流脓、破溃、明显疼痛，应尽快就医'),
       sourceList: buildSourceList(record.ragSources),
       reportDisclaimer: REPORT_DISCLAIMER,
-      footerLine: 'NO.' + reportNo + ' · ' + imageItems.length + ' 张照片 · 仅供参考，不能替代兽医诊断',
+      footerLine: 'NO.' + reportNo + '，' + imageItems.length + ' 张照片，仅供参考，不能替代兽医诊断',
       prevCompare: prevCompare
     })
 
@@ -620,11 +628,11 @@ Page({
         ctx.scale(dpr, dpr)
 
         /* ── Background ── */
-        ctx.fillStyle = '#FFFFFF'
+        ctx.fillStyle = '#F7F3EA'
         ctx.fillRect(0, 0, W, H)
 
         /* ── Header bar ── */
-        ctx.fillStyle = '#113B31'
+        ctx.fillStyle = '#BF5E3B'
         ctx.fillRect(0, 0, W, 142)
         ctx.fillStyle = '#ffffff'
         ctx.font = 'bold 34px sans-serif'
@@ -635,26 +643,26 @@ Page({
 
         /* ── Card 1: Diagnosis ── */
         self.drawCard(ctx, 34, 174, W - 68, 210)
-        ctx.fillStyle = '#66716B'
+        ctx.fillStyle = '#8C8475'
         ctx.font = '22px sans-serif'
         ctx.fillText('可能问题', 62, 220)
-        ctx.fillStyle = '#0F1F1A'
+        ctx.fillStyle = '#221E18'
         ctx.font = 'bold 36px sans-serif'
         self.drawLines(ctx, record.disease || '暂无明确结果', 62, 268, W - 250, 40, 2)
-        ctx.fillStyle = '#113B31'
+        ctx.fillStyle = '#BF5E3B'
         ctx.font = 'bold 44px sans-serif'
         ctx.fillText(record.confidenceText || '暂无', W - 210, 280)
-        ctx.fillStyle = '#66716B'
+        ctx.fillStyle = '#8C8475'
         ctx.font = '20px sans-serif'
         // 口径统一：匹配分不是发生概率，分享图不能写“发生概率”（BUG-J2）
         ctx.fillText('匹配度（非确诊）', W - 210, 316)
 
         /* ── Card 2: Observation ── */
         self.drawCard(ctx, 34, 414, W - 68, 214)
-        ctx.fillStyle = '#0F1F1A'
+        ctx.fillStyle = '#221E18'
         ctx.font = 'bold 28px sans-serif'
         ctx.fillText('观察依据', 62, 462)
-        ctx.fillStyle = '#0F1F1A'
+        ctx.fillStyle = '#221E18'
         ctx.font = '23px sans-serif'
         self.drawLines(ctx, record.observationText || record.supportText || '暂无观察描述', 62, 504, W - 124, 32, 4)
 
@@ -662,22 +670,22 @@ Page({
         var y = 658
         if (record.diseaseList && record.diseaseList.length) {
           self.drawCard(ctx, 34, y, W - 68, 260)
-          ctx.fillStyle = '#0F1F1A'
+          ctx.fillStyle = '#221E18'
           ctx.font = 'bold 28px sans-serif'
           ctx.fillText('鉴别诊断', 62, y + 48)
           for (var i = 0; i < Math.min(record.diseaseList.length, 3); i++) {
             var item = record.diseaseList[i]
             var rowY = y + 88 + i * 54
-            ctx.fillStyle = '#0F1F1A'
+            ctx.fillStyle = '#221E18'
             ctx.font = 'bold 23px sans-serif'
             ctx.fillText((i + 1) + '. ' + item.name, 62, rowY)
-            ctx.fillStyle = '#113B31'
+            ctx.fillStyle = '#BF5E3B'
             ctx.font = 'bold 24px sans-serif'
             ctx.fillText(item.scoreText, W - 150, rowY)
-            ctx.fillStyle = '#E4E0D5'
+            ctx.fillStyle = '#E7DECC'
             self.roundRect(ctx, 62, rowY + 16, W - 170, 8, 4)
             ctx.fill()
-            ctx.fillStyle = '#113B31'
+            ctx.fillStyle = '#BF5E3B'
             self.roundRect(ctx, 62, rowY + 16, Math.max(4, (W - 170) * item.percent / 100), 8, 4)
             ctx.fill()
           }
@@ -690,16 +698,16 @@ Page({
         var adviceH = hasDdx ? 210 : 330
         var adviceLines = hasDdx ? 4 : 7
         self.drawCard(ctx, 34, y, W - 68, adviceH)
-        ctx.fillStyle = '#0F1F1A'
+        ctx.fillStyle = '#221E18'
         ctx.font = 'bold 28px sans-serif'
         ctx.fillText('护理与就医建议', 62, y + 48)
-        ctx.fillStyle = '#0F1F1A'
+        ctx.fillStyle = '#221E18'
         ctx.font = '23px sans-serif'
         var advice = (record.homeCareList || []).concat(record.watchList || [], record.vetList || []).slice(0, adviceLines).join('。')
         self.drawLines(ctx, advice, 62, y + 90, W - 124, 32, adviceLines)
 
         /* ── Disclaimer ── */
-        ctx.fillStyle = '#66716B'
+        ctx.fillStyle = '#8C8475'
         ctx.font = '18px sans-serif'
         self.drawLines(ctx, REPORT_DISCLAIMER, 42, H - 86, W - 84, 24, 2)
 
@@ -731,13 +739,9 @@ Page({
   },
 
   drawCard: function (ctx, x, y, w, h) {
-    ctx.fillStyle = '#ffffff'
+    ctx.fillStyle = '#FFFDF8'
     this.roundRect(ctx, x, y, w, h, 24)
     ctx.fill()
-    ctx.strokeStyle = '#E4E0D5'
-    ctx.lineWidth = 2
-    this.roundRect(ctx, x, y, w, h, 24)
-    ctx.stroke()
   },
 
   drawLines: function (ctx, text, x, y, maxWidth, lineHeight, maxLines) {

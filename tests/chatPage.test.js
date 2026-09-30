@@ -34,6 +34,19 @@ function createPage(data) {
 }
 
 async function run() {
+  const restoredPage = createPage()
+  restoredPage._session = {
+    messages: [
+      { id: 'old-doctor', role: 'doctor', text: '**先观察**\n* 留意渗液', timestamp: 1 },
+      { id: 'old-user', role: 'user', text: '我输入的 * 应保留', timestamp: 2 }
+    ]
+  }
+  const restoredMessages = restoredPage._formatMessages()
+  assert.strictEqual(restoredMessages[0].text, '先观察\n留意渗液',
+    'saved doctor messages should also display without markdown syntax')
+  assert.strictEqual(restoredMessages[1].text, '我输入的 * 应保留',
+    'the display cleanup must not alter the user message')
+
   const firstBox = { x: 0.1, y: 0.1, width: 0.2, height: 0.2 }
   const secondBox = { x: 0.3, y: 0.3, width: 0.2, height: 0.2 }
   const existingBox = { x: 0.6, y: 0.6, width: 0.2, height: 0.2 }
@@ -79,6 +92,37 @@ async function run() {
     [existingBox, replacementBox],
     'confirmed photos and lesion boxes must preserve the same ordering')
   assert.deepStrictEqual(page.data.uploadedPhotoBoxes, [])
+  assert.ok(page.data.messages[page.data.messages.length - 1].text.indexOf('猫、狗') >= 0,
+    'photo-first flow should ask only for species when it is unknown')
+
+  const readyPage = createPage({
+    uploadedPhotos: ['data:image/jpeg;base64,READY'],
+    uploadedPhotoBoxes: [null], showPhotoActions: true
+  })
+  readyPage._session = {
+    phase: chatDoctor.PHASE.COMPLAINT,
+    draft: { petType: 'cat', complaint: '耳朵发红', photoPaths: [], photoBase64s: [], lesionBoxes: [] },
+    messages: []
+  }
+  let diagnosisStarted = false
+  readyPage._runDiagnosis = function () { diagnosisStarted = true }
+  readyPage.onConfirmPhotos()
+  await new Promise(function (resolve) { setTimeout(resolve, 550) })
+  assert.strictEqual(readyPage._session.phase, chatDoctor.PHASE.ANALYZING,
+    'with known species, uploading photos should start analysis without a forced questionnaire')
+  assert.strictEqual(diagnosisStarted, true)
+
+  const failedPage = createPage()
+  failedPage._session = {
+    phase: chatDoctor.PHASE.ANALYZING,
+    draft: { petType: 'cat', photoPaths: ['/user-data/old.jpg'], pendingPhotoAnalysis: true },
+    messages: []
+  }
+  failedPage._handleDiagnosisError('服务暂时不可用')
+  assert.strictEqual(failedPage._session.phase, chatDoctor.PHASE.COMPLAINT,
+    'a failed photo analysis must return to interactive text consultation')
+  assert.strictEqual(failedPage._session.draft.pendingPhotoAnalysis, false)
+  assert.strictEqual(failedPage.data.inputType, 'text')
 
   let chooseImageCalled = false
   wx.chooseImage = function () { chooseImageCalled = true }

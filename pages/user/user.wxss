@@ -1,55 +1,63 @@
 /* ═══════════════════════════════════════════════════════
-   User Page — VetAI DS v5
-   账户 / 细线设置组 / 开发者选项 / 紧急条
+   User Page — VetAI DS v7「暖阳 · 衬线」
+   账户 / 统计三格 / 设置卡片 / 紧急提示 / 品牌收尾
+   不画分割线：设置项是一张卡片里的若干行，行间只靠留白
    ═══════════════════════════════════════════════════════ */
 
+/* BUG-UI2：底部留白只认 --tab-bar-h，不再用 120rpx 魔数 */
 .user-page {
-  padding-bottom: calc(var(--sp-8) + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--sp-6) + var(--tab-bar-h) + env(safe-area-inset-bottom));
 }
 
-/* ── 账户区 ── */
 .account-flat {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  margin-top: var(--sp-2);
+  margin-top: var(--sp-3);
 }
 
 .account-avatar {
-  width: 108rpx;
-  height: 108rpx;
+  position: relative;
+  width: 116rpx;
+  height: 116rpx;
   border-radius: 50%;
   background: var(--brand);
-  color: var(--lime);
+  color: var(--on-brand);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-serif);
-  font-size: 40rpx;
-  font-weight: 900;
-  overflow: hidden;
+  font-size: var(--fs-hero);
+  font-weight: 700;
   flex-shrink: 0;
 }
 
-.account-avatar-img { width: 100%; height: 100%; }
+.account-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
 
+/* 「换」角标：40rpx 圆内容区仅 32rpx，原 18rpx 字几乎不可辨，抬到 --fs-mini（BUG-UI37） */
 .account-avatar-badge {
   position: absolute;
   right: -4rpx;
   bottom: -4rpx;
-  width: 40rpx;
-  height: 40rpx;
+  width: 44rpx;
+  height: 44rpx;
   border-radius: 50%;
-  background: var(--brand-dark);
-  border: 3rpx solid var(--card);
-  color: var(--lime);
-  font-size: 20rpx;
-  font-weight: 900;
+  background: var(--ink);
+  border: 4rpx solid var(--bg);
+  color: var(--on-ink);
+  font-size: var(--fs-mini);
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
 }
+
+.account-copy { flex: 1; min-width: 0; }
 
 .account-name-row {
   display: flex;
@@ -57,152 +65,212 @@
   gap: var(--sp-2);
 }
 
-.account-rename {
-  font-size: var(--fs-caption);
-  color: var(--gold);
-  border: 2rpx solid var(--gold-line);
-  border-radius: 999rpx;
-  padding: 2rpx 16rpx;
-  flex-shrink: 0;
-}
-
-.account-rename:active {
-  background: var(--gold-mist);
-}
-
 .account-name {
   font-family: var(--font-serif);
   font-size: var(--fs-display);
-  font-weight: 900;
+  font-weight: 800;
   color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+.account-rename {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  min-height: 56rpx;
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-xs);
+  background: var(--surface);
+  color: var(--body);
+  font-size: var(--fs-mini);
+}
+
+.account-rename:active { opacity: 0.7; }
+
 .account-desc {
-  margin-top: 4rpx;
+  margin-top: 6rpx;
   color: var(--muted);
   font-size: var(--fs-caption);
 }
 
-/* ── 统计一行细线 ── */
-.stat-line {
-  margin-top: var(--sp-4);
-  display: flex;
+/* 本机空间入口：陶土色文字链，热区用伪元素撑到 88rpx，不动盒模型（BUG-UI5b） */
+.account-space-link {
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-2) 0;
-  border-top: 4rpx solid var(--text);
-  border-bottom: 1rpx solid var(--line);
+  gap: 4rpx;
+  margin-top: var(--sp-1);
+  color: var(--brand-dark);
   font-size: var(--fs-caption);
+  font-weight: 600;
+}
+
+.account-space-link:active { opacity: 0.7; }
+
+.account-space-link::after {
+  content: "";
+  position: absolute;
+  top: -26rpx;
+  right: -16rpx;
+  bottom: -26rpx;
+  left: -8rpx;
+}
+
+.account-space-arrow {
+  width: 24rpx;
+  height: 24rpx;
+  flex: none;
+}
+
+/* ── 统计三格 ── */
+.stat-grid {
+  margin-top: var(--sp-5);
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.stat-cell {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--card);
+}
+
+.stat-num {
+  font-family: var(--font-serif);
+  font-size: var(--fs-display);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stat-num-sm {
+  font-size: var(--fs-heading);
+  line-height: 1.5;
+}
+
+.stat-label {
+  font-size: var(--fs-mini);
+  /* --muted 在 --card 上只有 3.64:1，小字改 --body（BUG-UI4） */
   color: var(--body);
 }
 
-.stat-line-num {
-  font-size: 30rpx;
-  font-weight: 700;
-  color: var(--text);
-  font-family: var(--font-mono);
-}
-
-.stat-line-recent {
-  margin-left: auto;
-  font-family: var(--font-mono);
+/* 统计为 0 时的引导文案 */
+.stat-empty-hint {
+  margin-top: var(--sp-2);
+  color: var(--muted);
   font-size: var(--fs-mini);
-  letter-spacing: 2rpx;
-  color: var(--gold);
 }
 
-/* ── 设置细线组 ── */
-.settings-flat { margin-top: var(--sp-6); }
+/* ── 设置卡片 ── */
+.settings-flat {
+  margin-top: var(--sp-6);
+  padding: var(--sp-1) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--card);
+}
 
 .section-eyebrow {
-  color: var(--gold);
-  font-family: var(--font-mono);
-  font-size: var(--fs-mini);
-  font-weight: 600;
-  letter-spacing: 4rpx;
-  margin-bottom: var(--sp-1);
+  padding: var(--sp-3) 0 4rpx;
+  color: var(--muted);
+  font-family: var(--font-serif);
+  font-size: var(--fs-caption);
 }
 
+/* 行高抬到 100rpx，整行可点（BUG-UI5） */
 .flat-item {
   display: flex;
   align-items: center;
+  min-height: 100rpx;
   padding: var(--sp-3) 0;
-  border-bottom: 1rpx solid var(--line);
 }
 
-.flat-item:active { opacity: 0.7; }
+.flat-item:active { opacity: 0.6; }
 
 .flat-title {
   flex: 1;
+  min-width: 0;
   font-size: var(--fs-body);
-  font-weight: 600;
   color: var(--text);
 }
 
 .flat-title.dev { color: var(--muted); }
 
 .flat-note {
-  color: var(--muted);
+  margin-right: var(--sp-1);
+  color: var(--body);
   font-size: var(--fs-mini);
-  margin-right: var(--sp-2);
+  text-align: right;
 }
 
+/* 图标尺寸对齐 --vet-icon-sm(28rpx) 的视觉重量，宽度用 32rpx 保持旋转中心稳定 */
 .flat-chevron {
-  width: 14rpx;
-  height: 14rpx;
-  border-top: 3rpx solid var(--faint);
-  border-right: 3rpx solid var(--faint);
-  transform: rotate(45deg);
+  width: 32rpx;
+  height: 32rpx;
+  flex: none;
   transition: transform var(--dur-base) var(--ease-standard);
 }
 
-.flat-chevron.open { transform: rotate(135deg); }
+.flat-chevron.open { transform: rotate(180deg); }
 
-/* 展开面板：wx:if 挂载时用入场动画替代瞬时切换 */
+/* 展开面板：沙色底块，wx:if 挂载时用入场动画 */
 .flat-detail {
-  padding: var(--sp-2) 0 var(--sp-3);
-  border-bottom: 1rpx solid var(--line);
+  margin-bottom: var(--sp-2);
+  padding: var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--surface);
   animation: vetFadeUp var(--dur-base) var(--ease-out) both;
 }
 
 .flat-detail-text {
   color: var(--body);
   font-size: var(--fs-caption);
-  line-height: 1.7;
+  line-height: 1.75;
   white-space: pre-wrap;
+  word-break: break-all;
 }
 
 .flat-detail-actions {
   margin-top: var(--sp-2);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-2);
+  gap: var(--sp-1);
 }
 
+.flat-detail-actions:first-child { margin-top: 0; }
+
+/* 热区 72rpx（面板内的次要操作，横向足够宽） */
 .flat-action {
   display: inline-flex;
   align-items: center;
-  min-height: 60rpx;
+  justify-content: center;
+  min-height: 72rpx;
   padding: 0 var(--sp-3);
-  border-radius: 999rpx;
-  border: 1rpx solid var(--brand);
-  color: var(--brand);
+  border-radius: var(--r-xs);
+  background: var(--card);
+  color: var(--text);
   font-size: var(--fs-caption);
-  font-weight: 600;
 }
 
 .flat-action:active { opacity: 0.7; }
 
-.flat-action.danger {
-  border-color: var(--sev-emergency);
-  color: var(--sev-emergency);
-}
+.flat-action.danger { color: var(--sev-emergency); }
 
-/* ── 开发者：反馈分析 ── */
+/* ── 开发者：反馈分析（整块由 isDev 门禁控制，BUG-UI38） ── */
 .dev-analysis {
   margin-top: var(--sp-3);
-  padding-top: var(--sp-2);
-  border-top: 1rpx dashed var(--line);
+  padding: var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--card);
 }
 
 .dev-analysis-title {
@@ -214,7 +282,7 @@
 
 .dev-analysis-sub {
   margin-top: var(--sp-2);
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-mini);
   font-weight: 700;
 }
@@ -224,13 +292,13 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--sp-2);
-  padding: 8rpx 0;
+  padding: var(--sp-1) 0;
   font-size: var(--fs-caption);
   color: var(--body);
 }
 
 .kb-detail-text {
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-mini);
   margin-top: 4rpx;
   line-height: 1.4;
@@ -247,48 +315,60 @@
   align-items: center;
   gap: var(--sp-1);
   padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--r-sm);
+  border-radius: var(--r-xs);
   background: var(--surface);
-  border: 1rpx solid var(--line);
   color: var(--body);
   font-size: var(--fs-caption);
-  font-weight: 600;
 }
 
-.feedback-pill .text-numeric {
-  color: var(--brand);
-}
+.feedback-pill .text-numeric { color: var(--brand); }
 
 /* ── 底部紧急提示条 ── */
 .emergency-strip {
-  margin-top: var(--sp-6);
-  padding: var(--sp-3);
+  margin-top: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
   border-radius: var(--r-md);
-  background: var(--accent-mist);
-  border: 2rpx dashed var(--accent-line);
+  background: var(--accent-soft);
   font-size: var(--fs-caption);
-  line-height: 1.65;
+  line-height: 1.7;
   color: var(--body);
 }
 
-.emergency-strong { color: var(--accent); font-weight: 700; }
+.emergency-strip:active { opacity: 0.9; }
+
+.emergency-strong {
+  margin-right: var(--sp-1);
+  font-family: var(--font-serif);
+  color: var(--accent);
+  font-weight: 700;
+}
 
 .emergency-link {
   color: var(--accent);
   font-weight: 700;
-  border-bottom: 2rpx solid var(--accent-line);
 }
 
-/* ── 鎏金印章收尾 ── */
-.user-seal-wrap {
-  margin-top: var(--sp-5);
-  display: flex;
-  justify-content: center;
-}
-
-.seal-stack {
+/* ── 品牌收尾 ── */
+.user-brand {
+  margin-top: var(--sp-6);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rpx;
+  gap: var(--sp-1);
+}
+
+.user-brand-word {
+  font-family: var(--font-serif);
+  font-size: var(--fs-title);
+  font-weight: 800;
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.user-brand-ai { color: var(--brand); }
+
+/* BUG-UI4：--faint 在纸底上只有 2.51:1，版本号小字改用 --muted */
+.user-brand-sub {
+  font-size: var(--fs-mini);
+  color: var(--muted);
 }

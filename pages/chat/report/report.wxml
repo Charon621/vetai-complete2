@@ -8,55 +8,60 @@ function serial(dateStr) {
 function no(n) {
   return n < 10 ? '0' + n : '' + n
 }
-module.exports = { serial: serial, no: no }
+/* 记录 id 尾 4 位：同一天多次问诊靠它区分 */
+function tail(id) {
+  var s = '' + (id || '')
+  var digits = s.replace(getRegExp('[^0-9a-zA-Z]', 'g'), '')
+  return digits ? digits.slice(-4) : '0000'
+}
+module.exports = { serial: serial, no: no, tail: tail }
 </wxs>
 
 <view class="report-page">
   <block wx:if="{{displayRecord}}">
-    <!-- 处方笺刊头 -->
+    <!-- 刊头：报告编号（日期 + 记录 id 尾号，避免同一天多次问诊编号重复，BUG-UI26） -->
     <view class="report-masthead vet-fade-up">
-      <text class="vet-mono-gold">RPT-{{fmt.serial(displayRecord.dateStr)}}</text>
-      <view class="report-masthead-badge">问诊报告</view>
+      <text class="vet-mono-gold">No. {{fmt.serial(displayRecord.dateStr)}}-{{fmt.tail(displayRecord.id)}}</text>
+      <view class="report-masthead-badge">简版报告</view>
     </view>
-    <view class="vet-divider-strong report-open-rule"></view>
 
-    <!-- 结论区：宠物名 + 鎏金印章 -->
+    <!-- 结论区：宠物名 + 来源标注 -->
     <view class="report-head vet-fade-up vet-stagger-1">
       <view class="report-head-main">
         <view class="vet-title-xl">{{displayRecord.petName}}</view>
         <view class="report-pet-meta">{{displayRecord.petTypeLabel}}{{displayRecord.breed ? '，' + displayRecord.breed : ''}}{{displayRecord.dateStr ? ' / ' + displayRecord.dateStr : ''}}</view>
       </view>
-      <view class="vet-seal report-seal">
-        <text>AI 问诊<text class="vet-seal-sub">VETAI</text></text>
-      </view>
+      <!-- BUG-UI63：双圈印章易被误读为认证，改为来源标注 -->
+      <view class="report-origin">AI 生成 · 仅供参考</view>
     </view>
 
-    <!-- 处方笺结论块：严重度竖条 + chip + 结论 -->
+    <!-- 结论面板：严重度渐变底 + 状态 + 结论 -->
     <view class="report-verdict verdict-{{displayRecord.urgency}} vet-fade-up vet-stagger-2">
-      <view class="verdict-bar"></view>
       <view class="verdict-body">
-        <view class="verdict-chip">{{displayRecord.urgencyText}}</view>
+        <view class="vet-status sev-{{displayRecord.urgency}}">{{displayRecord.urgencyText}}</view>
+        <!-- BUG-UI23：补字段名，原先只渲染值，用户不知道这串粗体字是什么 -->
+        <view class="vet-label verdict-label">初步判断</view>
         <view class="verdict-text" wx:if="{{displayRecord.lines.length > 0}}">{{displayRecord.lines[0].value}}</view>
       </view>
     </view>
 
     <!-- 照片 -->
     <view class="report-photos vet-fade-up vet-stagger-3" wx:if="{{displayRecord.photos.length > 0}}">
-      <scroll-view scroll-x show-scrollbar="{{false}}">
+      <scroll-view class="report-photos-scroll" scroll-x show-scrollbar="{{false}}">
         <view class="report-photos-row">
-          <image wx:for="{{displayRecord.photos}}" wx:key="*this" src="{{item}}" mode="aspectFill" class="report-photo" />
+          <image wx:for="{{displayRecord.photos}}" wx:key="*this" src="{{item}}" mode="aspectFill" class="report-photo"
+            aria-label="患处照片" bindtap="onPreviewPhoto" data-index="{{index}}" />
         </view>
       </scroll-view>
     </view>
 
     <!-- 诊断信息（首条已在结论块呈现，此处从第二条起编号列出） -->
-    <view class="report-sections vet-fade-up vet-stagger-4" wx:if="{{displayRecord.lines.length > 1}}">
+    <view class="report-sections vet-card vet-fade-up vet-stagger-4" wx:if="{{displayRecord.lines.length > 1}}">
       <block wx:for="{{displayRecord.lines}}" wx:key="label">
         <block wx:if="{{index > 0}}">
-          <view class="vet-divider report-rule" wx:if="{{index > 1}}"></view>
           <view class="report-section">
             <view class="report-section-head">
-              <text class="vet-mono-gold">{{fmt.no(index)}}</text>
+              <text class="vet-no report-section-no">{{index}}</text>
               <text class="report-section-label">{{item.label}}</text>
             </view>
             <view class="report-section-value">{{item.value}}</view>
@@ -73,7 +78,7 @@ module.exports = { serial: serial, no: no }
     <!-- 底部操作 -->
     <view class="report-actions">
       <view class="vet-btn vet-btn-secondary report-btn" bindtap="goHistory">查看记录</view>
-      <view class="vet-btn vet-btn-primary report-btn" bindtap="onBack">返回对话</view>
+      <view class="vet-btn vet-btn-ink report-btn" bindtap="onBack">返回对话</view>
     </view>
   </block>
 

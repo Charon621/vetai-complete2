@@ -6,46 +6,48 @@
   padding-bottom: calc(var(--sp-8) + env(safe-area-inset-bottom));
 }
 
+/* v3 二级页返回控件 */
+
+
+
+
+/* 必填标记（BUG-UI36） */
+.field-required {
+  margin-left: 4rpx;
+  color: var(--accent);
+  font-weight: 600;
+}
+
 /* ── 页头 ────────────────────────────────── */
 .profile-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--sp-3);
-  padding: var(--sp-1) 0 var(--sp-3);
+  padding-bottom: var(--sp-4);
 }
 
-.profile-head-left {
-  flex: 1;
-  min-width: 0;
-}
+.profile-head-left { flex: 1; min-width: 0; }
 
-.profile-title {
-  color: var(--text);
-  font-family: var(--font-serif);
-  font-size: var(--fs-display);
-  font-weight: 700;
-  line-height: 1.22;
-}
-
+/* 页内标题已删除：与原生导航标题「宠物档案」重复（BUG-UI51） */
 .profile-desc {
-  margin-top: var(--sp-1);
+  margin-top: 0;
   color: var(--muted);
   font-size: var(--fs-caption);
   line-height: 1.55;
+  max-width: 520rpx;
 }
-
-/* 品牌色圆形新增按钮 */
+/* 热区 88rpx（BUG-UI5） */
 .head-add-btn {
-  width: 72rpx;
-  height: 72rpx;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
   background: var(--brand);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-top: 4rpx;
+  margin-top: -4rpx;
 }
 
 .head-add-btn:active {
@@ -53,96 +55,8 @@
   transform: scale(0.94);
 }
 
-.head-add-icon {
-  color: var(--on-brand);
-}
-
-/* ── 空状态 ───────────────────────────────── */
-.empty-panel {
-  margin-top: var(--sp-3); /* 容器/标题复用全局 .vet-empty / .vet-empty-title */
-}
-
-.empty-icon-wrap {
-  margin-bottom: var(--sp-3);
-}
-
-.empty-pet-icon {
-  width: 128rpx;
-  height: 128rpx;
-  margin: 0 auto;
-  border-radius: 50%;
-  background: var(--brand-light);
-  color: var(--brand);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* ── 空状态插画：猫侧影 ── */
-.illus-cat {
-  position: relative;
-  width: 76rpx;
-  height: 70rpx;
-}
-
-.illus-cat-ear {
-  position: absolute;
-  top: 0;
-  width: 22rpx;
-  height: 22rpx;
-  background: var(--brand-light);
-  border: 3rpx solid currentColor;
-  box-sizing: border-box;
-}
-
-.illus-cat-ear.left {
-  left: 11rpx;
-  border-radius: 8rpx 4rpx 0 4rpx;
-  transform: rotate(14deg);
-}
-
-.illus-cat-ear.right {
-  right: 11rpx;
-  border-radius: 4rpx 8rpx 4rpx 0;
-  transform: rotate(-14deg);
-}
-
-.illus-cat-face {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  width: 68rpx;
-  height: 52rpx;
-  transform: translateX(-50%);
-  background: var(--brand-light);
-  border: 3rpx solid currentColor;
-  border-radius: 34rpx 34rpx 30rpx 30rpx;
-  box-sizing: border-box;
-}
-
-.illus-cat-eyes {
-  position: absolute;
-  left: 16rpx;
-  top: 20rpx;
-  width: 6rpx;
-  height: 6rpx;
-  border-radius: 50%;
-  background: currentColor;
-  box-shadow: 28rpx 0 0 currentColor;
-}
-
-.illus-cat-muzzle {
-  position: absolute;
-  left: 50%;
-  top: 31rpx;
-  width: 10rpx;
-  height: 6rpx;
-  transform: translateX(-50%);
-  border: 3rpx solid currentColor;
-  border-top: none;
-  border-radius: 0 0 10rpx 10rpx;
-  box-sizing: border-box;
-}
+/* 容器/标题复用全局 .vet-empty / .vet-empty-title */
+.empty-panel { margin-top: var(--sp-2); }
 
 .empty-desc {
   max-width: 520rpx;
@@ -153,6 +67,7 @@
 }
 
 .empty-add-btn {
+  display: inline-flex;
   min-width: 320rpx;
 }
 
@@ -160,35 +75,30 @@
 .profile-list {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
-  margin-top: var(--sp-1);
+  gap: var(--sp-3);
 }
 
-/* ── 档案卡片 ─────────────────────────────── */
 .pet-card {
   overflow: hidden;
   border-radius: var(--r-md);
   background: var(--card);
-  border: 1rpx solid var(--line-light);
-  transition: border-color var(--dur-base) var(--ease-standard);
 }
 
+/* BUG-UI27：原先用 box-shadow 假描边，环色 --brand-light 在纸底上只有 1.13:1，
+   实际看不见，还违反「卡片不描边」。当前档案已由勾选徽标 + 「当前使用」标签表达，
+   这里只把卡片底色提到 surface 做一层很轻的区分。 */
 .pet-card-active {
-  border-color: var(--brand);
-  background: var(--card);
+  background: var(--surface);
 }
 
 .pet-body {
   display: flex;
   gap: var(--sp-3);
-  padding: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
 }
 
-.pet-body:active {
-  opacity: 0.92;
-}
+.pet-body:active { opacity: 0.9; }
 
-/* 头像区域 */
 .pet-avatar-wrap {
   position: relative;
   flex-shrink: 0;
@@ -196,48 +106,43 @@
 
 .pet-avatar-img,
 .pet-avatar-placeholder {
-  width: 100rpx;
-  height: 100rpx;
+  width: 104rpx;
+  height: 104rpx;
   border-radius: 50%;
 }
 
 .pet-avatar-placeholder {
-  background: var(--surface);
-  color: var(--muted);
+  background: var(--card);
+  color: var(--text);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--fs-title);
+  font-family: var(--font-serif);
+  font-size: var(--fs-hero);
   font-weight: 700;
 }
 
 .current-badge {
   position: absolute;
-  right: -2rpx;
-  bottom: -2rpx;
-  width: 36rpx;
-  height: 36rpx;
+  right: -4rpx;
+  bottom: -4rpx;
+  width: 40rpx;
+  height: 40rpx;
   border-radius: 50%;
   background: var(--brand);
-  color: var(--on-brand);
-  border: 3rpx solid var(--card);
+  border: 4rpx solid var(--card);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--fs-mini);
-  font-weight: 700;
   box-sizing: border-box;
 }
 
 .current-badge-check {
-  transform: scale(0.6) rotate(-45deg); /* 全局对勾在 36rpx 徽章内光学缩小 */
+  width: 24rpx;
+  height: 24rpx;
 }
 
-/* 信息区 */
-.pet-info {
-  flex: 1;
-  min-width: 0;
-}
+.pet-info { flex: 1; min-width: 0; }
 
 .pet-top {
   display: flex;
@@ -245,6 +150,7 @@
   gap: var(--sp-2);
 }
 
+/* 名字允许两行，避免 20 字上限的名字被硬截断（BUG-UI28） */
 .pet-name {
   min-width: 0;
   color: var(--text);
@@ -252,26 +158,22 @@
   font-size: var(--fs-title);
   font-weight: 700;
   line-height: 1.34;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-/* 当前使用标签 */
 .current-tag {
-  min-height: 38rpx;
-  padding: 0 var(--sp-2);
-  border-radius: var(--r-sm);
-  background: var(--brand);
-  color: var(--on-brand);
+  padding: 4rpx var(--sp-2);
+  border-radius: var(--r-xs);
+  background: var(--brand-light);
+  color: var(--brand-dark);
   font-size: var(--fs-mini);
   font-weight: 600;
-  display: flex;
-  align-items: center;
   flex-shrink: 0;
 }
 
-/* 信息 chips */
 .pet-chips {
   display: flex;
   flex-wrap: wrap;
@@ -279,40 +181,37 @@
   margin-top: var(--sp-2);
 }
 
-/* 信息 chips（与 index 首页 .choice 视觉对齐：同高 52rpx、同圆角、同描边） */
+/* 复用 .vet-chip 的尺寸语言：60rpx 高、8rpx 圆角、沙色底 */
 .info-chip {
   max-width: 100%;
-  min-height: 52rpx;
-  padding: 0 var(--sp-2);
-  border-radius: var(--r-sm);
-  background: var(--brand-light);
-  border: 1rpx solid var(--line);
-  color: var(--brand);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-xs);
+  background: var(--surface);
+  color: var(--body);
   font-size: var(--fs-caption);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
   box-sizing: border-box;
 }
 
-/* 最近问诊行 */
+/* BUG-UI29：原先 padding 14/18rpx 且背景是 --bg，与所在奶白卡片只有 1.08:1，
+   看不出边界；改用 --surface 并把间距归到栅格。 */
 .last-row {
   margin-top: var(--sp-2);
-  padding-top: var(--sp-2);
-  border-top: 1rpx solid var(--line-light);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   gap: 4rpx;
 }
 
+/* --muted 在 --surface 上只有 3.04:1，小字改 --body（BUG-UI4） */
 .last-label {
-  color: var(--faint);
+  color: var(--body);
   font-size: var(--fs-mini);
-  font-weight: 600;
 }
 
 .last-value {
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-caption);
   line-height: 1.45;
   overflow: hidden;
@@ -325,97 +224,68 @@
 /* ── 操作区 ──────────────────────────────── */
 .pet-actions {
   display: flex;
-  border-top: 1rpx solid var(--line-light);
+  justify-content: flex-end;
+  gap: var(--sp-1);
+  padding: 0 var(--sp-3) var(--sp-3);
 }
 
+/* 编辑 / 删除的热区抬到 88rpx（BUG-UI5） */
 .pet-action {
-  flex: 1;
-  min-height: 76rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--sp-1);
+  min-height: 88rpx;
   padding: 0 var(--sp-3);
+  border-radius: var(--r-xs);
 }
 
-.pet-action + .pet-action {
-  border-left: 1rpx solid var(--line-light);
-}
-
-.pet-action:active {
-  background: var(--surface);
-}
-
-.action-icon {
-  font-size: var(--fs-caption);
-  line-height: 1;
-}
-
-.action-icon-close {
-  transform: scale(0.55); /* 全局叉号随文字行光学缩小 */
-}
+.pet-action:active { background: var(--surface); }
 
 .action-text {
   font-size: var(--fs-caption);
   font-weight: 600;
 }
 
-.action-edit {
-  color: var(--brand);
-}
-
-.action-delete {
-  color: var(--sev-urgent);
-}
+.action-edit { color: var(--brand-dark); }
+.action-delete { color: var(--sev-emergency); }
 
 /* ── 添加档案卡片 ─────────────────────────── */
 .add-profile-card {
   display: flex;
   gap: var(--sp-3);
   align-items: center;
-  padding: var(--sp-3);
+  padding: var(--sp-4);
   border-radius: var(--r-md);
-  border: 2rpx dashed var(--line);
-  background: var(--card);
+  background: var(--surface);
   box-sizing: border-box;
-  margin-top: 4rpx;
 }
 
-.add-profile-card:active {
-  opacity: 0.9;
-  background: var(--brand-light);
-}
+.add-profile-card:active { opacity: 0.85; }
 
 .add-mark {
-  width: 72rpx;
-  height: 72rpx;
+  width: 76rpx;
+  height: 76rpx;
   border-radius: 50%;
-  background: var(--brand-light);
+  background: var(--card);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.add-mark-icon {
-  color: var(--brand);
-}
-
-.add-copy {
-  flex: 1;
-  min-width: 0;
-}
+.add-copy { flex: 1; min-width: 0; }
 
 .add-title {
   color: var(--text);
   font-family: var(--font-serif);
-  font-size: var(--fs-title);
+  font-size: var(--fs-heading);
   font-weight: 700;
 }
 
 .add-desc {
   margin-top: 6rpx;
-  color: var(--faint);
+  color: var(--muted);
   font-size: var(--fs-caption);
   line-height: 1.5;
 }
@@ -436,12 +306,14 @@
   background: var(--overlay);
 }
 
+/* BUG-UI30：高度不再写死 85vh，用 max-height 让内容少时抽屉自然收窄 */
 .form-drawer {
   width: 100%;
-  height: 85vh;
-  padding: 0 var(--sp-3) 0;
+  max-height: 85vh;
+  padding: 0 var(--sp-4);
   border-radius: var(--r-lg) var(--r-lg) 0 0;
-  background: var(--bg);
+  background: var(--card);
+  box-shadow: var(--shadow-lg);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -458,8 +330,8 @@
   width: 72rpx;
   height: 8rpx;
   margin: var(--sp-3) auto var(--sp-2);
-  border-radius: var(--r-sm);
-  background: var(--line);
+  border-radius: 4rpx;
+  background: var(--surface-strong);
   flex-shrink: 0;
 }
 
@@ -468,26 +340,22 @@
   justify-content: space-between;
   gap: var(--sp-3);
   margin-bottom: var(--sp-3);
-  padding: 0 4rpx;
 }
 
+/* 关闭按钮热区 88rpx（BUG-UI5） */
 .form-close {
-  width: 64rpx;
-  height: 64rpx;
+  width: 88rpx;
+  height: 88rpx;
+  margin: -12rpx -12rpx 0 0;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--card);
-  border: 1rpx solid var(--line);
-  color: var(--muted);
+  background: var(--surface);
   flex-shrink: 0;
-  margin-top: 4rpx;
 }
 
-.form-close:active {
-  background: var(--surface);
-}
+.form-close:active { opacity: 0.7; }
 
 .form-scroll {
   flex: 1;
@@ -502,8 +370,7 @@
   margin-bottom: var(--sp-3);
   padding: var(--sp-3);
   border-radius: var(--r-md);
-  background: var(--card);
-  border: 1rpx solid var(--line-light);
+  background: var(--surface);
 }
 
 .avatar-upload,
@@ -515,45 +382,30 @@
   overflow: hidden;
 }
 
-.avatar-upload {
-  flex-shrink: 0;
-}
-
-.avatar-img {
-  border: 1rpx solid var(--line);
-}
+.avatar-upload { flex-shrink: 0; }
 
 .avatar-placeholder {
-  background: var(--surface);
-  border: 2rpx dashed var(--line);
-  color: var(--muted);
+  background: var(--card);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-sizing: border-box;
-}
-
-.avatar-plus {
-  color: var(--muted);
+  gap: 4rpx;
 }
 
 .avatar-label {
-  margin-top: 4rpx;
   font-size: var(--fs-mini);
-  font-weight: 600;
   color: var(--muted);
 }
 
 .avatar-hint {
   color: var(--muted);
   font-size: var(--fs-caption);
-  font-weight: 600;
 }
 
 .avatar-remove {
   margin-top: var(--sp-1);
-  color: var(--sev-urgent);
+  color: var(--sev-emergency);
   font-size: var(--fs-caption);
   font-weight: 600;
 }
@@ -561,10 +413,9 @@
 /* 表单卡片 */
 .form-card {
   margin-bottom: var(--sp-3);
-  padding: var(--sp-3);
+  padding: var(--sp-4) var(--sp-3);
   border-radius: var(--r-md);
-  background: var(--card);
-  border: 1rpx solid var(--line-light);
+  background: var(--surface);
   box-sizing: border-box;
 }
 
@@ -572,30 +423,44 @@
   margin-bottom: var(--sp-3);
   color: var(--text);
   font-family: var(--font-serif);
-  font-size: 30rpx;
+  font-size: var(--fs-heading);
   font-weight: 700;
-  padding-bottom: var(--sp-2);
-  border-bottom: 1rpx solid var(--line-light);
 }
 
 .chip-row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-2);
+  gap: var(--sp-1);
 }
 
+/* picker 也是输入框：右侧给下拉指示，未选时整行用次级色（BUG-UI31） */
 .picker-display {
   display: flex;
   align-items: center;
-  color: var(--muted);
+  justify-content: space-between;
+  gap: var(--sp-2);
+  color: var(--body);
 }
 
-/* 输入框聚焦态（页面样式后加载，特异性天然优先） */
-.vet-input:focus,
-.vet-textarea:focus {
-  border-color: var(--brand);
-  background: var(--card);
-  box-shadow: 0 0 0 4rpx var(--brand-focus-ring);
+.picker-display.is-empty { color: var(--muted); }
+
+.picker-caret {
+  width: 28rpx;
+  height: 28rpx;
+  flex: none;
+}
+
+/* BUG-UI32：WXSS 的 :focus 支持不可靠，且聚焦时把底色改成 --card 会让输入框
+   边界消失。改由 bindfocus/bindblur 切 .is-focus，保持 surface 底 + 实色描边。 */
+.vet-input.is-focus,
+.vet-textarea.is-focus {
+  background: var(--surface);
+  box-shadow: 0 0 0 3rpx var(--brand);
+}
+
+/* 保存按钮禁用态（未填必填项时） */
+.form-actions .vet-btn[disabled] {
+  opacity: 0.45;
 }
 
 /* ── 底部按钮区 ──────────────────────────── */
@@ -603,28 +468,8 @@
   display: grid;
   grid-template-columns: 1fr 1.6fr;
   gap: var(--sp-2);
-  margin: 0 calc(var(--sp-4) * -1);
+  margin: var(--sp-3) calc(var(--sp-4) * -1) 0;
   padding: var(--sp-3) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom));
-  border-top: 1rpx solid var(--line-light);
   background: var(--card);
-}
-
-/* v3 二级页返回控件 */
-.profile-back {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1);
-  margin-bottom: var(--sp-2);
-  color: var(--muted);
-  font-size: var(--fs-caption);
-}
-
-.profile-back:active { opacity: 0.6; }
-
-.profile-back-arrow {
-  width: 16rpx;
-  height: 16rpx;
-  border-left: 3rpx solid var(--muted);
-  border-bottom: 3rpx solid var(--muted);
-  transform: rotate(45deg);
+  box-shadow: var(--shadow-bar);
 }

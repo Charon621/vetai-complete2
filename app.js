@@ -1,5 +1,6 @@
 var config = require('./utils/config')
 var imageUtil = require('./utils/image')
+var fontFace = require('./utils/fontFace')
 
 App({
   onLaunch: function () {
@@ -13,6 +14,10 @@ App({
     } else {
       console.warn('[VetAI] 当前基础库不支持 wx.cloud')
     }
+
+    // BUG-UI58：真机安卓没有中文衬线，设计系统的宋体整套会掉回黑体。
+    // 内置子集字体在这一步异步加载，失败也不影响功能（字体栈会自动回落）。
+    fontFace.loadSerif()
 
     // 检测暗色模式
     this.initDarkMode()

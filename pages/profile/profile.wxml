@@ -1,32 +1,18 @@
 <view class="vet-page profile-page">
-  <!-- 页头：简洁专业 -->
-  <view class="profile-back" bindtap="goBack">
-    <view class="profile-back-arrow"></view>
-    <text>返回</text>
-  </view>
+  <!-- 页头：简洁专业。页内标题与原生导航标题重复，这里去掉一份（BUG-UI51） -->
   <view class="profile-head">
     <view class="profile-head-left">
-      <view class="profile-title">宠物档案</view>
       <view class="profile-desc">完善年龄、品种和过往情况，有助于生成更有参考价值的初筛报告。</view>
     </view>
-    <view class="head-add-btn" wx:if="{{profiles.length > 0 && !showForm}}" bindtap="showCreateForm">
-      <view class="vic vic-plus head-add-icon"></view>
+    <view class="head-add-btn" wx:if="{{profiles.length > 0 && !showForm}}" bindtap="showCreateForm" aria-label="新建档案">
+      <image class="vet-icon" src="/assets/icons/plus-bold-paper.svg" />
     </view>
   </view>
 
   <!-- 空状态 -->
-  <view wx:if="{{profiles.length === 0 && !showForm}}" class="vet-empty empty-panel">
-    <view class="empty-icon-wrap">
-      <view class="empty-pet-icon">
-        <view class="illus-cat">
-          <view class="illus-cat-ear left"></view>
-          <view class="illus-cat-ear right"></view>
-          <view class="illus-cat-face">
-            <view class="illus-cat-eyes"></view>
-            <view class="illus-cat-muzzle"></view>
-          </view>
-        </view>
-      </view>
+  <view wx:if="{{profiles.length === 0 && !showForm}}" class="vet-empty empty-panel vet-fade-up">
+    <view class="vet-empty-icon">
+      <image src="/assets/icons/cat-light-clay.svg" />
     </view>
     <view class="vet-empty-title">还没有宠物档案</view>
     <view class="empty-desc">通过对话式建档，AI 兽医助手会像真实医生一样逐步询问信息，建立更完整的宠物档案。</view>
@@ -35,13 +21,13 @@
 
   <!-- 档案列表 -->
   <view class="profile-list" wx:if="{{profiles.length > 0}}">
-    <view class="pet-card {{activeProfileId === item.id ? 'pet-card-active' : ''}}" wx:for="{{profiles}}" wx:key="id">
+    <view class="pet-card {{activeProfileId === item.id ? 'pet-card-active' : ''}} vet-fade-up" wx:for="{{profiles}}" wx:key="id">
       <view class="pet-body" bindtap="selectProfile" data-id="{{item.id}}">
         <view class="pet-avatar-wrap">
           <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" class="pet-avatar-img" />
           <view wx:else class="pet-avatar-placeholder">{{item.avatarText}}</view>
           <view class="current-badge" wx:if="{{activeProfileId === item.id}}">
-            <view class="vic vic-check current-badge-check"></view>
+            <image class="current-badge-check" src="/assets/icons/check-bold-paper.svg" />
           </view>
         </view>
         <view class="pet-info">
@@ -62,21 +48,21 @@
         </view>
       </view>
       <view class="pet-actions">
-        <view class="pet-action action-edit" catchtap="showEditForm" data-id="{{item.id}}">
-          <text class="action-icon">✎</text>
+        <view class="pet-action action-edit" catchtap="showEditForm" data-id="{{item.id}}" aria-label="编辑档案">
+          <image class="vet-icon-sm" src="/assets/icons/pencil-simple-light-clay.svg" />
           <text class="action-text">编辑</text>
         </view>
-        <view class="pet-action action-delete" catchtap="deleteProfile" data-id="{{item.id}}">
-          <view class="vic vic-close action-icon-close"></view>
+        <view class="pet-action action-delete" catchtap="deleteProfile" data-id="{{item.id}}" aria-label="删除档案">
+          <image class="vet-icon-sm" src="/assets/icons/trash-light-rust.svg" />
           <text class="action-text">删除</text>
         </view>
       </view>
     </view>
 
     <!-- 添加档案卡片 -->
-    <view class="add-profile-card" bindtap="showCreateForm">
+    <view class="add-profile-card vet-fade-up" bindtap="showCreateForm" aria-label="对话式建档">
       <view class="add-mark">
-        <view class="vic vic-plus add-mark-icon"></view>
+        <image class="vet-icon" src="/assets/icons/plus-light-clay.svg" />
       </view>
       <view class="add-copy">
         <view class="add-title">对话式建档</view>
@@ -85,26 +71,26 @@
     </view>
   </view>
 
-  <!-- 表单抽屉 -->
-  <view class="form-overlay" wx:if="{{showForm}}" catchtap="hideCreateForm">
+  <!-- 表单抽屉（只用于编辑已有档案；新建走对话建档，BUG-UI33） -->
+  <view class="form-overlay" wx:if="{{showForm}}" catchtap="onDrawerMaskTap">
     <view class="form-drawer" catchtap="noop">
       <view class="drawer-handle"></view>
       <view class="form-header">
         <view>
-          <view class="vet-title-lg">{{editingId ? '编辑档案' : '添加宠物档案'}}</view>
+          <view class="vet-title-lg">编辑档案</view>
           <view class="vet-caption">基础信息会用于生成初筛报告</view>
         </view>
-        <view class="form-close" bindtap="hideCreateForm">
-          <view class="vic vic-close"></view>
+        <view class="form-close" bindtap="onDrawerClose" aria-label="关闭">
+          <image class="vet-icon" src="/assets/icons/x-light-body.svg" />
         </view>
       </view>
 
       <scroll-view class="form-scroll" scroll-y enhanced show-scrollbar="{{false}}">
         <view class="avatar-section">
-          <view class="avatar-upload" bindtap="chooseAvatar">
+          <view class="avatar-upload" bindtap="chooseAvatar" aria-label="添加头像">
             <image wx:if="{{form.avatar}}" src="{{form.avatar}}" mode="aspectFill" class="avatar-img" />
             <view wx:else class="avatar-placeholder">
-              <view class="vic vic-plus avatar-plus"></view>
+              <image class="vet-icon" src="/assets/icons/plus-light-mute.svg" />
               <text class="avatar-label">添加头像</text>
             </view>
           </view>
@@ -117,15 +103,13 @@
         <view class="form-card">
           <view class="form-section-title">基础信息</view>
           <view class="vet-field">
-            <text class="vet-field-label">名字</text>
-            <input class="vet-input" value="{{form.petName}}" maxlength="20" placeholder="例如：糯米" bindinput="onInput" data-key="petName" />
+            <text class="vet-field-label">名字<text class="field-required">*</text></text>
+            <input class="vet-input {{focusKey === 'petName' ? 'is-focus' : ''}}" value="{{form.petName}}" maxlength="20"
+              placeholder="例如：糯米" bindinput="onInput" data-key="petName"
+              bindfocus="onFieldFocus" bindblur="onFieldBlur" cursor-spacing="24" adjust-position />
           </view>
           <view class="vet-field">
-            <text class="vet-field-label">品种</text>
-            <input class="vet-input" value="{{form.breed}}" maxlength="20" placeholder="可选" bindinput="onInput" data-key="breed" />
-          </view>
-          <view class="vet-field">
-            <view class="vet-field-label">种类</view>
+            <view class="vet-field-label">种类<text class="field-required">*</text></view>
             <view class="chip-row">
               <view class="vet-chip {{form.petType === item.value ? 'vet-chip-active' : ''}}"
                 wx:for="{{petTypeOptions}}" wx:key="value"
@@ -133,7 +117,13 @@
             </view>
           </view>
           <view class="vet-field">
-            <view class="vet-field-label">性别</view>
+            <text class="vet-field-label">品种</text>
+            <input class="vet-input {{focusKey === 'breed' ? 'is-focus' : ''}}" value="{{form.breed}}" maxlength="20"
+              placeholder="可选" bindinput="onInput" data-key="breed"
+              bindfocus="onFieldFocus" bindblur="onFieldBlur" cursor-spacing="24" adjust-position />
+          </view>
+          <view class="vet-field">
+            <view class="vet-field-label">性别<text class="field-required">*</text></view>
             <view class="chip-row">
               <view class="vet-chip {{form.gender === item.value ? 'vet-chip-active' : ''}}"
                 wx:for="{{genderOptions}}" wx:key="value"
@@ -141,7 +131,7 @@
             </view>
           </view>
           <view class="vet-field">
-            <view class="vet-field-label">年龄</view>
+            <view class="vet-field-label">年龄<text class="field-required">*</text></view>
             <view class="chip-row">
               <view class="vet-chip {{form.age === item.value ? 'vet-chip-active' : ''}}"
                 wx:for="{{ageOptions}}" wx:key="value"
@@ -154,28 +144,40 @@
           <view class="form-section-title">健康信息</view>
           <view class="vet-field">
             <text class="vet-field-label">体重 (kg)</text>
-            <input class="vet-input" type="digit" value="{{form.weight}}" maxlength="6" placeholder="可选" bindinput="onInput" data-key="weight" />
+            <input class="vet-input {{focusKey === 'weight' ? 'is-focus' : ''}}" type="digit" value="{{form.weight}}"
+              maxlength="6" placeholder="可选" bindinput="onInput" data-key="weight"
+              bindfocus="onFieldFocus" bindblur="onFieldBlur" cursor-spacing="24" adjust-position />
           </view>
           <view class="vet-field">
             <text class="vet-field-label">绝育情况</text>
             <picker bindchange="onSterilizedChange" range="{{sterilizedOptions}}" range-key="label">
-              <view class="vet-input picker-display">{{form.sterilizedLabel || '请选择'}}</view>
+              <view class="vet-input picker-display {{form.sterilizedLabel ? '' : 'is-empty'}}">
+                <text>{{form.sterilizedLabel || '请选择'}}</text>
+                <image class="picker-caret" src="/assets/icons/caret-down-light-mute.svg" />
+              </view>
             </picker>
           </view>
           <view class="vet-field">
             <text class="vet-field-label">过敏史</text>
-            <input class="vet-input" value="{{form.allergy}}" maxlength="100" placeholder="如：对某药物过敏" bindinput="onInput" data-key="allergy" />
+            <input class="vet-input {{focusKey === 'allergy' ? 'is-focus' : ''}}" value="{{form.allergy}}"
+              maxlength="100" placeholder="如：对某药物过敏" bindinput="onInput" data-key="allergy"
+              bindfocus="onFieldFocus" bindblur="onFieldBlur" cursor-spacing="24" adjust-position />
           </view>
           <view class="vet-field">
             <text class="vet-field-label">既往病史</text>
-            <textarea class="vet-textarea" value="{{form.medicalHistory}}" maxlength="300" placeholder="反复耳炎、真菌感染、正在用药等" bindinput="onInput" data-key="medicalHistory" />
+            <!-- BUG-UI34：键盘弹起时给 textarea 留出空间，避免被底部按钮区盖住 -->
+            <textarea class="vet-textarea {{focusKey === 'medicalHistory' ? 'is-focus' : ''}}"
+              value="{{form.medicalHistory}}" maxlength="300" placeholder="反复耳炎、真菌感染、正在用药等"
+              bindinput="onInput" data-key="medicalHistory"
+              bindfocus="onFieldFocus" bindblur="onFieldBlur"
+              cursor-spacing="120" adjust-position="{{true}}" />
           </view>
         </view>
       </scroll-view>
 
       <view class="form-actions">
-        <button class="vet-btn vet-btn-ghost" bindtap="hideCreateForm">取消</button>
-        <button class="vet-btn vet-btn-primary" bindtap="saveProfile">{{editingId ? '保存修改' : '创建档案'}}</button>
+        <button class="vet-btn vet-btn-ghost" bindtap="onDrawerClose">取消</button>
+        <button class="vet-btn vet-btn-primary" bindtap="saveProfile" disabled="{{!formValid}}">保存修改</button>
       </view>
     </view>
   </view>

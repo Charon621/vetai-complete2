@@ -1,341 +1,310 @@
 /* ═══════════════════════════════════════════════════════
-   Result Page — VetAI DS v5
-   结论前置 / 处方笺式墨线分层 / 匹配 chip / checklist
+   Result Page — VetAI DS v7「暖阳 · 衬线」
+   结论面板（渐变 + 弧形表盘）/ 拱窗病名卡 / 衬线序号步骤
+   不画分割线：区块靠留白与奶白卡片分开
    ═══════════════════════════════════════════════════════ */
 
+/* BUG-UI2：底部留白只认 --action-bar-h，不再用 220rpx 魔数 */
 .report-page {
-  padding-bottom: calc(240rpx + env(safe-area-inset-bottom));
+  padding-top: var(--sp-2);
+  padding-bottom: calc(var(--sp-4) + var(--action-bar-h) + env(safe-area-inset-bottom));
 }
 
 /* ═══════════════════════════════════════
-   0. 骨架屏（记录载入前占位）
+   0. 骨架屏（记录载入前占位，扫光复用 vetShimmer）
    ═══════════════════════════════════════ */
-.report-skeleton {
-  margin-top: var(--sp-2);
+.report-skeleton { margin-top: var(--sp-2); }
+.sk-hero { height: 280rpx; border-radius: var(--r-md); }
+.sk-line { height: 40rpx; margin-top: var(--sp-2); }
+.sk-short { width: 60%; }
+
+/* ═══ 1. 结论面板 ═══ */
+/* BUG-UI20：四档渐变的 hex 原先在两页各写一遍且与 --sev-*-bg 令牌全部不等值，
+   这里统一引用令牌，只有渐变的中间停靠点保留同源混色。 */
+.verdict {
+  position: relative;
+  overflow: hidden;
+  padding: var(--sp-4) var(--sp-4) 30rpx;
+  border-radius: var(--r-lg);
+  background: linear-gradient(160deg, var(--sev-mid-bg) 0%, var(--sev-mid-mid) 55%, var(--bg) 100%);
 }
 
-.sk-hero {
-  height: 220rpx;
-  border-radius: var(--r-md);
-}
+.verdict-moderate { background: linear-gradient(160deg, var(--sev-mid-bg) 0%, var(--sev-mid-mid) 55%, var(--bg) 100%); }
+.verdict-low { background: linear-gradient(160deg, var(--sev-low-bg) 0%, var(--sev-low-mid) 55%, var(--bg) 100%); }
+.verdict-urgent { background: linear-gradient(160deg, var(--sev-urgent-bg) 0%, var(--sev-urgent-mid) 55%, var(--bg) 100%); }
+.verdict-emergency { background: linear-gradient(160deg, var(--sev-emergency-bg) 0%, var(--sev-emergency-mid) 55%, var(--bg) 100%); }
 
-.sk-line {
-  height: 40rpx;
-  margin-top: var(--sp-2);
-  border-radius: var(--r-sm);
-}
-
-.sk-short {
-  width: 60%;
-}
-
-/* ═══════════════════════════════════════
-   1. 顶部结论区（结论前置）
-   ═══════════════════════════════════════ */
-.conclusion {
+.verdict-meta {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-  gap: var(--sp-3);
-  margin-top: var(--sp-1);
-}
-
-.conclusion-main { flex: 1; min-width: 0; }
-
-.conclusion-meta {
-  display: block;
-  color: var(--gold);
-  font-family: var(--font-mono);
+  gap: var(--sp-2);
   font-size: var(--fs-mini);
-  letter-spacing: 4rpx;
+  color: var(--body);
+  opacity: 0.8;
 }
 
-.sev-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6rpx;
-  margin-top: var(--sp-2);
-  padding: 6rpx 20rpx;
-  border-radius: 999rpx;
-  font-size: var(--fs-caption);
-  font-weight: 700;
+.verdict-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
 }
 
-.sev-chip-dot {
-  width: 12rpx;
-  height: 12rpx;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
-}
+.verdict-main { flex: 1; min-width: 0; }
 
-.sev-chip-low { background: var(--sev-low-bg); color: var(--sev-low); }
-.sev-chip-moderate { background: var(--sev-mid-bg); color: var(--sev-mid-text); }
-.sev-chip-urgent { background: var(--sev-urgent-bg); color: var(--sev-urgent); }
-.sev-chip-emergency { background: var(--sev-emergency-bg); color: var(--sev-emergency); }
-
-.conclusion-title {
-  margin-top: var(--sp-2);
-  color: var(--text);
+/* BUG-UI70：完整报告页试点宋体常规字重，全站推广待真机认可 */
+.verdict-title {
+  margin-top: var(--sp-1);
   font-family: var(--font-serif);
   font-size: var(--fs-display);
-  font-weight: 900;
-  line-height: 1.35;
+  font-weight: 400;
+  line-height: 1.22;
+  color: var(--text);
 }
 
-.conclusion-note {
-  margin-top: 8rpx;
-  color: var(--body);
-  font-size: var(--fs-caption);
-  line-height: 1.65;
+.verdict-gauge {
+  flex: none;
+  width: 184rpx;
+  text-align: center;
 }
 
-.conclusion-seal {
-  flex-shrink: 0;
-  margin-top: var(--sp-4);
+.gauge-img {
+  display: block;
+  width: 184rpx;
+  height: 112rpx;
 }
 
-.conclusion-rule { margin: var(--sp-4) 0 0; }
-
-/* ═══════════════════════════════════════
-   2. 可能是什么
-   ═══════════════════════════════════════ */
-.dx-block { margin-top: var(--sp-4); }
-
-.dx-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-2);
-}
-
-.dx-eyebrow {
-  color: var(--gold);
+/* BUG-UI21：原用 -40rpx 负 margin 叠压表盘，--font-mono 在 iOS/Android
+   落到的字体基线不同，位置会飘；改为表盘图形自带底部留白 + 正常间距。 */
+.gauge-num {
+  margin-top: -36rpx;
   font-family: var(--font-mono);
   font-size: var(--fs-mini);
-  font-weight: 600;
-  letter-spacing: 4rpx;
-}
-
-/* 匹配度徽标：非动作元素，用淡金雾而非青柠 */
-.match-chip {
-  padding: 4rpx 18rpx;
-  border-radius: 999rpx;
-  background: var(--gold-mist);
-  border: 1rpx solid var(--gold-line);
-  color: var(--gold);
-  font-size: var(--fs-mini);
-  font-weight: 700;
-}
-
-.dx-name {
-  margin-top: var(--sp-2);
-  color: var(--text);
-  font-family: var(--font-serif);
-  font-size: var(--fs-title);
-  font-weight: 900;
-  line-height: 1.35;
-}
-
-.dx-sub {
-  margin-left: var(--sp-2);
   color: var(--muted);
-  font-family: var(--font-sans);
-  font-size: var(--fs-caption);
-  font-weight: 400;
+  line-height: 1.2;
 }
 
-.dx-desc {
-  margin-top: 8rpx;
-  color: var(--body);
+.gauge-num-cur {
+  font-size: var(--fs-title);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.verdict-note {
+  margin-top: var(--sp-3);
   font-size: var(--fs-caption);
   line-height: 1.65;
+  color: var(--body);
 }
 
-.dx-thumbs {
-  margin-top: var(--sp-3);
+/* ═══ 区块通用 ═══ */
+.sec { margin-top: var(--sp-6); }
+
+.sec-head {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
+  padding: 0 4rpx;
 }
 
-.dx-thumb {
-  position: relative;
-  width: 152rpx;
-  height: 152rpx;
-  border-radius: var(--r-sm);
-  overflow: hidden;
-  background: var(--surface);
-  border: 1rpx solid var(--line);
-  flex-shrink: 0;
-}
-
-.dx-thumb image { width: 100%; height: 100%; }
-
-.dx-thumb-lesion {
-  position: absolute;
-  border: 2rpx dashed var(--accent-line);
-  background: var(--accent-mist);
-  border-radius: 4rpx;
-  box-sizing: border-box;
-}
-
-.dx-thumb-note {
-  flex: 1;
-  min-width: 0;
-  color: var(--muted);
-  font-size: 22rpx;
-  line-height: 1.6;
-}
-
-.dx-thumb-link { color: var(--brand); font-weight: 700; border-bottom: 2rpx solid var(--lime); padding-bottom: 2rpx; }
-
-.dx-secondary {
-  margin-top: var(--sp-3);
-  color: var(--muted);
-  font-size: 22rpx;
-  line-height: 1.6;
-}
-
-/* ═══════════════════════════════════════
-   3. 接下来怎么做 checklist
-   ═══════════════════════════════════════ */
-.care-block {
-  margin-top: var(--sp-5);
-  border-top: 1rpx solid var(--line);
-  padding-top: var(--sp-3);
-}
-
-.checklist {
-  margin-top: var(--sp-2);
-  display: flex;
-  flex-direction: column;
-}
-
-.check-item {
-  display: flex;
-  gap: var(--sp-2);
-  padding: var(--sp-2) 0;
-  border-bottom: 1rpx dashed var(--line);
-}
-
-.check-item:last-child { border-bottom: none; }
-
-.check-box {
-  width: 30rpx;
-  height: 30rpx;
-  border-radius: 6rpx;
-  flex-shrink: 0;
-  margin-top: 4rpx;
-  box-sizing: border-box;
-}
-
-.check-box-now { border: 2rpx solid var(--brand); }
-.check-box-watch { border: 2rpx solid var(--sev-mid); }
-.check-box-vet { border: 2rpx solid var(--accent); }
-
-.check-text {
-  flex: 1;
-  min-width: 0;
+.sec-title {
+  font-family: var(--font-serif);
+  font-size: var(--fs-title);
+  font-weight: 400;
   color: var(--text);
-  font-size: var(--fs-caption);
-  line-height: 1.6;
 }
 
-.check-tag { font-weight: 900; font-family: var(--font-serif); }
+.sec-desc {
+  margin-top: 6rpx;
+  padding: 0 4rpx;
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
 
-/* ═══════════════════════════════════════
-   4. Report Blocks（判断依据 / 参考来源）
-   ═══════════════════════════════════════ */
-.report-block {
-  margin-top: var(--sp-3);
+.match-chip {
+  padding: 4rpx var(--sp-2);
+  border-radius: var(--r-xs);
+  background: var(--sage-soft);
+  /* --sage 在 sage-soft 上只有 3.6:1，小字改用 --body（BUG-UI4） */
+  color: var(--body);
+  font-size: var(--fs-mini);
+  font-weight: 600;
+}
+
+/* ═══ 2. 可能是什么：拱窗照片 + 病名 ═══ */
+/* BUG-UI57（真机）：这一块是整页最高的卡片，把拱窗照片、内边距和字号一起收紧，
+   首屏能多露出一块「接下来怎么做」，避免一屏被它占满。 */
+.dx-card {
+  margin-top: var(--sp-2);
   padding: var(--sp-3);
   border-radius: var(--r-md);
   background: var(--card);
-  border: 1rpx solid var(--line-light);
+}
+
+.dx-top {
+  display: flex;
+  gap: var(--sp-3);
+}
+
+.dx-arch {
+  position: relative;
+  flex: none;
+  width: 140rpx;
+  height: 172rpx;
+  border-radius: 70rpx 70rpx 12rpx 12rpx;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.dx-arch image {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 患处虚线框叠在照片上，用奶白而非纯白，与暖色板同源（BUG-UI6） */
+.dx-lesion {
+  position: absolute;
+  border: 3rpx dashed var(--on-brand);
+  border-radius: var(--r-xs);
   box-sizing: border-box;
 }
 
-.block-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-3);
+.dx-info {
+  flex: 1;
+  min-width: 0;
 }
 
-.block-title-wrap {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-}
-
-.block-title {
-  color: var(--text);
+.dx-name {
   font-family: var(--font-serif);
   font-size: var(--fs-title);
-  font-weight: 700;
-  line-height: 1.35;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--text);
 }
 
-.block-desc {
-  margin-top: 4rpx;
-  color: var(--muted);
+.dx-sub {
+  margin-top: 8rpx;
   font-size: var(--fs-caption);
-  line-height: 1.5;
-}
-
-.evidence-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-}
-
-.evidence-item {
-  padding-bottom: var(--sp-2);
-  border-bottom: 1rpx solid var(--line-light);
-}
-
-.evidence-item:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-
-.evidence-key {
   color: var(--muted);
-  font-size: var(--fs-caption);
-  font-weight: 700;
-  line-height: 1.4;
-  margin-bottom: 6rpx;
 }
 
-.evidence-value {
+.dx-hint {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-mini);
+  color: var(--muted);
+}
+
+/* 纯文字链接：伪元素扩热区，不动盒模型（BUG-UI5b：负 margin 会把基线拉偏） */
+.dx-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  color: var(--brand-dark);
+}
+
+.dx-link::after {
+  content: "";
+  position: absolute;
+  top: -22rpx;
+  right: -12rpx;
+  bottom: -22rpx;
+  left: -12rpx;
+}
+
+.dx-desc {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-caption);
+  line-height: 1.65;
   color: var(--body);
+}
+
+.dx-secondary {
+  margin-top: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-size: var(--fs-caption);
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* ═══════════════════════════════════════
+   3. 接下来怎么做（衬线序号步骤）
+   ═══════════════════════════════════════ */
+.step-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--card);
+}
+
+.sec-head + .step-card { margin-top: var(--sp-3); }
+
+/* 序号用 --fs-hero(64rpx)，与全局阶梯一致 */
+.step-no {
+  flex: none;
+  width: 40rpx;
+  font-size: var(--fs-hero);
+  line-height: 0.95;
+}
+
+.step-body { flex: 1; min-width: 0; }
+
+.step-tag {
+  font-size: var(--fs-mini);
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+
+.step-tag-now { color: var(--brand-dark); }
+.step-tag-watch { color: var(--ochre-text); }
+.step-tag-vet { color: var(--sev-emergency); }
+
+.step-text {
+  margin-top: 4rpx;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--text);
+}
+
+/* ═══════════════════════════════════════
+   4. 判断依据 / 参考来源
+   ═══════════════════════════════════════ */
+.basis-card {
+  margin-top: var(--sp-3);
+  padding: var(--sp-1) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--card);
+}
+
+.basis-item { padding: var(--sp-3) 0; }
+
+.basis-key {
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.basis-value {
+  margin-top: 6rpx;
   font-size: var(--fs-body);
   line-height: 1.65;
-}
-
-.source-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-}
-
-.source-item {
-  padding-bottom: var(--sp-2);
-  border-bottom: 1rpx solid var(--line-light);
-}
-
-.source-item:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
+  color: var(--body);
 }
 
 .source-title {
-  color: var(--text);
   font-size: var(--fs-caption);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.45;
+  color: var(--text);
 }
 
 .source-meta {
@@ -343,60 +312,60 @@
   display: flex;
   flex-direction: column;
   gap: 2rpx;
-  color: var(--muted);
   font-size: var(--fs-mini);
   line-height: 1.4;
+  color: var(--muted);
   word-break: break-all;
 }
 
 /* ═══════════════════════════════════════
    5. 反馈（收成一行，点“没有”再展开）
    ═══════════════════════════════════════ */
-.feedback-inline {
-  margin-top: var(--sp-5);
-  padding-top: var(--sp-3);
-  border-top: 1rpx solid var(--line);
+.feedback {
+  margin-top: var(--sp-6);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--surface);
 }
 
-.feedback-inline-row {
+.feedback-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-2);
 }
 
-.feedback-inline-q {
-  color: var(--muted);
-  font-size: var(--fs-caption);
+.feedback-q {
+  font-family: var(--font-serif);
+  font-size: var(--fs-body);
+  color: var(--text);
 }
 
-.feedback-inline-opts { display: flex; gap: var(--sp-1); }
+.feedback-opts { display: flex; gap: var(--sp-1); }
 
+/* 热区抬到 88rpx：反馈 chip 是纯点按控件（BUG-UI5） */
 .fb-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 52rpx;
+  justify-content: center;
+  min-height: 88rpx;
   padding: 0 var(--sp-3);
-  border-radius: 999rpx;
-  border: 1rpx solid var(--line);
+  border-radius: var(--r-xs);
   background: var(--card);
-  color: var(--text);
+  color: var(--body);
   font-size: var(--fs-caption);
-  font-weight: 600;
 }
 
 .fb-chip.on {
-  background: var(--brand);
-  border-color: var(--brand);
-  color: var(--on-brand);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-weight: 600;
 }
-
-.fb-chip-sm { min-height: 48rpx; font-size: var(--fs-mini); }
 
 .fb-followup-q {
   margin-top: var(--sp-3);
-  color: var(--body);
   font-size: var(--fs-caption);
+  color: var(--body);
 }
 
 .fb-wrap {
@@ -406,66 +375,82 @@
   gap: var(--sp-1);
 }
 
-.feedback-done-inline {
+.feedback-done {
   display: flex;
   align-items: center;
-  gap: var(--sp-1);
-  color: var(--brand);
+  gap: var(--sp-2);
+  min-height: 88rpx;
   font-size: var(--fs-caption);
 }
 
 .feedback-done-icon {
-  width: 34rpx;
-  height: 34rpx;
+  width: 40rpx;
+  height: 40rpx;
   border-radius: 50%;
-  background: var(--brand);
-  color: var(--card);
-  display: inline-flex;
+  background: var(--sage);
+  display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
-.feedback-done-check {
-  transform: scale(0.55) rotate(-45deg); /* 全局对勾在 34rpx 圆徽内光学缩小 */
-}
+.feedback-done-check { width: 24rpx; height: 24rpx; }
 
 .feedback-done-text { color: var(--body); }
 
+/* 纯文字链接：伪元素扩热区，不动盒模型（BUG-UI5b） */
 .feedback-edit-link {
+  position: relative;
   margin-left: auto;
-  color: var(--brand);
+  color: var(--brand-dark);
   font-weight: 600;
+}
+
+.feedback-edit-link::after {
+  content: "";
+  position: absolute;
+  top: -28rpx;
+  right: -16rpx;
+  bottom: -28rpx;
+  left: -16rpx;
 }
 
 /* ═══════════════════════════════════════
    6. 页脚 / 次级操作
    ═══════════════════════════════════════ */
+.report-more {
+  margin-top: var(--sp-5);
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-6);
+}
+
+/* 纯文字操作：伪元素扩热区，不动盒模型（BUG-UI5b） */
+.report-more-link {
+  position: relative;
+  font-size: var(--fs-caption);
+  color: var(--body);
+}
+
+.report-more-link::after {
+  content: "";
+  position: absolute;
+  top: -28rpx;
+  right: -12rpx;
+  bottom: -28rpx;
+  left: -12rpx;
+}
+
+.report-more-link:active { opacity: 0.6; }
+
+/* BUG-UI4：--faint 在纸底上只有 2.51:1，页脚小字改用 --muted */
 .report-footer {
   margin-top: var(--sp-4);
-  color: var(--faint);
+  text-align: center;
   font-family: var(--font-mono);
   font-size: var(--fs-mini);
   line-height: 1.6;
-}
-
-.report-more {
-  margin-top: var(--sp-3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-}
-
-.report-more-link {
   color: var(--muted);
-  font-size: var(--fs-caption);
-}
-
-.report-more-sep {
-  width: 6rpx;
-  height: 6rpx;
-  border-radius: 50%;
-  background: var(--faint);
 }
 
 /* ═══════════════════════════════════════
@@ -477,37 +462,21 @@
   right: 0;
   bottom: 0;
   z-index: 20;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom));
-  border-radius: var(--r-md) var(--r-md) 0 0;
-  border-top: 1rpx solid var(--line);
-  background: var(--card);
+  padding: var(--sp-3) var(--vet-page-x) calc(var(--sp-3) + env(safe-area-inset-bottom));
+  background: var(--bg);
   box-shadow: var(--shadow-bar);
   box-sizing: border-box;
 }
 
-.bottom-actions .vet-btn {
-  min-height: 96rpx;
-  border-radius: 999rpx;
-  font-size: var(--fs-body);
-  font-weight: 700;
-}
+.bottom-actions .vet-btn { min-height: 96rpx; }
+.share-btn { flex: 1.5; }
+.find-hospital-btn { flex: 1; }
 
-/* 紧急时「找医院」按钮转珊瑚红 */
+/* 紧急时「找医院」提升为陶土主按钮 */
 .report-page.sev-urgent .find-hospital-btn,
 .report-page.sev-emergency .find-hospital-btn {
-  color: var(--sev-emergency);
-  border-color: var(--sev-emergency);
-}
-
-/* ═══════════════════════════════════════
-   Dark Mode
-   ═══════════════════════════════════════ */
-@media (prefers-color-scheme: dark) {
-  .bottom-actions {
-    background: var(--card);
-    border-top-color: var(--line);
-  }
+  background: var(--brand);
+  color: var(--on-brand);
 }

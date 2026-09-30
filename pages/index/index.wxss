@@ -1,579 +1,777 @@
 /* ═══════════════════════════════════════════════════════
-   Index Page — VetAI DS v5
-   诊室编辑风 · 暖纸白 · 鎏金元数据
+   Index Page — VetAI DS v7「暖阳 · 衬线」
+   首页：半透明合影 + 动态问候 + 陶土主卡；拍照流程：三步表单
+   不画分割线，层次靠留白、底色深浅与卡片
    ═══════════════════════════════════════════════════════ */
 
 /* ── 页面容器 ── */
 .triage-page {
-  padding: var(--sp-3) var(--vet-page-x) calc(var(--sp-8) + env(safe-area-inset-bottom));
-  background: transparent;
-}
-
-.triage-page.has-submit-bar {
-  padding-bottom: calc(220rpx + env(safe-area-inset-bottom));
-}
-
-/* ── 无档案引导横幅 — 融入页面的温暖邀请 ── */
-.profile-guide {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-5) var(--sp-4);
-  background: linear-gradient(135deg, var(--brand-light) 0%, var(--brand-mist-strong) 60%, var(--brand-mist) 100%);
-  border-radius: var(--r-lg);
-  box-sizing: border-box;
   position: relative;
+  /* BUG-UI2：底部留白只认 --tab-bar-h，不再用 120rpx 魔数 */
+  padding: var(--sp-3) var(--vet-page-x) calc(var(--sp-6) + var(--tab-bar-h) + env(safe-area-inset-bottom));
 }
 
-/* 右侧装饰圆点 */
-.profile-guide::after {
-  content: "";
+/* 首页在底栏预留区上方排版；短屏正常向下滚动。 */
+.triage-page.is-home {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.triage-page.is-home .home-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.home-top {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+}
+
+/* 只让主入口与次入口之间吸收剩余空间，卡片组不会掉进底栏下面。 */
+.triage-page.is-home .home-pair {
+  margin-top: auto;
+}
+
+/* 有「今日护理」时它跟在卡片组后面，间距交给自己的 margin-top */
+.home-pair + .care-tip {
+  margin-top: var(--sp-2);
+}
+
+/* 拍照态：底栏在流程里被收起（见 index.js 的 _syncTabBar），
+   所以这里只需让出提交栏自身高度，不用再叠加 --tab-bar-h */
+.triage-page.has-submit-bar {
+  padding-bottom: calc(var(--action-bar-h) + 108rpx + env(safe-area-inset-bottom));
+}
+
+/* ═══════════════════════════════════════════════════════
+   首页
+   ═══════════════════════════════════════════════════════ */
+
+/* 合影：铺在导航下方，半透明、偏暖，下半部渐隐进纸色 */
+.home-photo {
   position: absolute;
-  right: -40rpx;
-  top: -40rpx;
-  width: 180rpx;
-  height: 180rpx;
-  border-radius: 50%;
-  background: var(--brand-mist);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 460rpx;
+  opacity: 0.42;
+  filter: sepia(0.08) saturate(0.92);
   pointer-events: none;
 }
 
-.profile-guide:active {
-  opacity: 0.85;
+/* --bg @35% / @0 / @40%（微信 WXSS 不支持 8 位 hex，必须用 rgba） */
+.home-photo-fade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 460rpx;
+  background: linear-gradient(180deg,
+    rgba(247, 243, 234, 0.35) 0%,
+    rgba(247, 243, 234, 0) 30%,
+    rgba(247, 243, 234, 0.4) 62%,
+    var(--bg) 100%);
+  pointer-events: none;
 }
 
-.profile-guide-icon {
-  width: 80rpx;
-  height: 80rpx;
+.home-body {
+  position: relative;
+  z-index: 1;
+}
+
+.home-brand {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.brand-word {
+  font-family: var(--font-serif);
+  font-size: var(--fs-title);
+  font-weight: 800;
+  color: var(--text);
+}
+
+.brand-ai { color: var(--brand); }
+
+.brand-date {
+  font-family: var(--font-serif);
+  font-size: var(--fs-caption);
+  color: var(--body);
+}
+
+/* 动态问候：宋体大字。宠物名的手绘下划线方案已废弃（WXML 只渲染 greeting.sub），
+   原 .greet-line / .greet-name / .greet-underline 三条死样式一并删除（BUG-UI9）。 */
+.greet {
+  margin-top: 112rpx;
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-size: var(--fs-display);
+  font-weight: 800;
+  line-height: 1.26;
+}
+
+.greet-sub {
+  margin-top: 10rpx;
+  color: var(--body);
+  font-size: var(--fs-caption);
+}
+
+/* ── 宠物行 ── */
+.pet-row {
+  margin-top: var(--sp-2);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+.pet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  width: 88rpx;
+}
+
+.pet:active { opacity: 0.8; }
+
+/* 命中区不低于 88rpx（44pt）：视觉仍是 76rpx 圆，靠容器撑开热区（BUG-UI5） */
+.pet-avatar {
+  width: 76rpx;
+  height: 76rpx;
   border-radius: 50%;
-  background: var(--brand);
-  color: var(--on-brand);
+  background: var(--card);
+  color: var(--text);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-}
-
-.profile-guide-body {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6rpx;
-}
-
-.profile-guide-title {
-  color: var(--brand);
   font-family: var(--font-serif);
-  font-size: 28rpx;
+  font-size: var(--fs-heading);
   font-weight: 700;
-  line-height: 1.35;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.pet-avatar-img { display: block; width: 100%; height: 100%; }
+
+.pet.active .pet-avatar {
+  background: var(--ink);
+  color: var(--on-ink);
+  box-shadow: 0 0 0 5rpx var(--bg), 0 0 0 8rpx var(--brand);
 }
 
-.profile-guide-desc {
-  color: var(--muted);
-  font-size: var(--fs-caption);
-  line-height: 1.45;
+.pet-avatar-add { background: var(--surface); }
+
+.pet-name {
+  max-width: 82rpx;
+  font-size: var(--fs-mini);
+  color: var(--body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.profile-guide-action {
-  flex-shrink: 0;
-  padding: 10rpx 24rpx;
-  border-radius: 999rpx;
+.pet.active .pet-name {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── 拍照初筛主卡 ── */
+.photo-card {
+  position: relative;
+  margin-top: var(--sp-3);
+  height: 320rpx;
+  padding: var(--sp-4) var(--sp-4) 0;
   background: var(--brand);
   color: var(--on-brand);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  box-sizing: border-box;
+  box-shadow: 0 12rpx 28rpx rgba(118, 57, 35, 0.14);
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+
+.photo-card:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 4rpx 12rpx rgba(118, 57, 35, 0.12);
+}
+
+.photo-kicker {
+  font-family: var(--font-sans);
+  font-size: var(--fs-mini);
+  color: var(--on-brand-muted);
+}
+
+.photo-title {
+  margin-top: 6rpx;
+  font-family: var(--font-serif);
+  font-size: var(--fs-display);
+  font-weight: 800;
+}
+
+/* BUG-UI7：原先限宽 260rpx（只占可用宽度 47%），18 字说明被压成 3 行、
+   右侧大片留空。拱窗只占 174rpx，正文放到 420rpx 即可并排。 */
+.photo-desc {
+  margin-top: 8rpx;
+  max-width: 420rpx;
   font-size: var(--fs-caption);
+  line-height: 1.55;
+  color: var(--on-brand-muted);
+}
+
+.photo-go {
+  width: max-content;
+  margin-top: var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  /* 热区 76rpx：视觉不变，靠上下 padding 撑到近 88rpx（BUG-UI5） */
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--on-brand);
+  color: var(--brand-dark);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+/* 拱形取景窗：只在这里用大曲线 */
+.photo-arch {
+  position: absolute;
+  right: 24rpx;
+  bottom: 0;
+  width: 150rpx;
+  height: 196rpx;
+  border-radius: 75rpx 75rpx 0 0;
+  /* --on-brand @14%（微信 WXSS 不支持 8 位 hex，用 rgba） */
+  background: rgba(251, 245, 236, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.photo-arch-icon {
+  width: 72rpx;
+  height: 72rpx;
+}
+
+/* 主卡下面只放实际拍摄建议，让留白承担节奏，不加装饰图标。 */
+.photo-guide {
+  margin-top: var(--sp-4);
+  padding: 0 var(--sp-1);
+}
+
+.photo-guide-title {
+  font-family: var(--font-serif);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.photo-guide-row {
+  display: flex;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+  color: var(--body);
+  font-size: var(--fs-mini);
+}
+
+/* BUG-UI65：静态拍照建议改为纯文字，避免看起来能点 */
+.photo-guide-row text {
+  flex: 1;
+  padding: 0;
+  text-align: left;
+}
+
+/* ── 对话问诊 + 上次检查 ── */
+.home-pair {
+  margin-top: var(--sp-4);
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-2);
+  padding-top: var(--sp-4);
+}
+
+.pair-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 236rpx;
+  padding: var(--sp-3) var(--sp-3) var(--sp-2);
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+  box-sizing: border-box;
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+
+.pair-card-record { background: var(--surface-sunk); }
+
+.pair-card:active {
+  transform: translateY(2rpx);
+  box-shadow: var(--shadow-card-press);
+}
+
+.pair-title {
+  font-family: var(--font-serif);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.pair-sub {
+  margin-top: 16rpx;
+  font-size: var(--fs-caption);
+  color: var(--body);
+  line-height: 1.4;
+}
+
+.pair-meta {
+  flex: none;
+  margin-top: var(--sp-1);
+  font-size: var(--fs-mini);
+  color: var(--body);
+  line-height: 1.2;
+}
+
+.pair-disease {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pair-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  margin-top: auto;
+  padding-top: 16rpx;
+}
+
+.pair-action {
+  margin-top: auto;
+  padding-top: 16rpx;
+  color: var(--brand-dark);
+  font-size: var(--fs-mini);
   font-weight: 600;
   line-height: 1.3;
 }
 
-/* ── 影像采集区 ── */
-.evidence-board {
-  margin-top: var(--sp-5);
+/* 纯文字链接：伪元素扩热区，不动盒模型（BUG-UI5b） */
+.pair-link {
+  position: relative;
+  flex: none;
+  font-size: var(--fs-mini);
+  color: var(--brand-dark);
+  font-weight: 600;
 }
 
-.board-head {
+.pair-link::after {
+  content: "";
+  position: absolute;
+  top: -18rpx;
+  right: -16rpx;
+  bottom: -18rpx;
+  left: -16rpx;
+}
+
+.pair-card-empty .pair-sub { color: var(--muted); }
+
+@media (prefers-color-scheme: dark) {
+  .pair-card { background: #28241E; }
+  .pair-action { color: #E3AD8D; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pair-card, .photo-card { transition-duration: 0ms; }
+}
+
+/* 今日护理：鼠尾草浅底，无竖条 */
+.care-tip {
+  margin-top: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--sage-soft);
+  color: var(--body);
+  font-size: var(--fs-mini);
+  line-height: 1.5;
+}
+
+.care-tip-label {
+  margin-right: var(--sp-2);
+  /* --sage 在 --sage-soft 上只有 3.6:1，小字改用 --body 提对比（BUG-UI4） */
+  color: var(--body);
+  font-weight: 700;
+}
+
+/* ── 拍照流程顶栏 ── */
+
+.capture-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-2);
-  margin-bottom: var(--sp-3);
 }
 
-.board-head-left {
+.capture-back {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  flex: 1;
-  min-width: 0;
+  gap: 4rpx;
+  width: 140rpx;
+  font-size: var(--fs-body);
+  color: var(--body);
 }
 
-.board-title {
-  color: var(--text);
+.capture-back:active { opacity: 0.6; }
+
+.capture-topbar-title {
   font-family: var(--font-serif);
-  font-size: 30rpx;
+  font-size: var(--fs-heading);
   font-weight: 700;
-  line-height: 1.35;
+  color: var(--text);
 }
 
-.board-desc {
-  margin-top: 4rpx;
-  color: var(--muted);
-  font-size: var(--fs-caption);
-  line-height: 1.45;
-}
+.capture-topbar-spacer { width: 140rpx; }
 
-/* 计数徽章 */
-.board-count-badge {
-  flex-shrink: 0;
+/* ── 步骤标题 ── */
+.step-head {
   display: flex;
   align-items: baseline;
-  color: var(--brand);
-  font-size: 30rpx;
+  gap: var(--sp-2);
+  margin-top: var(--sp-6);
+}
+
+.step-no { font-size: var(--fs-heading); }
+
+.step-title {
+  font-family: var(--font-serif);
+  font-size: var(--fs-title);
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  color: var(--text);
 }
 
-.board-count-sep {
+.step-side {
+  margin-left: auto;
   font-size: var(--fs-caption);
-  color: var(--faint);
-  margin: 0 2rpx;
+  color: var(--muted);
 }
 
-/* ── 无图引导区 — 浅灰底 + 虚线边框 ── */
-.capture-hero {
+/* 纯文字操作：用伪元素把命中区撑到 88rpx，不动盒模型
+   （BUG-UI5b：之前用负 margin 扩热区，在 align-items:baseline 的父容器里会把基线拉偏） */
+.step-side-link {
   position: relative;
-  border-radius: var(--r-md);
-  overflow: visible;
-  padding: var(--sp-5) var(--sp-4) var(--sp-4);
-  background: var(--surface);
+  color: var(--brand-dark);
+  font-weight: 600;
 }
 
-/* 取景框四角标线，替代虚线边框 */
-.capture-hero-bg {
-  display: block;
+.step-side-link::after {
+  content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(var(--brand-mid), var(--brand-mid)),
-    linear-gradient(var(--brand-mid), var(--brand-mid)),
-    linear-gradient(var(--brand-mid), var(--brand-mid)),
-    linear-gradient(var(--brand-mid), var(--brand-mid)),
-    linear-gradient(var(--brand-mid), var(--brand-mid)),
-    linear-gradient(var(--brand-mid), var(--brand-mid)),
-    linear-gradient(var(--brand-mid), var(--brand-mid)),
-    linear-gradient(var(--brand-mid), var(--brand-mid));
-  background-size:
-    32rpx 4rpx, 4rpx 32rpx,
-    32rpx 4rpx, 4rpx 32rpx,
-    32rpx 4rpx, 4rpx 32rpx,
-    32rpx 4rpx, 4rpx 32rpx;
-  background-position:
-    left 12rpx top 12rpx, left 12rpx top 12rpx,
-    right 12rpx top 12rpx, right 12rpx top 12rpx,
-    left 12rpx bottom 12rpx, left 12rpx bottom 12rpx,
-    right 12rpx bottom 12rpx, right 12rpx bottom 12rpx;
-  background-repeat: no-repeat;
-  border-radius: var(--r-md);
+  top: -22rpx;
+  right: -12rpx;
+  bottom: -22rpx;
+  left: -12rpx;
 }
 
-.capture-hero-inner {
-  position: relative;
+.step-desc {
+  margin-top: 6rpx;
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+
+/* ── 无图引导区 — 奶白卡 + 构图示意 ── */
+.capture-hero {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--card);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: var(--sp-2);
 }
 
-/* 极简相机图标 — 纯 CSS */
-.capture-hero-icon {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: var(--r-md);
-  background: var(--card);
-  border: 1rpx solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--sp-1);
-}
+.capture-hero:active { opacity: 0.9; }
 
-.capture-hero-camera {
-  position: relative;
-  width: 44rpx;
-  height: 36rpx;
+.capture-frame {
+  width: 100%;
+  height: 260rpx;
+  padding: 24rpx;
   border-radius: var(--r-sm);
-  border: 3rpx solid var(--muted);
+  background: var(--surface-strong);
   box-sizing: border-box;
 }
 
-.capture-hero-camera::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 14rpx;
-  height: 14rpx;
-  border-radius: 50%;
-  border: 3rpx solid var(--muted);
-  transform: translate(-50%, -50%);
+.capture-frame-inner {
+  width: 100%;
+  height: 100%;
+  border: 2rpx solid rgba(93, 79, 63, 0.42);
+  border-radius: var(--r-xs);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  box-sizing: border-box;
 }
 
-.capture-hero-camera::after {
-  content: "";
-  position: absolute;
-  left: 8rpx;
-  top: -8rpx;
-  width: 18rpx;
-  height: 8rpx;
-  border-radius: var(--r-sm) var(--r-sm) 0 0;
-  background: var(--muted);
+.capture-frame-label {
+  font-size: var(--fs-mini);
+  color: var(--body);
+}
+
+.capture-frame-guide {
+  font-family: var(--font-serif);
+  font-size: var(--fs-heading);
+  font-weight: 700;
+  color: var(--text);
+}
+
+@media (prefers-color-scheme: dark) {
+  .capture-frame-inner { border-color: rgba(242, 236, 224, 0.42); }
 }
 
 .capture-hero-title {
-  color: var(--text);
-  font-size: var(--fs-body);
+  margin-top: var(--sp-3);
+  font-family: var(--font-serif);
+  font-size: var(--fs-heading);
   font-weight: 700;
-  line-height: 1.35;
+  color: var(--text);
 }
 
 .capture-hero-desc {
-  color: var(--muted);
-  font-size: var(--fs-caption);
-  line-height: 1.5;
+  margin-top: 8rpx;
   max-width: 480rpx;
+  font-size: var(--fs-caption);
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .capture-hero-btn {
-  margin-top: var(--sp-1);
-  padding: var(--sp-2) var(--sp-5);
-  border-radius: var(--r-md);
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-6);
+  border-radius: var(--r-sm);
   background: var(--brand);
   color: var(--on-brand);
   font-size: var(--fs-body);
-  font-weight: 700;
-  transition: all 0.2s ease;
+  font-weight: 600;
 }
 
-.capture-hero-btn:active {
-  transform: scale(0.97);
-  opacity: 0.92;
-}
-
-.capture-hero-tags {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  gap: var(--sp-1);
+/* ── 三列照片卡 ── */
+.shot-grid {
   margin-top: var(--sp-3);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
 }
 
-.capture-tag {
-  padding: 6rpx var(--sp-2);
+.shot-photo {
+  position: relative;
+  height: 232rpx;
   border-radius: var(--r-sm);
-  background: var(--card);
-  color: var(--body);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.shot-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.shot-badge {
+  position: absolute;
+  left: 12rpx;
+  bottom: 12rpx;
+  padding: 4rpx var(--sp-2);
+  border-radius: var(--r-xs);
+  /* --on-brand @92%（微信 WXSS 不支持 8 位 hex，用 rgba） */
+  background: rgba(251, 245, 236, 0.92);
+  color: var(--text);
   font-size: var(--fs-mini);
   font-weight: 600;
-  border: 1rpx solid var(--line-light);
 }
 
-/* ── 有图列表 ── */
-.evidence-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-}
-
-.evidence-item {
-  display: flex;
-  align-items: stretch;
-  overflow: hidden;
-  border-radius: var(--r-md);
-  background: var(--card);
-  border: 1rpx solid var(--line-light);
-}
-
-.evidence-img-wrap {
-  position: relative;
-  overflow: hidden;
-  flex-shrink: 0;
-  width: 140rpx;
-}
-
-.evidence-image {
-  width: 140rpx;
-  height: 140rpx;
-  display: block;
-  background: var(--surface);
-}
-
-.evidence-img-badge {
-  position: absolute;
-  top: 6rpx;
-  left: 6rpx;
-  padding: 3rpx 10rpx;
-  border-radius: var(--r-sm);
-  background: var(--scrim);
-  color: var(--on-overlay);
-  font-size: 20rpx;
-  font-weight: 600;
-}
-
-.evidence-img-badge.has-box {
-  background: var(--brand);
-}
-
-.evidence-info {
-  flex: 1;
-  min-width: 0;
-  padding: var(--sp-2) var(--sp-3);
-  background: var(--card);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--sp-1);
-}
-
-.evidence-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sp-2);
-}
-
-.evidence-label {
-  color: var(--text);
-  font-size: 27rpx;
-  font-weight: 700;
-}
-
-.evidence-state {
-  margin-top: 4rpx;
-  color: var(--muted);
-  font-size: var(--fs-caption);
-}
-
-.evidence-state.saved {
-  color: var(--brand);
-  font-weight: 700;
-}
-
-/* 删除按钮 — CSS 绘制的 X */
-.remove-btn {
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: var(--r-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--surface);
-  flex-shrink: 0;
-}
-
-.remove-x {
-  position: relative;
-  width: 20rpx;
-  height: 20rpx;
-}
-
-.remove-x::before,
-.remove-x::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 18rpx;
-  height: 3rpx;
-  border-radius: 2rpx;
-  background: var(--muted);
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.remove-x::after {
-  transform: translate(-50%, -50%) rotate(-45deg);
-}
-
-.evidence-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-1);
-}
-
-.action-chip {
-  min-height: 48rpx;
-  padding: 0 var(--sp-2);
-  border-radius: var(--r-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--surface);
-  border: 1rpx solid var(--line);
-  color: var(--body);
-  font-size: var(--fs-caption);
-  font-weight: 600;
-  box-sizing: border-box;
-  transition: all 0.15s ease;
-}
-
-.action-chip.active {
-  background: var(--brand);
-  border-color: var(--brand);
+/* 选中态用奶白字而非纯白，避免与暖色板不同源（BUG-UI6） */
+.shot-badge.is-boxed {
+  background: var(--sage);
   color: var(--on-brand);
 }
 
-.action-chip.primary {
-  background: var(--brand-light);
-  border-color: var(--line);
-  color: var(--brand);
-  font-weight: 700;
-}
-
-.action-chip.warning {
-  background: var(--accent-soft);
-  border-color: var(--line);
-  color: var(--accent);
-}
-
-/* 继续添加（加号图标走全局 .vic-plus） */
-.append-photo {
-  min-height: 80rpx;
-  border-radius: var(--r-md);
-  border: 2rpx dashed var(--line);
+.shot-remove {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  /* 视觉 44rpx 圆，热区靠 padding 撑到 88rpx（BUG-UI5） */
+  width: 88rpx;
+  height: 88rpx;
+  margin: -22rpx;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sp-1);
-  color: var(--muted);
-  font-size: var(--fs-caption);
-  font-weight: 600;
-  background: transparent;
-  transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
-.append-photo .vic-plus {
+.shot-remove::before {
+  content: "";
+  position: absolute;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: var(--scrim);
+}
+
+.shot-remove-icon {
+  position: relative;
   width: 24rpx;
   height: 24rpx;
 }
 
-/* ── 通用信息区块 ── */
-.case-section {
-  margin-top: var(--sp-5);
-}
-
-.section-title-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-3);
-}
-
-.section-title {
-  color: var(--text);
-  font-family: var(--font-serif);
-  font-size: 30rpx;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.section-desc {
-  margin-top: 4rpx;
-  color: var(--muted);
-  font-size: var(--fs-caption);
-  line-height: 1.45;
-}
-
-/* ── 表单面板 — 白底卡片 ── */
-.input-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  padding: var(--sp-3);
-  background: var(--card);
-  border: 1rpx solid var(--line-light);
-  border-radius: var(--r-md);
-}
-
-.field-block {
-  display: flex;
-  flex-direction: column;
-}
-
-.field-title {
-  margin-bottom: var(--sp-1);
-  color: var(--body);
-  font-size: var(--fs-caption);
+.shot-quality {
+  position: absolute;
+  left: 12rpx;
+  top: 12rpx;
+  padding: 4rpx var(--sp-1);
+  border-radius: var(--r-xs);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: var(--fs-mini);
   font-weight: 600;
 }
 
+.shot-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--sp-1);
+  padding: 0 4rpx;
+  font-size: var(--fs-caption);
+}
+
+.shot-role { color: var(--muted); }
+.shot-role.is-set { color: var(--text); font-weight: 600; }
+
+/* 纯文字操作，命中区用伪元素撑到 88rpx（BUG-UI5b） */
+.shot-lasso {
+  position: relative;
+  color: var(--brand-dark);
+  font-weight: 600;
+}
+
+.shot-lasso::after {
+  content: "";
+  position: absolute;
+  top: -26rpx;
+  right: -16rpx;
+  bottom: -26rpx;
+  left: -16rpx;
+}
+
+.shot-add {
+  height: 232rpx;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+
+.shot-add:active { opacity: 0.8; }
+
+/* ── 表单：标签 + 选项，同一行 ── */
+.form-row {
+  display: flex;
+  align-items: flex-start;
+  margin-top: var(--sp-3);
+}
+
+.form-label {
+  flex: none;
+  width: 124rpx;
+  padding-top: var(--sp-2);
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+
 .choice-row {
+  flex: 1;
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-1);
 }
 
-.body-row .choice {
-  min-width: 100rpx;
-}
-
 .choice {
-  min-height: 52rpx;
+  min-height: 60rpx;
   padding: 0 var(--sp-3);
-  border-radius: var(--r-sm);
+  border-radius: var(--r-xs);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--brand-light);
-  border: 1rpx solid var(--line);
-  color: var(--brand);
+  background: var(--surface);
+  color: var(--body);
   font-size: var(--fs-caption);
-  font-weight: 600;
   box-sizing: border-box;
-  transition: all 0.15s ease;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 
 .choice.selected {
-  background: var(--brand);
-  border-color: var(--brand);
-  color: var(--on-brand);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-weight: 600;
 }
 
-/* 文本域 */
+.part-grid {
+  margin-top: var(--sp-3);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--sp-1);
+}
+
+.part-grid .choice { padding: 0; }
+
+/* BUG-UI8：原先用 --card 作底，在纸色页面上对比仅 1.06:1，几乎看不出是输入框；
+   改回与 .choice / .vet-input 一致的 --surface。 */
 .clinical-textarea {
   width: 100%;
-  min-height: 160rpx;
+  min-height: 170rpx;
+  margin-top: var(--sp-3);
   padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
+  border-radius: var(--r-sm);
   background: var(--surface);
-  border: 1rpx solid var(--line);
   color: var(--text);
   font-size: var(--fs-body);
   line-height: 1.6;
   box-sizing: border-box;
-  transition: border-color 0.2s ease;
 }
 
-.clinical-textarea:focus {
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3rpx var(--brand-focus-ring);
-}
+.textarea-placeholder { color: var(--muted); }
 
 /* ── 底部提交栏 — 浮起面板（与 result/chat 底栏统一） ── */
+/* BUG-UI56（真机）：拍照流程里底栏已被收起（index.js 的 _syncTabBar），
+   提交栏不再需要为它让位，只保留自身安全区即可。 */
 .submit-area {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 20;
-  padding: var(--sp-2) var(--sp-4) calc(var(--sp-2) + env(safe-area-inset-bottom));
-  background: var(--card);
-  border-top: 1rpx solid var(--line);
-  border-radius: var(--r-md) var(--r-md) 0 0;
+  padding: var(--sp-3) var(--vet-page-x) calc(var(--sp-2) + env(safe-area-inset-bottom));
+  background: var(--bg);
   box-shadow: var(--shadow-bar);
   box-sizing: border-box;
 }
@@ -582,38 +780,30 @@
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  margin-bottom: var(--sp-2);
+  margin-bottom: var(--sp-3);
 }
 
-.submit-progress-bar {
-  flex: 1;
-  height: 8rpx;
-  border-radius: var(--r-sm);
-  background: var(--line-light);
-  overflow: hidden;
+.submit-steps {
+  display: flex;
+  gap: var(--sp-1);
+  flex: none;
 }
 
-.submit-progress-fill {
-  height: 100%;
-  border-radius: var(--r-sm);
-  background: var(--brand);
-  transition: width var(--dur-base) var(--ease-standard);
+.submit-step {
+  width: 32rpx;
+  height: 12rpx;
+  border-radius: var(--r-xs);
+  background: var(--surface-strong);
+  transition: background var(--dur-base) var(--ease-standard);
 }
 
-.submit-progress-text {
-  flex-shrink: 0;
-  color: var(--brand);
-  font-size: var(--fs-mini);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
+.submit-step.on { background: var(--brand); }
 
 .submit-hint-inline {
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
   color: var(--muted);
-  font-size: var(--fs-mini);
-  margin-left: auto;
-  max-width: 260rpx;
+  font-size: var(--fs-caption);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -621,24 +811,25 @@
 
 .submit-btn {
   width: 100%;
-  height: 88rpx;
-  font-size: 30rpx;
+  height: 96rpx;
+  font-size: var(--fs-heading);
 }
 
-.submit-btn[disabled],
-.btn-disabled {
+.submit-btn[disabled] {
   opacity: 0.4;
-  box-shadow: none;
+  background: var(--brand);
+  color: var(--on-brand);
 }
 
+/* BUG-UI4：--faint 在纸底上只有 2.51:1，免责提示改用 --muted（3.34:1） */
 .submit-disclaimer {
   margin-top: var(--sp-1);
-  color: var(--faint);
+  color: var(--muted);
   text-align: center;
   font-size: var(--fs-mini);
 }
 
-/* ── 分析中遮罩 — 纯黑半透明 + 白字 ── */
+/* ── 分析中遮罩 ── */
 .analyzing-mask {
   position: fixed;
   top: 0;
@@ -652,385 +843,52 @@
   background: var(--overlay);
 }
 
+/* 遮罩里的加载卡：限宽 + 居中，不再依赖 .vet-loading-card 的固定 560rpx */
 .analyzing-card {
-  text-align: left;
+  width: 560rpx;
+  max-width: calc(100vw - 96rpx);
+  margin: 0 auto;
 }
 
-.analyzing-desc-text {
-  margin: var(--sp-2) 0 var(--sp-3);
-  padding: var(--sp-2) var(--sp-3);
+.analyzing-photo {
+  display: block;
+  width: 100%;
+  height: 240rpx;
+  margin-bottom: var(--sp-3);
   border-radius: var(--r-sm);
-  background: var(--surface);
-  color: var(--body);
-  font-size: var(--fs-caption);
-  font-weight: 600;
-  line-height: 1.5;
 }
-
-/* ── Dark Mode 适配 ── */
-@media (prefers-color-scheme: dark) {
-  .profile-guide-icon {
-    background: var(--brand);
-  }
-
-  .capture-hero {
-    background: var(--surface);
-  }
-
-  .capture-hero-icon {
-    background: var(--surface);
-    border-color: var(--line);
-  }
-
-  .capture-tag {
-    background: var(--surface);
-    border-color: var(--line);
-  }
-
-  .submit-area {
-    background: var(--card);
-  }
-
-  .evidence-item {
-    background: var(--card);
-  }
+/* BUG-UI73：清单循环往返滚动；遮罩移除时 CSS 动画自动停止。 */
+.analyzing-steps {
+  margin: var(--sp-3) 0;
+  height: 112rpx;
+  overflow: hidden;
 }
-
-/* ═══════════════════════════════════════════════════════
-   v4 首页（4a）— 刊头 / 宠物行 / 01 PHOTO / 02 CHAT / 上次检查
-   ═══════════════════════════════════════════════════════ */
-
-/* ── 刊头 ── */
-.home-masthead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: var(--sp-2);
+.analyzing-steps-track {
+  animation: analyzingChecklistScroll 4s ease-in-out infinite alternate;
 }
-
-.masthead-date {
-  font-family: var(--font-mono);
-  font-size: var(--fs-mini);
-  font-weight: 600;
-  letter-spacing: 4rpx;
-  color: var(--gold);
+@keyframes analyzingChecklistScroll {
+  0%, 15% { transform: translateY(0); }
+  85%, 100% { transform: translateY(-112rpx); }
 }
-
-.masthead-brand {
-  font-family: var(--font-mono);
-  font-size: var(--fs-mini);
-  font-weight: 600;
-  letter-spacing: 3rpx;
-  color: var(--gold);
-  border: 1rpx solid var(--gold-line);
-  border-radius: 6rpx; /* 豁免：微型描边徽标的笔画级圆角，不入三档 */
-  padding: 4rpx 12rpx;
-}
-
-/* ── 宋体大标题 ── */
-.greet-title {
-  margin-top: var(--sp-3);
-  color: var(--text);
-  font-family: var(--font-serif);
-  font-size: var(--fs-hero);
-  font-weight: 900;
-  line-height: 1.25;
-}
-
-.greet-sub {
-  margin-top: 12rpx;
-  color: var(--muted);
-  font-size: var(--fs-caption);
-}
-
-/* ── 宠物行 ── */
-.pet-row {
-  margin-top: var(--sp-3);
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-}
-
-.pet-avatar {
-  width: 88rpx;
-  height: 88rpx;
-  border-radius: 50%;
-  background: var(--surface);
-  border: 4rpx solid transparent;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-serif);
-  font-size: 32rpx;
-  font-weight: 900;
-  opacity: 0.6;
-  box-sizing: border-box;
-}
-
-.pet-avatar:active { opacity: 0.85; }
-
-.pet-avatar.active {
-  border-color: var(--brand);
-  opacity: 1;
-}
-
-.pet-avatar-add {
-  background: transparent;
-  border: 2rpx dashed var(--faint);
-  color: var(--ghost);
-  font-family: var(--font-sans);
-  font-size: 36rpx;
-  font-weight: 300;
-  opacity: 1;
-}
-
-.pet-count {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: var(--fs-mini);
-  letter-spacing: 2rpx;
-  color: var(--gold);
-}
-
-/* ── 区块编号（01 / PHOTO、02 / CHAT） ── */
-.card-no {
-  font-family: var(--font-mono);
-  font-size: var(--fs-mini);
-  font-weight: 600;
-  letter-spacing: 4rpx;
-}
-
-.card-no-lime { color: var(--lime); }
-.card-no-gold { color: var(--gold); }
-
-/* ── 01 / PHOTO 墨绿主卡 ── */
-.photo-card {
+.analyzing-step {
   position: relative;
-  margin-top: var(--sp-4);
-  padding: 36rpx 36rpx 32rpx;
-  background: var(--brand);
-  color: var(--on-brand);
-  border-radius: var(--r-lg);
-  overflow: hidden;
+  padding-left: 40rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  color: var(--muted);
+  font-size: var(--fs-caption);
 }
-
-.photo-card:active { opacity: 0.94; }
-
-.photo-seal {
+.analyzing-step::before {
+  content: "";
   position: absolute;
-  right: 28rpx;
-  top: 28rpx;
-  width: 108rpx;
-  height: 108rpx;
-  border-color: var(--gold-line-onbrand);
-  transform: rotate(10deg);
+  left: 0;
+  top: 18rpx;
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  background: var(--surface-strong);
 }
-
-.photo-seal::before {
-  border-color: var(--gold-line-onbrand-inner);
-}
-
-.seal-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rpx;
-}
-
-.photo-seal text {
-  color: var(--gold-bright);
-  font-size: 22rpx;
-  line-height: 1;
-}
-
-.photo-seal .vet-seal-sub {
-  color: var(--gold-bright);
-  font-size: 12rpx;
-}
-
-.photo-title {
-  margin-top: 20rpx;
-  font-family: var(--font-serif);
-  font-size: var(--fs-display);
-  font-weight: 900;
-}
-
-.photo-desc {
-  margin-top: 6rpx;
-  max-width: 400rpx;
-  font-size: var(--fs-caption);
-  line-height: 1.6;
-  opacity: 0.72;
-}
-
-.photo-foot {
-  margin-top: 28rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.photo-eta {
-  font-family: var(--font-mono);
-  font-size: 22rpx;
-  letter-spacing: 2rpx;
-  opacity: 0.55;
-}
-
-/* ── 02 / CHAT 墨线描边卡 ── */
-.chat-card {
-  margin-top: 20rpx;
-  padding: 30rpx 36rpx;
-  background: var(--card);
-  border: 2rpx solid var(--brand);
-  border-radius: var(--r-lg);
-  display: flex;
-  align-items: center;
-  gap: 28rpx;
-  box-sizing: border-box;
-}
-
-.chat-card:active { opacity: 0.92; }
-
-.chat-card-body { flex: 1; min-width: 0; }
-
-.chat-card-title {
-  margin-top: 10rpx;
-  font-family: var(--font-serif);
-  font-size: var(--fs-title);
-  font-weight: 900;
-  color: var(--text);
-}
-
-.chat-card-sub {
-  margin-top: 4rpx;
-  font-size: var(--fs-caption);
-  color: var(--muted);
-}
-
-/* ── 上次检查 ── */
-.last-check {
-  margin-top: var(--sp-5);
-  border-top: 4rpx solid var(--text);
-  padding-top: 20rpx;
-}
-
-.last-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-
-.last-title {
-  font-family: var(--font-serif);
-  font-size: 30rpx;
-  font-weight: 900;
-  color: var(--text);
-}
-
-.last-all {
-  font-family: var(--font-mono);
-  font-size: var(--fs-mini);
-  letter-spacing: 2rpx;
-  color: var(--gold);
-}
-
-.last-row {
-  margin-top: var(--sp-2);
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-}
-
-.last-date {
-  flex-shrink: 0;
-  font-family: var(--font-mono);
-  font-size: 22rpx;
-  color: var(--gold);
-}
-
-.last-info { flex: 1; min-width: 0; }
-
-.last-disease {
-  font-size: 27rpx;
-  font-weight: 700;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.last-status {
-  flex-shrink: 0;
-  font-size: 20rpx;
-  font-weight: 700;
-  border-radius: var(--r-sm);
-  padding: 6rpx 14rpx;
-  background: var(--surface);
-  color: var(--muted);
-}
-
-.last-status.sev-low { color: var(--sev-low); background: var(--sev-low-bg); }
-.last-status.sev-moderate { color: var(--sev-mid-text); background: var(--sev-mid-bg); }
-.last-status.sev-urgent { color: var(--sev-urgent); background: var(--sev-urgent-bg); }
-.last-status.sev-emergency { color: var(--sev-emergency); background: var(--sev-emergency-bg); }
-
-/* 今日护理 —— 处方笺「医嘱」：淡金雾底 + 鎏金左竖条 */
-.care-tip {
-  margin-top: 20rpx;
-  padding: 20rpx 24rpx;
-  border-radius: var(--r-md);
-  background: var(--gold-mist);
-  border-left: 4rpx solid var(--gold);
-  font-size: var(--fs-caption);
-  line-height: 1.6;
-  color: var(--body);
-}
-
-.care-tip-label {
-  color: var(--gold);
-  font-weight: 700;
-}
-
-/* 空状态容器复用全局 .vet-empty，此处仅保留页面内的外边距 */
-.home-empty {
-  margin-top: var(--sp-6);
-}
-
-
-/* ── 拍照流程顶栏 ── */
-.capture-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-2);
-}
-
-.capture-back {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-  font-size: var(--fs-caption);
-  color: var(--muted);
-}
-
-.capture-back-arrow {
-  width: 16rpx;
-  height: 16rpx;
-  border-left: 3rpx solid var(--muted);
-  border-bottom: 3rpx solid var(--muted);
-  transform: rotate(45deg);
-}
-
-.capture-topbar-title {
-  font-family: var(--font-serif);
-  font-size: var(--fs-title);
-  font-weight: 900;
-  color: var(--text);
-}
-
-.capture-topbar-spacer {
-  width: 80rpx;
-}
+.analyzing-step.is-current { color: var(--text); font-weight: 600; }
+.analyzing-step.is-current::before { background: var(--brand); }
+.analyzing-step.is-done { color: var(--body); }
+.analyzing-step.is-done::before { background: var(--sage); }

@@ -7,12 +7,24 @@ var emptyForm = {
   allergy: '', medicalHistory: '', avatar: ''
 }
 
+// 记录时间统一展示为「5 月 7 日」（BUG-UI53）
+function formatShortDate(record) {
+  var raw = (record && record.createdAt) || (record && record.timestamp) || ''
+  var parsed = typeof raw === 'number' ? raw : Date.parse(String(raw))
+  if (isNaN(parsed)) return ''
+  var d = new Date(parsed)
+  return (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日'
+}
+
 Page({
   data: {
     profiles: [],
     activeProfileId: '',
     showForm: false,
     editingId: '',
+    // 聚焦字段 key，驱动 .is-focus（BUG-UI32）；formValid 驱动保存按钮禁用态（BUG-UI36）
+    focusKey: '',
+    formValid: false,
     form: Object.assign({}, emptyForm),
     petTypeOptions: [
       { value: 'dog', label: '犬' },
@@ -64,7 +76,9 @@ Page({
       }
       return Object.assign({}, item, {
         avatarText: item.petName ? item.petName.slice(0, 1) : '宠',
-        lastRecordText: lastRecord ? ((lastRecord.disease || lastRecord.primaryDiagnosis || '初筛报告') + '，' + (lastRecord.timestamp || '')) : ''
+        // BUG-UI53：原先直接拼 timestamp（形如 2025/5/7 14:33:41），秒级时间无意义
+        // 且会被两行截断；统一成「5 月 7 日」，与详情页的展示口径一致。
+        lastRecordText: lastRecord ? ((lastRecord.disease || lastRecord.primaryDiagnosis || '初筛报告') + '，' + formatShortDate(lastRecord)) : ''
       })
     })
     this.setData({
@@ -104,29 +118,86 @@ Page({
         avatar: profile.avatar || ''
       }
     })
+    this._syncFormValid()
   },
 
+  // BUG-UI33：showCreateForm 一直是「跳对话页建档」，抽屉里的新建分支永久不可达；
+  // 抽屉只保留编辑语义，新建统一走对话建档。
   hideCreateForm: function () {
-    this.setData({ showForm: false, editingId: '', form: Object.assign({}, emptyForm) })
+    this.setData({ showForm: false, editingId: '', focusKey: '', form: Object.assign({}, emptyForm) })
+  },
+
+  // BUG-UI35：遮罩/关闭按钮原先直接丢弃已填内容（既往病史上限 300 字），
+  // 同一应用删一条记录都要二次确认，这里补脏检查。
+  _isFormDirty: function () {
+    var form = this.data.form
+    var keys = Object.keys(emptyForm)
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i]
+      if ((form[k] || '') !== (emptyForm[k] || '')) return true
+    }
+    return false
+  },
+
+  onDrawerClose: function () {
+    var self = this
+    if (!this._isFormDirty()) {
+      this.hideCreateForm()
+      return
+    }
+    wx.showModal({
+      title: '放弃修改？',
+      content: '已填写的内容不会保存。',
+      confirmText: '放弃',
+      confirmColor: '#9C3A25',
+      success: function (res) {
+        if (res.confirm) self.hideCreateForm()
+      }
+    })
+  },
+
+  onDrawerMaskTap: function () {
+    this.onDrawerClose()
+  },
+
+  // BUG-UI32：WXSS 的 :focus 支持不可靠，聚焦态改由数据驱动
+  onFieldFocus: function (e) {
+    var key = e.currentTarget.dataset.key || ''
+    if (key) this.setData({ focusKey: key })
+  },
+
+  onFieldBlur: function () {
+    if (this.data.focusKey) this.setData({ focusKey: '' })
+  },
+
+  // 保存按钮禁用态：四个必填项齐了才可点（BUG-UI36）
+  _syncFormValid: function () {
+    var form = this.data.form
+    var valid = !!(form.petName && form.petType && form.gender && form.age)
+    if (valid !== this.data.formValid) this.setData({ formValid: valid })
   },
 
   onInput: function (e) {
     this.setData({ ['form.' + e.currentTarget.dataset.key]: e.detail.value })
+    this._syncFormValid()
   },
 
   onPetTypeTap: function (e) {
     var item = this.data.petTypeOptions[parseInt(e.currentTarget.dataset.index)]
     this.setData({ 'form.petType': item.value, 'form.petTypeLabel': item.label })
+    this._syncFormValid()
   },
 
   onGenderTap: function (e) {
     var item = this.data.genderOptions[parseInt(e.currentTarget.dataset.index)]
     this.setData({ 'form.gender': item.value, 'form.genderLabel': item.label })
+    this._syncFormValid()
   },
 
   onAgeTap: function (e) {
     var item = this.data.ageOptions[parseInt(e.currentTarget.dataset.index)]
     this.setData({ 'form.age': item.value, 'form.ageLabel': item.label })
+    this._syncFormValid()
   },
 
   onSterilizedChange: function (e) {
@@ -180,25 +251,16 @@ Page({
       medicalHistory: form.medicalHistory.trim()
     })
 
-    if (this.data.editingId) {
-      var result = storage.updatePetProfile(this.data.editingId, profileData)
-      if (!result) {
-        wx.showToast({ title: '档案更新失败', icon: 'none' })
-        this.loadProfiles()
-        return
-      }
-      wx.showToast({ title: '已更新', icon: 'success' })
-    } else {
-      var profile = storage.addPetProfile(profileData)
-      if (profile.error) {
-        wx.showToast({ title: profile.error, icon: 'none' })
-        return
-      }
-      this.setData({ activeProfileId: profile.id })
-      wx.showToast({ title: '已创建', icon: 'success' })
+    // BUG-UI33：抽屉只服务编辑（新建走对话建档），原先的 addPetProfile 分支已不可达
+    var result = storage.updatePetProfile(this.data.editingId, profileData)
+    if (!result) {
+      wx.showToast({ title: '档案更新失败', icon: 'none' })
+      this.loadProfiles()
+      return
     }
+    wx.showToast({ title: '已更新', icon: 'success' })
 
-    this.setData({ showForm: false, editingId: '', form: Object.assign({}, emptyForm) })
+    this.setData({ showForm: false, editingId: '', focusKey: '', form: Object.assign({}, emptyForm) })
     this.loadProfiles()
   },
 
@@ -219,7 +281,7 @@ Page({
       title: '删除档案',
       content: '删除后不会删除已有问诊记录，但首页不再使用这个档案。',
       confirmText: '删除',
-      confirmColor: '#c76f5a',
+      confirmColor: '#9C3A25',
       success: function (res) {
         if (!res.confirm) return
         storage.deletePetProfile(id)

@@ -2,5 +2,5 @@
   "usingComponents": {
     "lesion-selector": "/components/lesion-selector/lesion-selector"
   },
-  "navigationBarTitleText": "皮肤初筛"
+  "navigationBarTitleText": ""
 }

@@ -1,40 +1,34 @@
+/* 底部内边距与全局 .vet-page 对齐（BUG-UI22），并改用 --vet-safe-bottom 令牌 */
 .report-page {
   min-height: 100vh;
   background: var(--bg);
-  padding: var(--sp-3) var(--sp-3) calc(var(--sp-4) + env(safe-area-inset-bottom));
+  padding: var(--sp-3) var(--vet-page-x) calc(var(--sp-6) + var(--vet-safe-bottom));
   box-sizing: border-box;
 }
 
-/* ── 处方笺刊头 ─────────────────────────────── */
+/* ── 刊头 ─────────────────────────────── */
 .report-masthead {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--sp-1) 0 var(--sp-2);
+  padding-bottom: var(--sp-4);
 }
 
 .report-masthead-badge {
-  font-family: var(--font-mono);
+  padding: 4rpx 14rpx;
+  border-radius: var(--r-xs);
+  background: var(--surface);
+  color: var(--body);
   font-size: var(--fs-mini);
-  font-weight: 600;
-  letter-spacing: 3rpx;
-  color: var(--gold);
-  border: 1rpx solid var(--gold-line);
-  border-radius: 6rpx; /* 豁免：微型描边徽标的笔画级圆角，不入三档（同 index 刊头徽标） */
-  padding: 4rpx 12rpx;
 }
 
-.report-open-rule {
-  margin-bottom: var(--sp-3);
-}
-
-/* ── 结论区（宠物名 + 鎏金印章） ─────────────── */
+/* ── 结论区（宠物名 + 印章） ─────────────── */
 .report-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--sp-2);
-  margin-bottom: var(--sp-3);
+  margin-bottom: var(--sp-4);
 }
 
 .report-head-main {
@@ -48,65 +42,57 @@
   margin-top: var(--sp-1);
 }
 
-.report-seal {
+.report-origin {
   flex: none;
+  margin-top: var(--sp-1);
+  padding: 4rpx var(--sp-2);
+  border-radius: var(--r-xs);
+  background: var(--surface);
+  color: var(--body);
+  font-size: var(--fs-mini);
 }
 
-/* ── 处方笺结论块 ─────────────────────────────── */
+
+
+/* ── 结论面板：严重度渐变底，不画竖条 ─────── */
+/* BUG-UI20：与 result.wxss 共用同一套令牌渐变，不再两页各写一遍 hex。
+   模板拼的是 verdict-{{urgency}}，urgency 归一化后只会是 low/moderate/urgent/emergency，
+   默认底色即 moderate，所以不再单独定义 .verdict-moderate。 */
 .report-verdict {
-  display: flex;
-  background: var(--card);
-  border: 1rpx solid var(--line-light);
-  border-radius: var(--r-md);
-  overflow: hidden;
-  margin-bottom: var(--sp-2);
+  border-radius: var(--r-lg);
+  background: linear-gradient(160deg, var(--sev-mid-bg) 0%, var(--sev-mid-mid) 55%, var(--bg) 100%);
+  margin-bottom: var(--sp-3);
 }
 
-.verdict-bar {
-  width: 4rpx;
-  flex: none;
-}
+.verdict-low { background: linear-gradient(160deg, var(--sev-low-bg) 0%, var(--sev-low-mid) 55%, var(--bg) 100%); }
+.verdict-urgent { background: linear-gradient(160deg, var(--sev-urgent-bg) 0%, var(--sev-urgent-mid) 55%, var(--bg) 100%); }
+.verdict-emergency { background: linear-gradient(160deg, var(--sev-emergency-bg) 0%, var(--sev-emergency-mid) 55%, var(--bg) 100%); }
 
 .verdict-body {
-  flex: 1;
-  min-width: 0;
-  padding: var(--sp-3);
+  padding: var(--sp-4);
 }
 
-.verdict-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44rpx;
-  padding: 0 var(--sp-2);
-  border-radius: 999rpx;
-  font-size: var(--fs-mini);
-  font-weight: 700;
+.verdict-label {
+  display: block;
+  margin-top: var(--sp-2);
 }
 
 .verdict-text {
-  margin-top: var(--sp-2);
+  margin-top: var(--sp-1);
   font-family: var(--font-serif);
-  font-size: var(--fs-title);
-  font-weight: 900;
+  font-size: var(--fs-display);
+  font-weight: 800;
   color: var(--text);
   line-height: 1.4;
 }
 
-.verdict-low .verdict-bar { background: var(--sev-low); }
-.verdict-low .verdict-chip { background: var(--sev-low-bg); color: var(--sev-low); }
-
-.verdict-moderate .verdict-bar { background: var(--sev-mid); }
-.verdict-moderate .verdict-chip { background: var(--sev-mid-bg); color: var(--sev-mid-text); }
-
-.verdict-urgent .verdict-bar { background: var(--sev-urgent); }
-.verdict-urgent .verdict-chip { background: var(--sev-urgent-bg); color: var(--sev-urgent); }
-
-.verdict-emergency .verdict-bar { background: var(--sev-emergency); }
-.verdict-emergency .verdict-chip { background: var(--sev-emergency-bg); color: var(--sev-emergency); }
-
 /* ── 照片 ─────────────────────────────── */
 .report-photos {
-  margin-bottom: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.report-photos-scroll {
+  height: 200rpx;
 }
 
 .report-photos-row {
@@ -122,17 +108,12 @@
   flex-shrink: 0;
 }
 
-/* ── 诊断信息（鎏金编号区块） ─────────────── */
+/* ── 诊断信息：奶白卡片，条目靠留白分开 ─────── */
+/* BUG-UI22：原先手工复刻 .vet-card 且内边距 28rpx，与相邻面板 32rpx 差 4rpx；
+   改为直接复用全局卡片类。 */
 .report-sections {
-  background: var(--card);
-  border: 1rpx solid var(--line-light);
-  border-radius: var(--r-md);
-  padding: 0 var(--sp-3);
+  padding: var(--sp-1) var(--sp-4);
   margin-bottom: var(--sp-3);
-}
-
-.report-rule {
-  margin: 0;
 }
 
 .report-section {
@@ -143,27 +124,33 @@
   display: flex;
   align-items: baseline;
   gap: var(--sp-1);
-  margin-bottom: var(--sp-1);
+  margin-bottom: 8rpx;
+}
+
+.report-section-no {
+  font-size: var(--fs-title);
+  line-height: 1;
 }
 
 .report-section-label {
-  font-size: var(--fs-mini);
-  font-weight: 700;
-  color: var(--brand);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .report-section-value {
   font-size: var(--fs-body);
   color: var(--text);
-  line-height: 1.6;
+  line-height: 1.65;
   white-space: pre-wrap;
 }
 
 /* ── 免责声明 ─────────────────────────────── */
+/* BUG-UI4：原先用 --faint，对纸底只有 2.51:1，关键提示读不清 */
 .report-disclaimer {
   font-size: var(--fs-mini);
-  color: var(--faint);
-  line-height: 1.5;
+  color: var(--muted);
+  line-height: 1.6;
   text-align: center;
   padding: var(--sp-2) var(--sp-3);
   margin-bottom: var(--sp-3);
@@ -184,7 +171,9 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding-top: 200rpx;
+  /* 空态垂直居中：用 flex 撑开而不是 200rpx 魔数 */
+  min-height: 60vh;
+  justify-content: center;
   gap: var(--sp-4);
 }
 

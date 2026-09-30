@@ -6,7 +6,7 @@
         <view class="vet-title-lg">圈出最明显的位置</view>
         <view class="vet-caption">可选步骤。标注后系统会额外关注这块区域。</view>
       </view>
-      <view class="lesion-close" bindtap="onCloseTap">×</view>
+      <view class="lesion-close" bindtap="onCloseTap" aria-label="关闭圈选"><image class="vet-icon" src="/assets/icons/x-light-body.svg" /></view>
     </view>
 
     <view class="lesion-toolbar">
@@ -31,7 +31,7 @@
     </view>
 
     <view class="lesion-actions">
-      <button class="vet-btn vet-btn-primary lesion-save-main" bindtap="onSaveTap">完成并保存圈选</button>
+      <button class="vet-btn vet-btn-primary lesion-save-main" bindtap="onSaveTap" disabled="{{!canSave}}">完成并保存圈选</button>
       <button class="vet-btn vet-btn-ghost" bindtap="onClearTap">清除</button>
       <button class="vet-btn vet-btn-secondary" bindtap="onResetTap">重画</button>
     </view>

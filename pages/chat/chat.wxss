@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════
-   Chat Page — VetAI DS v6
-   对话式问诊页面
+   Chat Page — VetAI DS v7「暖阳 · 衬线」
+   AI 回复不配头像、不包气泡，使用无衬线排段落；用户消息沙色气泡
+   只保留返回 / 相册 / 发送三个图标
    ═══════════════════════════════════════════ */
 
 /* page 必须有明确高度，.chat-page 的 height:100% / flex:1 才能生效，
@@ -24,19 +25,37 @@ page {
   z-index: 1000;
   display: flex;
   align-items: flex-end;
+  animation: pickerFadeIn 220ms ease-out both;
 }
 
+.profile-picker-mask.is-closing { animation: pickerFadeOut 240ms ease-in both; }
+
+@keyframes pickerFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pickerFadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* BUG-UI19：原先底色与页面同为 --bg 且无阴影，弹层层级只靠遮罩硬撑；
+   改奶白底 + 大阴影（设计系统里浮起元素才用阴影）。 */
 .profile-picker-sheet {
   width: 100%;
   background: var(--card);
+  border: none;
   border-radius: var(--r-lg) var(--r-lg) 0 0;
-  padding: var(--sp-4) var(--sp-3) calc(var(--sp-4) + env(safe-area-inset-bottom));
-  animation: slideUp var(--dur-base) var(--ease-out);
+  box-shadow: var(--shadow-bar);
+  padding: var(--sp-5) var(--sp-4) calc(var(--sp-4) + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  animation: pickerRise 360ms var(--ease-out) both;
 }
 
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+.profile-picker-sheet.is-closing { animation: pickerSink 240ms ease-in both; }
+
+@keyframes pickerRise {
+  from { transform: translateY(150rpx) scale(0.96); opacity: 0.42; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes pickerSink {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(110rpx); opacity: 0; }
 }
 
 .profile-picker-title {
@@ -52,7 +71,7 @@ page {
   color: var(--muted);
   text-align: center;
   margin-top: var(--sp-1);
-  margin-bottom: var(--sp-3);
+  margin-bottom: var(--sp-4);
 }
 
 .profile-picker-list {
@@ -63,15 +82,16 @@ page {
 .profile-picker-item {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2);
+  gap: var(--sp-3);
+  min-height: 112rpx;
+  padding: var(--sp-3);
   border-radius: var(--r-md);
-  margin-bottom: var(--sp-1);
+  background: var(--surface);
+  margin-bottom: var(--sp-2);
+  transition: transform 160ms ease, background 160ms ease;
 }
 
-.profile-picker-item:active {
-  background: var(--surface);
-}
+.profile-picker-item:active { transform: scale(0.985); background: var(--brand-light); }
 
 .profile-picker-avatar {
   width: 80rpx;
@@ -83,7 +103,8 @@ page {
   justify-content: center;
   overflow: hidden;
   flex-shrink: 0;
-  font-size: 30rpx;
+  font-family: var(--font-serif);
+  font-size: var(--fs-heading);
   font-weight: 700;
   color: var(--brand);
 }
@@ -99,7 +120,8 @@ page {
 }
 
 .profile-picker-name {
-  font-size: var(--fs-body);
+  font-family: var(--font-serif);
+  font-size: var(--fs-heading);
   font-weight: 700;
   color: var(--text);
 }
@@ -108,10 +130,6 @@ page {
   font-size: var(--fs-mini);
   color: var(--muted);
   margin-top: 4rpx;
-}
-
-.profile-picker-arrow {
-  color: var(--faint);
 }
 
 .profile-picker-new {
@@ -123,19 +141,12 @@ page {
   margin-top: var(--sp-2);
   border-radius: var(--r-md);
   background: var(--brand-light);
-  color: var(--brand);
+  color: var(--brand-dark);
   font-size: var(--fs-body);
   font-weight: 600;
 }
 
-.profile-picker-new:active {
-  opacity: 0.8;
-}
-
-.profile-picker-new-icon {
-  width: 24rpx;
-  height: 24rpx;
-}
+.profile-picker-new:active { transform: scale(0.985); }
 
 /* ── 顶部标题栏 ─────────────────────────────── */
 /* padding-top 由 wxml 内联 statusBarHeight 提供（custom 导航，JS 计算跨平台可靠），
@@ -144,63 +155,30 @@ page {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--sp-2) var(--sp-3);
-  background: var(--card);
-  border-bottom: 4rpx solid var(--text);
+  padding: var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-2);
+  background: var(--bg);
   flex-shrink: 0;
 }
 
 .chat-header-left {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--sp-1);
+  flex: 1;
+  min-width: 0;
 }
 
 .chat-back-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 50%;
-  border: 3rpx solid var(--text);
-  background: var(--card);
+  width: 88rpx;
+  height: 88rpx;
+  margin-left: -12rpx;
   flex-shrink: 0;
-  box-sizing: border-box;
 }
 
-.chat-back-btn:active {
-  background: var(--brand-light);
-}
-
-.chat-back-btn .vic-back {
-  width: 18rpx;
-  height: 18rpx;
-  color: var(--text);
-  transform: rotate(45deg);
-  margin-left: 4rpx;
-}
-
-.chat-doctor-avatar {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 50%;
-  background: var(--brand);
-  color: var(--lime);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-sizing: border-box;
-}
-
-.chat-header-left {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  flex: 1;
-  min-width: 0;
-}
+.chat-back-btn:active { opacity: 0.6; }
 
 .chat-header-info {
   flex: 1;
@@ -212,7 +190,7 @@ page {
   color: var(--text);
   font-family: var(--font-serif);
   font-size: var(--fs-title);
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
@@ -222,219 +200,177 @@ page {
 .chat-header-sub {
   display: flex;
   align-items: center;
-  gap: 6rpx;
+  gap: var(--sp-1);
   margin-top: 2rpx;
-  color: var(--gold);
-  font-family: var(--font-mono);
+  color: var(--muted);
   font-size: var(--fs-mini);
-  letter-spacing: 2rpx;
   line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.chat-status-dot {
-  width: 10rpx;
-  height: 10rpx;
-  border-radius: 50%;
-  background: var(--lime);
-  border: 1rpx solid var(--brand-mid);
-  flex-shrink: 0;
-}
-
 .chat-header-actions {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-1);
   flex-shrink: 0;
 }
 
-.chat-history-btn {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  padding: var(--sp-1) 0;
-}
-
-.chat-history-btn:active { opacity: 0.6; }
-
-.chat-history-text {
-  color: var(--muted);
-  font-size: var(--fs-caption);
-  font-weight: 600;
-  line-height: 1.2;
-}
-
+/* BUG-UI5：原先 padding 10/20rpx，实测高约 51rpx（25pt），远低于 88rpx 热区 */
+.chat-history-btn,
 .chat-new-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  padding: var(--sp-1) 0;
+  min-height: 72rpx;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-xs);
 }
 
-.chat-new-btn:active { opacity: 0.6; }
+.chat-history-btn { background: transparent; }
+.chat-new-btn { background: var(--ink); }
+
+.chat-history-btn:active,
+.chat-new-btn:active { opacity: 0.7; }
+
+.chat-history-text {
+  color: var(--body);
+  font-size: var(--fs-caption);
+  line-height: 1.3;
+}
 
 .chat-new-text {
-  color: var(--brand);
+  color: var(--on-ink);
   font-size: var(--fs-caption);
-  font-weight: 700;
-  border-bottom: 2rpx solid var(--lime);
-  padding-bottom: 2rpx;
-  line-height: 1.2;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* ── 问诊进度：标题下方居中小标签（圆角改小，曲线只留给气泡/头像） ── */
+.chat-progress {
+  align-self: center;
+  flex-shrink: 0;
+  margin: var(--sp-1) 0;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--ochre-soft);
+  color: var(--ochre-text);
+  font-size: var(--fs-mini);
+  line-height: 1.5;
 }
 
 /* ── 恢复草稿提示 ───────────────────────────── */
 .restored-notice {
-  text-align: center;
-  padding: var(--sp-1) var(--sp-3);
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: var(--fs-mini);
-  font-weight: 600;
+  align-self: center;
   flex-shrink: 0;
+  margin: var(--sp-1) 0;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--body);
+  font-size: var(--fs-mini);
 }
 
 /* ── 消息列表 ─────────────────────────────────── */
 .chat-messages {
   flex: 1;
   min-height: 0;
-  padding: var(--sp-3) var(--sp-3) var(--sp-2);
+  padding: var(--sp-2) var(--vet-page-x) var(--sp-2);
+  box-sizing: border-box;
 }
 
 .msg-row {
   display: flex;
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-3);
-  align-items: flex-start;
+  margin-bottom: var(--sp-4);
 }
 
-.msg-row-user {
-  flex-direction: row-reverse;
-  padding-right: var(--sp-3);
-}
-
-.msg-avatar {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 50%;
-  background: var(--brand);
-  color: var(--lime);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-sizing: border-box;
-}
-
-.msg-avatar .vic-cross {
-  transform: scale(0.85);
-}
-
-.msg-avatar-user {
-  background: var(--surface);
-  border: 1rpx solid var(--line);
-  color: var(--muted);
-}
+.msg-row-user { justify-content: flex-end; }
 
 .msg-content {
-  max-width: 75%;
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
-.msg-row-user .msg-content { align-items: flex-end; }
-
-/* ── 消息气泡 ─────────────────────────────────── */
-.msg-bubble {
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-bubble);
-  word-break: break-all;
-  box-sizing: border-box;
+.msg-row-doctor .msg-content {
+  max-width: 92%;
 }
 
-.msg-bubble-doctor {
-  background: var(--card);
-  border: 2rpx solid var(--brand);
-  border-top-left-radius: var(--r-bubble-tip);
+.msg-row-user .msg-content {
+  max-width: 78%;
+  align-items: flex-end;
 }
 
+/* AI 回复：无气泡，宋体段落；正文与用户侧统一字号，靠字体族区分（BUG-UI14） */
+.msg-bubble-doctor { padding: 0; }
+
+/* BUG-UI62：AI 文本用字不可预知，宋体子集覆盖有限，安卓易宋黑混排 */
+.msg-bubble-doctor .msg-text {
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.7;
+}
+
+/* 用户消息：沙色气泡，右下小角 */
 .msg-bubble-user {
-  background: var(--brand);
-  border-top-right-radius: var(--r-bubble-tip);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-bubble) var(--r-bubble) var(--r-bubble-tip) var(--r-bubble);
+  background: var(--surface);
 }
+
+/* BUG-UI15：break-all 会切断英文病名（如 Malassezia），改 overflow-wrap */
+.msg-bubble { overflow-wrap: anywhere; box-sizing: border-box; }
 
 .msg-text {
   font-size: var(--fs-body);
-  line-height: 1.6;
+  line-height: 1.7;
   white-space: pre-wrap;
 }
 
-.msg-bubble-doctor .msg-text { color: var(--text); }
-.msg-bubble-user .msg-text { color: var(--on-brand); }
+.msg-bubble-user .msg-text { color: var(--text); }
 
 /* ── 图片消息 ─────────────────────────────────── */
 .msg-images {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--sp-1);
   margin-top: var(--sp-1);
 }
 
 .msg-image-wrap {
   margin-top: var(--sp-1);
-  border-radius: var(--r-md);
+  border-radius: var(--r-sm);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
 }
 
 .msg-image {
-  width: 240rpx;
-  height: 240rpx;
-  border-radius: var(--r-md);
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: var(--r-sm);
+  display: block;
 }
 
 /* ── 分组时间戳（居中） ───────────────────────── */
 .msg-time-divider {
   text-align: center;
-  margin: var(--sp-2) 0;
+  margin: var(--sp-2) 0 var(--sp-4);
   color: var(--faint);
   font-family: var(--font-mono);
   font-size: var(--fs-mini);
-  letter-spacing: 4rpx;
-}
-
-/* ── 问诊进度：非动作提示，用淡金雾而非青柠 ────── */
-.chat-progress {
-  display: inline-flex;
-  align-items: center;
-  gap: 6rpx;
-  margin: 0 0 var(--sp-2) 76rpx;
-  padding: 14rpx 22rpx;
-  border-radius: var(--r-md);
-  background: var(--gold-mist);
-  border: 1rpx dashed var(--gold-line);
-  color: var(--body);
-  font-size: var(--fs-mini);
-  line-height: 1.6;
-}
-
-.chat-progress-dot {
-  display: none;
 }
 
 /* ── 底部锚点 ─────────────────────────────────── */
 .msg-bottom-anchor { height: 1rpx; }
 
 /* ── 底部输入区（浮起面板，与 index/result 底栏统一） ── */
+/* BUG-UI16：左右内边距与 .chat-messages 统一为 --vet-page-x，输入卡片和正文基线对齐 */
 .chat-input-area {
   flex-shrink: 0;
-  background: var(--card);
-  border-top: 1rpx solid var(--line-light);
-  border-radius: var(--r-md) var(--r-md) 0 0;
-  box-shadow: var(--shadow-bar);
-  padding: var(--sp-2) var(--sp-3) calc(var(--sp-2) + env(safe-area-inset-bottom));
+  background: var(--bg);
+  padding: var(--sp-2) var(--vet-page-x) calc(var(--sp-2) + env(safe-area-inset-bottom));
 }
 
 /* ── 快捷回复 ─────────────────────────────────── */
@@ -452,111 +388,120 @@ page {
 .qr-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 60rpx;
+  min-height: 64rpx;
   padding: 0 var(--sp-3);
-  border-radius: 999rpx;
+  border-radius: var(--r-xs);
   background: var(--card);
-  border: 2rpx solid var(--brand);
-  color: var(--brand);
+  color: var(--text);
   font-size: var(--fs-caption);
-  font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
   transition: transform var(--dur-fast) var(--ease-standard);
+  box-shadow: 0 0 0 1rpx var(--card-edge);
 }
 
+/* BUG-UI17：原先按下即变墨色实心，与 .vet-chip-active「已选中」同色，
+   会被误读为选中；按下只做缩放反馈。 */
 .qr-chip:active {
-  background: var(--brand);
-  color: var(--on-brand);
-  border-color: var(--brand);
   transform: scale(0.96);
 }
 
-.qr-chip.qr-skip {
-  border-color: var(--line);
-  color: var(--muted);
+/* 「跳过」已移出滚动行、成为独立按钮（BUG-UI46），原 .qr-chip.qr-skip 规则作废 */
+
+.skip-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--sp-1);
 }
 
-.qr-chip.qr-skip:active {
+.skip-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 64rpx;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-xs);
   background: var(--surface);
   color: var(--body);
-  border-color: var(--line);
+  font-size: var(--fs-mini);
 }
 
-/* ── 文本输入 ─────────────────────────────────── */
-.input-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-}
+.skip-btn:active { opacity: 0.75; }
 
-.input-plus-btn {
-  width: 76rpx;
-  height: 76rpx;
-  border-radius: 50%;
+/* ── 输入卡片：输入行 + 工具行 ───────────────── */
+.composer {
+  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1rpx solid var(--card-edge);
   background: var(--card);
-  border: 2rpx solid var(--brand);
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all var(--dur-fast) ease;
+  box-shadow: var(--shadow-md);
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 
-.input-plus-btn:active {
-  transform: scale(0.94);
-  opacity: 0.8;
-}
+.composer.is-focused {
 
-.input-plus-btn .vic-plus {
-  color: var(--brand);
+  border-color: var(--brand-dark);
+  box-shadow: var(--shadow-md), 0 0 0 4rpx rgba(159, 74, 43, 0.12);
 }
 
 .chat-input {
-  flex: 1;
-  min-height: 76rpx;
-  padding: 0 var(--sp-3);
-  border-radius: 999rpx;
-  background: var(--surface);
-  border: 1rpx solid transparent;
+  width: 100%;
+  min-height: 72rpx;
+  font-family: var(--font-sans);
   font-size: var(--fs-body);
-  box-sizing: border-box;
 }
 
-.chat-input:focus {
-  border-color: var(--brand);
+.chat-input-placeholder { color: var(--muted); }
+
+.composer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--sp-1);
 }
 
-/* 发送按钮常态即青柠实心（动作色只给可点的动作） */
-.send-btn {
-  width: 76rpx;
-  height: 76rpx;
-  border-radius: 50%;
-  background: var(--lime);
-  border: 1rpx solid var(--lime);
+/* 图标按钮统一 88rpx 热区，图标本身仍是 52rpx（BUG-UI5） */
+.input-plus-btn {
+  width: 88rpx;
+  height: 88rpx;
+  margin-left: -18rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  transition: all var(--dur-fast) ease;
 }
 
-.send-btn:active { transform: scale(0.94); opacity: 0.9; }
+.input-plus-btn:active { opacity: 0.6; }
 
-.send-btn .vic-up {
-  color: var(--on-lime);
+.send-btn {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: var(--r-sm);
+  background: var(--brand);
+  opacity: 0.45;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity var(--dur-fast) ease;
 }
+
+.send-btn-active { opacity: 1; }
+.send-btn:active { transform: scale(0.94); }
+
+.send-icon { width: 34rpx; height: 34rpx; }
 
 /* ── 分析中 / 结果模式 ─────────────────────────── */
+.input-row {
+  display: flex;
+  align-items: center;
+}
+
 .analyzing-row, .result-row {
   justify-content: center;
 }
 
 .analyzing-hint, .result-hint {
   color: var(--muted);
-  font-size: var(--fs-caption);
-  font-weight: 600;
+  font-family: var(--font-serif);
+  font-size: var(--fs-body);
   padding: var(--sp-2) 0;
 }
 
@@ -577,7 +522,7 @@ page {
   width: 8rpx;
   height: 8rpx;
   border-radius: 50%;
-  background: currentColor;
+  background: var(--brand);
   animation: vetTypingDot 1.2s ease-in-out infinite;
 }
 
@@ -592,21 +537,21 @@ page {
 /* ── 照片预览栏 ─────────────────────────────── */
 .photo-preview-bar {
   flex-shrink: 0;
-  background: var(--card);
-  border-top: 1rpx solid var(--line-light);
-  padding: var(--sp-2) var(--sp-3) calc(var(--sp-2) + env(safe-area-inset-bottom));
+  background: var(--bg);
+  box-shadow: var(--shadow-bar);
+  padding: var(--sp-3) var(--vet-page-x) calc(var(--sp-2) + env(safe-area-inset-bottom));
 }
 
 .photo-preview-list {
   display: flex;
   gap: var(--sp-2);
-  margin-bottom: var(--sp-2);
+  margin-bottom: var(--sp-3);
 }
 
 .photo-preview-item {
   position: relative;
-  width: 140rpx;
-  height: 140rpx;
+  width: 150rpx;
+  height: 150rpx;
   border-radius: var(--r-sm);
   overflow: hidden;
   flex-shrink: 0;
@@ -617,36 +562,47 @@ page {
   height: 100%;
 }
 
+/* 视觉 40rpx 圆，热区靠 ::before 撑到 88rpx（BUG-UI5） */
 .photo-preview-remove {
   position: absolute;
-  top: 4rpx;
-  right: 4rpx;
-  width: 36rpx;
-  height: 36rpx;
+  top: 8rpx;
+  right: 8rpx;
+  width: 40rpx;
+  height: 40rpx;
   border-radius: 50%;
   background: var(--scrim);
-  color: var(--on-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
 }
 
-.photo-preview-remove .vic-close {
-  transform: scale(0.55);
+.photo-preview-remove::before {
+  content: "";
+  position: absolute;
+  top: -24rpx;
+  right: -24rpx;
+  bottom: -24rpx;
+  left: -24rpx;
 }
 
+.photo-preview-remove-icon { width: 22rpx; height: 22rpx; }
+
+/* 「圈选」角标：整条底边可点，高度抬到 52rpx 兼顾可读与点按（BUG-UI5） */
 .photo-preview-circle {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
+  min-height: 52rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--brand-overlay);
   color: var(--on-overlay);
-  font-size: 20rpx;
+  font-size: var(--fs-mini);
   font-weight: 600;
   text-align: center;
-  padding: 4rpx 0;
+  padding: 6rpx 0;
 }
 
 .photo-preview-actions {
@@ -654,38 +610,37 @@ page {
   gap: var(--sp-2);
 }
 
-.photo-preview-btn-cancel {
+/* 高度对齐 .vet-btn 的 96rpx 基线（BUG-UI18：原先约 82rpx，比全站按钮矮一档） */
+.photo-preview-btn-cancel,
+.photo-preview-btn-secondary,
+.photo-preview-btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96rpx;
   text-align: center;
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
-  background: transparent;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-heading);
+}
+
+.photo-preview-btn-cancel {
+  padding: 0 var(--sp-3);
   color: var(--muted);
-  font-size: var(--fs-caption);
-  font-weight: 600;
   flex-shrink: 0;
 }
 
 .photo-preview-btn-secondary {
   flex: 1;
-  text-align: center;
-  padding: var(--sp-2) 0;
-  border-radius: var(--r-md);
   background: var(--surface);
-  border: 1rpx solid var(--line);
-  color: var(--muted);
-  font-size: var(--fs-caption);
+  color: var(--body);
   font-weight: 600;
 }
 
 .photo-preview-btn-primary {
   flex: 2;
-  text-align: center;
-  padding: var(--sp-2) 0;
-  border-radius: var(--r-md);
   background: var(--brand);
   color: var(--on-brand);
-  font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .photo-preview-btn-primary:active,
@@ -695,3 +650,17 @@ page {
 }
 
 /* 圈选器已抽取为 components/lesion-selector，样式见组件内 */
+
+@media (prefers-color-scheme: dark) {
+
+
+  .composer.is-focused {
+    border-color: rgba(219, 145, 112, 0.62);
+    box-shadow: var(--shadow-md), 0 0 0 4rpx rgba(219, 145, 112, 0.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-picker-mask, .profile-picker-sheet { animation-duration: 0ms; }
+  .profile-picker-item, .composer { transition-duration: 0ms; }
+}

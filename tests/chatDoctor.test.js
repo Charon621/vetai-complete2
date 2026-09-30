@@ -29,6 +29,11 @@ const followPrompt = chatDoctor.buildDoctorMessagePrompt(
 assert.ok(followPrompt.indexOf('不可信数据') >= 0 &&
   followPrompt.indexOf('不要给出药名、剂量、处方') >= 0,
   'follow-up prompt must keep safety rules and distrust user instructions')
+assert.strictEqual(
+  chatDoctor.toPlainDoctorText('## 观察建议\n* **留意患处变化**\n* 看看是否渗液'),
+  '观察建议\n留意患处变化\n看看是否渗液',
+  'doctor replies should be readable as plain text in the WeChat text bubble'
+)
 
 async function run() {
   let calls = []
@@ -59,6 +64,7 @@ async function run() {
   session.phase = chatDoctor.PHASE.COMPLAINT
   session.draft.photoPaths = ['wxfile://lesion.jpg']
   session.draft.photoBase64s = ['data:image/jpeg;base64,AAAA']
+  session.draft.pendingPhotoAnalysis = true
   api.chatAI = function () {
     calls.push(true)
     return Promise.resolve({
@@ -80,11 +86,12 @@ async function run() {
   session.draft.diagnosisResult = { success: true, data: { primaryDiagnosis: '外耳炎' } }
   api.chatAI = function (messages, options) {
     calls.push({ messages: messages, options: options })
-    return Promise.resolve({ success: true, text: '先保持耳道干燥，不要自行使用人用滴耳液。' })
+    return Promise.resolve({ success: true, text: '**先保持耳道干燥**\n* 不要自行使用人用滴耳液。' })
   }
   result = await chatDoctor.processUserInput(session, '现在能洗澡吗？', null)
   assert.strictEqual(calls.length, 1, 'follow-up should make exactly one model call')
   assert.ok(result.doctorMsg.text.indexOf('保持耳道干燥') >= 0)
+  assert.ok(result.doctorMsg.text.indexOf('*') < 0, 'markdown markers must not reach the chat message')
   assert.strictEqual(calls[0].options.temperature, 0.2, 'follow-up should use a low temperature')
   assert.ok(calls[0].messages[0].content.indexOf('不得提供药名、剂量、处方') >= 0,
     'follow-up system message must enforce medication safety')
@@ -124,7 +131,8 @@ async function run() {
   var evasiveSession = chatDoctor.createNewSession()
   var evasiveResult = await chatDoctor.processUserInput(evasiveSession, '不确定', null)
   assert.strictEqual(evasiveResult.session.draft.petName, '', 'evasive reply must not become the pet name')
-  assert.ok(evasiveResult.doctorMsg.text.indexOf('名字') >= 0, 'should keep asking for the name')
+  assert.strictEqual(evasiveResult.session.phase, chatDoctor.PHASE.COMPLAINT,
+    'an unknown name must not block the conversation')
 
   // “15个月”不能被当成幼年（BUG-C2）
   var monthSession = chatDoctor.createNewSession()
@@ -134,31 +142,29 @@ async function run() {
   var babyResult = await chatDoctor.processUserInput(babySession, '叫旺财，狗，公的，3个月大', null)
   assert.strictEqual(babyResult.session.draft.age, 'baby', '3 months should map to baby')
 
-  // 错误追问时的快捷选项必须对应“缺失的字段”（BUG-C1 配套回归）
+  // 照片分析仅需要明确动物种类，不因名字、年龄、性别缺失卡住对话。
   var reask = chatDoctor.getReaskQuickReplies({ petName: '奶糖', petType: 'cat' })
-  assert.ok(reask.length > 0 && reask[0].field === 'gender',
-    'missing gender should surface gender quick replies, not pet type')
+  assert.deepStrictEqual(reask, [], 'optional profile fields should not create a questionnaire')
   var reaskAge = chatDoctor.getReaskQuickReplies({ petName: '奶糖', petType: 'cat', gender: 'male' })
-  assert.ok(reaskAge.length > 0 && reaskAge[0].field === 'age',
-    'missing age should surface age quick replies')
+  assert.deepStrictEqual(reaskAge, [], 'age should remain optional')
   var missingGenderSession = chatDoctor.createNewSession()
   missingGenderSession.draft.petName = '奶糖'
   missingGenderSession.draft.petType = 'cat'
   missingGenderSession.draft.petTypeLabel = '猫'
   var missingGenderResult = await chatDoctor.processUserInput(missingGenderSession, '它最近有点痒', null)
-  assert.ok(missingGenderResult.doctorMsg.quickReplies.length > 0 &&
-    missingGenderResult.doctorMsg.quickReplies[0].field === 'gender',
-    'doctor message must carry field-specific quick replies for the missing field')
+  assert.strictEqual(missingGenderResult.session.phase, chatDoctor.PHASE.COMPLAINT)
+  assert.deepStrictEqual(missingGenderResult.doctorMsg.quickReplies, [],
+    'missing gender must not interrupt the skin concern')
 
   // ============================================================
   // BUG-C7 回归：问名字时不得给性别/类型选项；单字性别词与症状句不能当名字；
   // 「跳过」应占位推进；PHOTO 阶段补充描述不能丢。
   // ============================================================
-  // 1) 名字缺失时快捷选项必须为空（名字只能手打，给选项会误导用户点选后仍卡住）
+  // 1) 种类未知时快捷选项可见，名字缺失不影响它。
   assert.deepStrictEqual(chatDoctor.getReaskQuickReplies({ petType: 'cat' }), [],
-    'BUG-C7: missing pet name must not surface gender/type quick replies')
-  assert.ok(chatDoctor.getReaskQuickReplies({ petName: '奶糖', petType: 'cat' }).length > 0,
-    'once the name exists, missing-field quick replies should appear again')
+    'known species needs no profile quick replies')
+  assert.ok(chatDoctor.getReaskQuickReplies({}).length > 0,
+    'unknown species should expose species choices')
 
   // 2) AI 离线时，单字性别词/症状句不能入库为宠物名（fallback 路径）
   api.chatAI = function () { return Promise.resolve({ success: false, error: 'offline' }) }
@@ -170,13 +176,11 @@ async function run() {
   assert.strictEqual(symptomAsName.session.draft.petName, '',
     'BUG-C7: a symptom sentence must not become the pet name')
 
-  // 3) AI 离线时点「跳过」→ 占位名「宝贝」并继续推进，不死循环问名字
+  // 3) “跳过”不应生成假名字，也不阻断文字问诊。
   var skipSession = chatDoctor.createNewSession()
   var skipResult = await chatDoctor.processUserInput(skipSession, '这个不太清楚，先跳过', null)
-  assert.strictEqual(skipResult.session.draft.petName, '宝贝',
-    'BUG-C7: skipping the name question should fall back to a placeholder')
-  assert.ok(skipResult.doctorMsg.text.indexOf('小动物') >= 0,
-    'BUG-C7: after skip, the flow should proceed to pet type')
+  assert.strictEqual(skipResult.session.draft.petName, '', 'skip is not a pet name')
+  assert.strictEqual(skipResult.session.phase, chatDoctor.PHASE.COMPLAINT)
 
   // 4) PHOTO 阶段补充描述必须合并进主诉，不能丢弃
   var photoSession = chatDoctor.createNewSession()
@@ -185,6 +189,7 @@ async function run() {
   photoSession.draft.petType = 'cat'
   photoSession.draft.photoPaths = ['wxfile://lesion.jpg']
   photoSession.draft.photoBase64s = ['data:image/jpeg;base64,AAAA']
+  photoSession.draft.pendingPhotoAnalysis = true
   photoSession.draft.complaint = '耳朵发红'
   var photoResult = await chatDoctor.processUserInput(photoSession, '还总是挠', null)
   assert.strictEqual(photoResult.session.phase, chatDoctor.PHASE.ANALYZING,
@@ -192,7 +197,7 @@ async function run() {
   assert.ok(photoResult.session.draft.complaint.indexOf('还总是挠') >= 0,
     'BUG-C7: photo-phase supplementary description must merge into the complaint')
 
-  // 5) COMPLAINT 阶段跳过 → 中立占位主诉，不把「先跳过」原文送进模型
+  // 5) COMPLAINT 阶段跳过 → 不把「先跳过」原文送进模型
   api.chatAI = function () { return Promise.resolve({ success: false, error: 'offline' }) }
   var skipComplaintSession = chatDoctor.createNewSession()
   skipComplaintSession.phase = chatDoctor.PHASE.COMPLAINT
@@ -201,8 +206,7 @@ async function run() {
   var skipComplaintResult = await chatDoctor.processUserInput(skipComplaintSession, '这个不太清楚，先跳过', null)
   assert.ok(skipComplaintResult.session.draft.complaint.indexOf('先跳过') < 0,
     'BUG-C7: skip placeholder text must not leak into the complaint')
-  assert.strictEqual(skipComplaintResult.session.phase, chatDoctor.PHASE.PHOTO,
-    'BUG-C7: skipped complaint should still advance to photo phase')
+  assert.strictEqual(skipComplaintResult.session.phase, chatDoctor.PHASE.COMPLAINT)
 
   // 恢复 AI mock，避免影响后续断言
   api.chatAI = function () {
@@ -211,7 +215,8 @@ async function run() {
 
   result.session.draft.photoPaths = []
   result = await chatDoctor.processUserInput(result.session, '背上发红掉毛，已经3天了', null)
-  assert.strictEqual(result.session.phase, chatDoctor.PHASE.PHOTO, 'local complaint fallback should reach photo phase')
+  assert.strictEqual(result.session.phase, chatDoctor.PHASE.COMPLAINT,
+    'text consultation should remain open until a photo is uploaded')
   assert.strictEqual(result.session.draft.bodyPart, 'back')
   assert.ok(result.session.draft.symptoms.indexOf('redness') >= 0)
   assert.ok(result.session.draft.symptoms.indexOf('hair_loss') >= 0)
@@ -257,8 +262,8 @@ async function run() {
   storedDraft.phase = chatDoctor.PHASE.RESULT
   storedDraft.draft.diagnosisResult = { success: false, error: 'timeout' }
   restored = chatDoctor.initSession()
-  assert.strictEqual(restored.session.phase, chatDoctor.PHASE.PHOTO,
-    'failed result interrupted during restore should allow a photo retry')
+  assert.strictEqual(restored.session.phase, chatDoctor.PHASE.COMPLAINT,
+    'failed result interrupted during restore should allow text follow-up or photo retry')
 
   // BUG-C7：旧版本草稿缺字段（photoPaths/photoBase64s/lesionBoxes）时必须补齐，
   // 否则确认照片/诊断时 TypeError 且 _isProcessing 卡死整个对话
@@ -295,8 +300,8 @@ async function run() {
   var aiSkipResult = await chatDoctor.processUserInput(aiSkipSession, '这个不太清楚，先跳过', null)
   assert.ok(aiSkipResult.session.draft.complaint.indexOf('先跳过') < 0,
     'BUG-C11: AI raw extraction must not override the skip placeholder')
-  assert.ok(aiSkipResult.session.draft.complaint.indexOf('未能清晰描述') >= 0,
-    'BUG-C11: skip should keep the neutral placeholder')
+  assert.strictEqual(aiSkipResult.session.draft.complaint, '',
+    'skipping should leave the complaint empty instead of fabricating a symptom')
 
   // ============================================================
   // BUG-C13 回归：AI 离线时完整介绍句「糯米，猫，3岁，公的」能提取名字；
@@ -329,6 +334,71 @@ async function run() {
     'BUG-C12: failed follow-up must return a retry prompt, not the default question')
   assert.ok(followUpFailResult.doctorMsg.text.indexOf('还有其他想问的吗') < 0,
     'BUG-C12: default follow-up question must not be used as a non-answer')
+
+  // 文字问诊可连续多轮：症状不会立刻强制转拍照，单纯提问不污染主诉。
+  var conversationCalls = []
+  api.chatAI = function (messages, options) {
+    conversationCalls.push({ messages: messages, options: options })
+    if (options.response_format) {
+      return Promise.resolve({ success: true, text: JSON.stringify({
+        petType: 'cat', complaint: '耳朵发红三天', bodyPart: 'ears',
+        symptoms: ['redness'], duration: '三天'
+      }) })
+    }
+    return Promise.resolve({ success: true, text: '可能有几种原因。先别让它继续抓挠；这三天有渗液或明显疼痛吗？' })
+  }
+  var conversation = chatDoctor.createNewSession()
+  var firstTurn = await chatDoctor.processUserInput(conversation, '我家猫耳朵发红三天', null)
+  assert.strictEqual(firstTurn.session.phase, chatDoctor.PHASE.COMPLAINT)
+  assert.ok(firstTurn.session.draft.complaint.indexOf('耳朵发红') >= 0)
+  var secondTurn = await chatDoctor.processUserInput(conversation, '这会传染给人吗？', null)
+  assert.strictEqual(secondTurn.session.phase, chatDoctor.PHASE.COMPLAINT)
+  assert.ok(secondTurn.doctorMsg.text.indexOf('渗液') >= 0)
+  assert.ok(conversation.draft.complaint.indexOf('传染') < 0,
+    'a question must not become a clinical observation')
+  var replyCall = conversationCalls[conversationCalls.length - 1]
+  assert.ok(replyCall.messages[1].content.indexOf('耳朵发红') >= 0 &&
+    replyCall.messages[1].content.indexOf('传染给人') >= 0,
+    'the reply model must receive both accumulated case context and current question')
+
+  api.chatAI = function (messages, options) {
+    if (options.response_format) {
+      return Promise.resolve({ success: true, text: JSON.stringify({
+        isObservation: true, complaint: '身上长了奇怪的东西',
+        petName: '宝贝', petType: '', bodyPart: 'back', symptoms: [], duration: ''
+      }) })
+    }
+    return Promise.resolve({ success: true, text: '能说说大概是什么时候发现的吗？' })
+  }
+  var colloquial = chatDoctor.createNewSession()
+  var colloquialTurn = await chatDoctor.processUserInput(colloquial, '身上长了奇怪的东西', null)
+  assert.ok(colloquialTurn.session.draft.complaint.indexOf('身上长了奇怪的东西') >= 0,
+    'model-classified owner observations should enter the case even without a fixed symptom keyword')
+  assert.strictEqual(colloquialTurn.session.draft.petName, '',
+    'the model must not fabricate a pet name when it is optional')
+
+  // 照片先到也能继续：仅缺动物种类时询问种类，回答后进入分析。
+  var photoFirst = chatDoctor.createNewSession()
+  photoFirst.phase = chatDoctor.PHASE.COMPLAINT
+  photoFirst.draft.photoPaths = ['wxfile://lesion.jpg']
+  photoFirst.draft.pendingPhotoAnalysis = true
+  var needsSpecies = await chatDoctor.processUserInput(photoFirst, '帮我看看这张照片', null)
+  assert.strictEqual(needsSpecies.session.phase, chatDoctor.PHASE.COMPLAINT)
+  assert.ok(needsSpecies.doctorMsg.text.indexOf('猫、狗') >= 0)
+  assert.strictEqual(needsSpecies.doctorMsg.quickReplies[0].field, 'petType')
+  var withSpecies = await chatDoctor.processUserInput(photoFirst, '猫', {
+    field: 'petType', value: 'cat', label: '猫'
+  })
+  assert.strictEqual(withSpecies.session.phase, chatDoctor.PHASE.ANALYZING)
+
+  var oldPhoto = chatDoctor.createNewSession()
+  oldPhoto.phase = chatDoctor.PHASE.COMPLAINT
+  oldPhoto.draft.petType = 'cat'
+  oldPhoto.draft.photoPaths = ['wxfile://old.jpg']
+  oldPhoto.draft.pendingPhotoAnalysis = false
+  var textAfterOldPhoto = await chatDoctor.processUserInput(oldPhoto, '它今天还在挠，需要注意什么？', null)
+  assert.strictEqual(textAfterOldPhoto.session.phase, chatDoctor.PHASE.COMPLAINT,
+    'a previously analyzed photo must not hijack later text questions')
 
   console.log('chatDoctor tests passed')
 }

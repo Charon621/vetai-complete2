@@ -9,107 +9,109 @@
   </view>
 
   <block wx:if="{{record.id}}">
-  <!-- ═══ 顶部结论区（结论前置） ═══ -->
-  <view class="conclusion">
-    <view class="conclusion-main">
-      <text class="conclusion-meta text-numeric">{{record.metaLine}}</text>
-      <view class="sev-chip sev-chip-{{record.urgency || 'moderate'}}">
-        <view class="sev-chip-dot"></view>
-        <text>{{record.severityChip}}</text>
-      </view>
-      <view class="conclusion-title">{{record.actionConclusion}}</view>
-      <view class="conclusion-note">{{record.actionNote}}</view>
+  <!-- ═══ 结论面板：暖色渐变 + 四段弧形表盘 ═══ -->
+  <view class="verdict verdict-{{record.urgency || 'moderate'}} vet-fade-up">
+    <view class="verdict-meta">
+      <text>{{record.metaLine}}</text>
+      <text class="text-numeric">{{record.shortDate}}</text>
     </view>
-    <view class="vet-seal conclusion-seal"><text>AI 初筛</text></view>
+    <view class="verdict-row">
+      <view class="verdict-main">
+        <view class="vet-status sev-{{record.urgency || 'moderate'}}">{{record.severityChip}}</view>
+        <view class="verdict-title">{{record.actionConclusion}}</view>
+      </view>
+      <view class="verdict-gauge">
+        <image class="gauge-img" src="/assets/icons/gauge-{{record.urgency || 'moderate'}}.svg" mode="aspectFit" />
+        <view class="gauge-num"><text class="gauge-num-cur">{{record.severityLevel}}</text> / 4</view>
+      </view>
+    </view>
+    <view class="verdict-note">{{record.actionNote}}</view>
   </view>
-
-  <view class="vet-divider-strong conclusion-rule"></view>
 
   <!-- ═══ 可能是什么 ═══ -->
-  <view class="dx-block">
-    <view class="dx-head">
-      <text class="dx-eyebrow">01 / 可能是什么</text>
-      <view class="match-chip" wx:if="{{record.hasConfidence}}">{{record.confidenceLevel}}</view>
+  <view class="sec vet-fade-up vet-stagger-1">
+    <view class="sec-head">
+      <text class="sec-title">可能是什么</text>
+      <text class="match-chip" wx:if="{{record.hasConfidence}}">{{record.confidenceLevel}}</text>
     </view>
-    <view class="dx-name">
-      {{record.disease || '暂无明确结果'}}<text class="dx-sub" wx:if="{{record.diseaseSub}}">{{record.diseaseSub}}</text>
-    </view>
-    <view class="dx-desc" wx:if="{{record.possibleMeaning}}">{{record.possibleMeaning}}</view>
-
-    <view class="dx-thumbs" wx:if="{{record.imageItems.length > 0}}">
-      <block wx:for="{{record.imageItems}}" wx:key="path">
-        <view class="dx-thumb" wx:if="{{index < 2}}">
-          <image src="{{item.path}}" mode="aspectFill" lazy-load />
-          <view class="dx-thumb-lesion" wx:if="{{item.lesionStyle}}" style="{{item.lesionStyle}}"></view>
+    <view class="dx-card">
+      <view class="dx-top">
+        <view class="dx-arch" wx:if="{{record.imageItems.length > 0}}" bindtap="onViewImages">
+          <image src="{{record.imageItems[0].path}}" mode="aspectFill" lazy-load />
+          <view class="dx-lesion" wx:if="{{record.imageItems[0].lesionStyle}}" style="{{record.imageItems[0].lesionStyle}}"></view>
         </view>
-      </block>
-      <view class="dx-thumb-note">
-        虚线框是你圈出的患处，AI 主要依据这些近景判断。
-        <text class="dx-thumb-link" bindtap="onViewImages" wx:if="{{record.imageItems.length > 0}}">看大图 →</text>
+        <view class="dx-info">
+          <view class="dx-name">{{record.disease || '暂无明确结果'}}</view>
+          <view class="dx-sub" wx:if="{{record.diseaseSub}}">{{record.diseaseSub}}</view>
+          <view class="dx-hint" wx:if="{{record.hasLesion}}">虚线框是你圈出的患处</view>
+          <view class="dx-link" wx:if="{{record.imageItems.length > 0}}" bindtap="onViewImages">
+            <text>看大图</text>
+            <image class="vet-icon-sm" src="/assets/icons/caret-right-bold-clay.svg" />
+          </view>
+        </view>
       </view>
+      <view class="dx-desc" wx:if="{{record.possibleMeaning}}">{{record.possibleMeaning}}</view>
+      <view class="dx-secondary" wx:if="{{record.secondaryText}}">{{record.secondaryText}}</view>
     </view>
-
-    <view class="dx-secondary" wx:if="{{record.secondaryText}}">{{record.secondaryText}}</view>
   </view>
 
-  <!-- ═══ 接下来怎么做 ═══ -->
-  <view class="care-block">
-    <text class="dx-eyebrow">02 / 接下来怎么做</text>
-    <view class="checklist">
-      <view class="check-item" wx:for="{{record.checklist}}" wx:key="tag">
-        <view class="check-box check-box-{{item.cls}}"></view>
-        <view class="check-text"><text class="check-tag">{{item.tag}}</text><text class="mid-dot"></text>{{item.text}}</view>
+  <!-- ═══ 接下来怎么做：衬线斜体序号 ═══ -->
+  <view class="sec vet-fade-up vet-stagger-2">
+    <view class="sec-head">
+      <text class="sec-title">接下来怎么做</text>
+    </view>
+    <view class="step-card" wx:for="{{record.checklist}}" wx:key="tag">
+      <text class="vet-no step-no">{{index + 1}}</text>
+      <view class="step-body">
+        <view class="step-tag step-tag-{{item.cls}}">{{item.tag}}</view>
+        <view class="step-text">{{item.text}}</view>
       </view>
     </view>
   </view>
 
   <!-- ═══ 判断依据（次要，供就医沟通） ═══ -->
-  <view class="report-block" wx:if="{{record.observationText || record.supportText || record.uncertaintyText}}">
-    <view class="block-head">
-      <view class="block-title-wrap">
-        <view class="block-title">判断依据</view>
-      </view>
+  <view class="sec vet-fade-up" wx:if="{{record.observationText || record.supportText || record.uncertaintyText}}">
+    <view class="sec-head">
+      <text class="sec-title">判断依据</text>
     </view>
-    <view class="evidence-list">
-      <view class="evidence-item" wx:if="{{record.observationText}}">
-        <view class="evidence-key">客观观察</view>
-        <view class="evidence-value">{{record.observationText}}</view>
+    <view class="basis-card">
+      <view class="basis-item" wx:if="{{record.observationText}}">
+        <view class="basis-key">客观观察</view>
+        <view class="basis-value">{{record.observationText}}</view>
       </view>
-      <view class="evidence-item" wx:if="{{record.supportText}}">
-        <view class="evidence-key">支持理由</view>
-        <view class="evidence-value">{{record.supportText}}</view>
+      <view class="basis-item" wx:if="{{record.supportText}}">
+        <view class="basis-key">支持理由</view>
+        <view class="basis-value">{{record.supportText}}</view>
       </view>
-      <view class="evidence-item" wx:if="{{record.uncertaintyText}}">
-        <view class="evidence-key">不确定因素</view>
-        <view class="evidence-value">{{record.uncertaintyText}}</view>
+      <view class="basis-item" wx:if="{{record.uncertaintyText}}">
+        <view class="basis-key">不确定因素</view>
+        <view class="basis-value">{{record.uncertaintyText}}</view>
       </view>
     </view>
   </view>
 
   <!-- ═══ 临床参考来源 ═══ -->
-  <view class="report-block" wx:if="{{record.sourceList.length > 0}}">
-    <view class="block-head">
-      <view class="block-title-wrap">
-        <view class="block-title">临床参考来源</view>
-      </view>
-      <view class="block-desc">用于解释候选方向，不代表确诊依据</view>
+  <view class="sec vet-fade-up" wx:if="{{record.sourceList.length > 0}}">
+    <view class="sec-head">
+      <text class="sec-title">临床参考来源</text>
     </view>
-    <view class="source-list">
-      <view class="source-item" wx:for="{{record.sourceList}}" wx:key="title">
-        <view class="source-title">{{item.title}}</view>
-        <view class="source-meta" wx:if="{{item.tier || item.url}}">
+    <view class="sec-desc">用于解释候选方向，不代表确诊依据</view>
+    <view class="basis-card">
+      <view class="basis-item" wx:for="{{record.sourceList}}" wx:key="title">
+        <view class="source-title">{{index + 1}}. {{item.title}}</view>
+        <view class="source-meta" wx:if="{{item.tier || item.domain}}">
           <text wx:if="{{item.tier}}">{{item.tier}}</text>
-          <text wx:if="{{item.url}}">{{item.url}}</text>
+          <text wx:if="{{item.domain}}">{{item.domain}}</text>
         </view>
       </view>
     </view>
   </view>
 
   <!-- ═══ 反馈（收成一行，点“没有”再展开） ═══ -->
-  <view class="feedback-inline" wx:if="{{!feedbackSubmitted}}">
-    <view class="feedback-inline-row">
-      <text class="feedback-inline-q">这份报告有帮助吗？</text>
-      <view class="feedback-inline-opts">
+  <view class="feedback vet-fade-up" wx:if="{{!feedbackSubmitted}}">
+    <view class="feedback-row">
+      <text class="feedback-q">这份报告有帮助吗？</text>
+      <view class="feedback-opts">
         <view class="fb-chip {{feedbackHelpful === true ? 'on' : ''}}" bindtap="onFeedbackHelpful" data-value="true">有</view>
         <view class="fb-chip {{feedbackHelpful === false ? 'on' : ''}}" bindtap="onFeedbackHelpful" data-value="false">没有</view>
       </view>
@@ -117,7 +119,7 @@
 
     <view class="fb-followup-q" wx:if="{{feedbackHelpful === false}}">主要卡在哪里？</view>
     <view class="fb-wrap" wx:if="{{feedbackHelpful === false}}">
-      <view class="fb-chip fb-chip-sm {{feedbackIssue === item.value ? 'on' : ''}}" wx:for="{{feedbackIssueOptions}}" wx:key="value" bindtap="onFeedbackIssue" data-value="{{item.value}}">{{item.label}}</view>
+      <view class="fb-chip {{feedbackIssue === item.value ? 'on' : ''}}" wx:for="{{feedbackIssueOptions}}" wx:key="value" bindtap="onFeedbackIssue" data-value="{{item.value}}">{{item.label}}</view>
     </view>
 
     <view class="fb-followup-q" wx:if="{{feedbackHelpful !== null}}">你是否已带宠物就医？</view>
@@ -128,31 +130,29 @@
 
     <view class="fb-followup-q" wx:if="{{feedbackVet === true}}">兽医结论和报告方向一致吗？</view>
     <view class="fb-wrap" wx:if="{{feedbackVet === true}}">
-      <view class="fb-chip fb-chip-sm {{feedbackVetOutcome === item.value ? 'on' : ''}}" wx:for="{{feedbackVetOutcomeOptions}}" wx:key="value" bindtap="onFeedbackVetOutcome" data-value="{{item.value}}">{{item.label}}</view>
+      <view class="fb-chip {{feedbackVetOutcome === item.value ? 'on' : ''}}" wx:for="{{feedbackVetOutcomeOptions}}" wx:key="value" bindtap="onFeedbackVetOutcome" data-value="{{item.value}}">{{item.label}}</view>
     </view>
   </view>
-  <view class="feedback-inline feedback-done-inline" wx:else>
+  <view class="feedback feedback-done" wx:else>
     <view class="feedback-done-icon">
-      <view class="vic vic-check feedback-done-check"></view>
+      <image class="feedback-done-check" src="/assets/icons/check-bold-paper.svg" />
     </view>
     <text class="feedback-done-text">感谢你的反馈</text>
     <text class="feedback-edit-link" bindtap="onEditFeedback">修改</text>
   </view>
 
-  <!-- ═══ 页脚小字 ═══ -->
+  <!-- ═══ 次级操作 + 页脚 ═══ -->
+  <view class="report-more">
+    <text class="report-more-link" bindtap="saveShareImage">保存报告</text>
+    <text class="report-more-link" bindtap="goBack">返回首页</text>
+    <text class="report-more-link" bindtap="goHistory">查看历史</text>
+  </view>
   <view class="report-footer">{{record.footerLine}}</view>
 
   <!-- ═══ 底部操作（2 键） ═══ -->
   <view class="bottom-actions">
-    <button class="vet-btn vet-btn-primary" open-type="share">分享给兽医</button>
+    <button class="vet-btn vet-btn-ink share-btn" open-type="share">分享给兽医</button>
     <button class="vet-btn vet-btn-secondary find-hospital-btn" bindtap="findHospital">找医院</button>
-  </view>
-  <view class="report-more">
-    <text class="report-more-link" bindtap="saveShareImage">保存报告</text>
-    <view class="report-more-sep"></view>
-    <text class="report-more-link" bindtap="goBack">返回首页</text>
-    <view class="report-more-sep"></view>
-    <text class="report-more-link" bindtap="goHistory">查看历史</text>
   </view>
   </block>
 

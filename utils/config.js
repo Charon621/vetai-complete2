@@ -4,6 +4,9 @@
 // ============================================================
 
 module.exports = {
+  // 应用版本号：与 package.json 保持一致，「关于 VetAI」直接读取（BUG-UI39）
+  APP_VERSION: '3.0.0',
+
   // ---------- 千问 DashScope（多模态视觉模型）----------
   // 正式使用时不要在小程序前端保存 API Key。默认走微信云函数代理。
   USE_CLOUD_FUNCTION: true,
@@ -62,6 +65,9 @@ module.exports = {
   // 多模型投票：并行调用第二模型 provider 做交叉验证，分歧时标记「需医生确认」。
   // 需先接入第二模型 provider（utils/api.js PROVIDERS 目前仅 qwen）
   ENABLE_MULTI_MODEL_VOTE: false,
+  // 开发者面板：控制「我的」页里的开发者选项（反馈分析、埋点导出、本机空间切换）。
+  // BUG-UI38：此前该面板对普通用户完全可见（门禁只是个假条件），发布版必须保持 false。
+  SHOW_DEV_PANEL: false,
 
   // 正式版不要打印模型原始响应，避免泄露病例描述
   DEBUG_LOGS: false

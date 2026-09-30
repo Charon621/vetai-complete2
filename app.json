@@ -16,16 +16,16 @@
   "window": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "VetAI",
-    "navigationBarBackgroundColor": "#FBFAF6",
-    "backgroundColor": "#FBFAF6",
+    "navigationBarBackgroundColor": "#F7F3EA",
+    "backgroundColor": "#F7F3EA",
     "enablePullDownRefresh": false,
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
     "custom": true,
-    "color": "#9AA69F",
-    "selectedColor": "#0F1F1A",
-    "backgroundColor": "#FFFFFF",
+    "color": "#8C8475",
+    "selectedColor": "#BF5E3B",
+    "backgroundColor": "#F7F3EA",
     "borderStyle": "white",
     "list": [
       {
