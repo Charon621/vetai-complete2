@@ -34,3 +34,6 @@ __pycache__/
 *.pyc
 .preview/
 IDEA.md
+
+# Backend-only deployment credential, never commit
+/cloudfunctions/diagnose/deepseek.private.json

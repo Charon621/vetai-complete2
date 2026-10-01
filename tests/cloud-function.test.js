@@ -22,6 +22,10 @@ const assert = require('assert')
 const path = require('path')
 const https = require('https')
 const EventEmitter = require('events')
+process.env.QWEN_API_BASE = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
+// Stale model overrides must not prevent the requested Flash model.
+process.env.QWEN_FAST_MODELS = 'qwen3.6-flash'
+process.env.QWEN_FULL_MODELS = 'qwen3.8-max'
 
 // ---------- 环境变量 ----------
 process.env.QWEN_API_KEY = 'test-api-key'
@@ -63,14 +67,17 @@ require.cache[sdkPath] = {
 
 // ---------- mock https.request（内建模块直接替换属性） ----------
 let httpsCallCount = 0
+let lastPayload = null
+let lastRequestOptions = null
 let httpsShouldError = false
 let nextStatusCode = 200
 let nextBody = JSON.stringify({ choices: [{ message: { content: 'ok' } }] })
 
 https.request = function (options, callback) {
   httpsCallCount++
+  lastRequestOptions = options
   const req = new EventEmitter()
-  req.write = function () {}
+  req.write = function (body) { lastPayload = JSON.parse(body) }
   req.destroy = function () {}
   req.end = function () {
     process.nextTick(function () {
@@ -91,14 +98,14 @@ https.request = function (options, callback) {
 
 const cloudFn = require('../cloudfunctions/diagnose/index.js')
 
-const PHASE_FAST = 'chat-ai'          // models: qwen3.6-flash/qwen3.7-plus, maxImages 0
-const PHASE_VISION = 'vision-precheck' // model: qwen3.6-flash, maxImages 2
+const PHASE_FAST = 'chat-ai'          // models: qwen3.8-flash/qwen3.8-flash, maxImages 0
+const PHASE_VISION = 'vision-precheck' // model: qwen3.8-flash, maxImages 2
 
 function validEvent(extra) {
   return Object.assign({
     phase: PHASE_FAST,
     payload: {
-      model: 'qwen3.6-flash',
+      model: 'qwen3.8-flash',
       messages: [{ role: 'user', content: '你好' }]
     }
   }, extra || {})
@@ -129,12 +136,12 @@ async function run() {
   res = await cloudFn.main({ phase: PHASE_FAST, payload: null })
   assert.strictEqual(res.error, '请求参数不完整', 'missing payload')
 
-  res = await cloudFn.main({ phase: PHASE_FAST, payload: { model: 'qwen3.6-flash', messages: [] } })
+  res = await cloudFn.main({ phase: PHASE_FAST, payload: { model: 'qwen3.8-flash', messages: [] } })
   assert.strictEqual(res.error, '请求参数不完整', 'empty messages')
 
   res = await cloudFn.main({
     phase: PHASE_FAST,
-    payload: { model: 'qwen3.6-flash', messages: [{ role: 'user', content: 'x'.repeat(3400000) }] }
+    payload: { model: 'qwen3.8-flash', messages: [{ role: 'user', content: 'x'.repeat(3400000) }] }
   })
   assert.strictEqual(res.error, '请求体过大', 'oversized event body')
 
@@ -146,13 +153,13 @@ async function run() {
 
   res = await cloudFn.main({
     phase: PHASE_FAST,
-    payload: { model: 'qwen3.6-flash', messages: [{ role: 'hacker', content: 'hi' }] }
+    payload: { model: 'qwen3.8-flash', messages: [{ role: 'hacker', content: 'hi' }] }
   })
   assert.strictEqual(res.error, '消息角色不合法', 'illegal role')
 
   res = await cloudFn.main({
     phase: PHASE_FAST,
-    payload: { model: 'qwen3.6-flash', messages: [{ role: 'user', content: 'x'.repeat(30001) }] }
+    payload: { model: 'qwen3.8-flash', messages: [{ role: 'user', content: 'x'.repeat(30001) }] }
   })
   assert.strictEqual(res.error, '文本内容过长', 'text too long (string content)')
 
@@ -160,14 +167,14 @@ async function run() {
   for (let i = 0; i < 9; i++) nineItems.push({ type: 'text', text: 'a' })
   res = await cloudFn.main({
     phase: PHASE_VISION,
-    payload: { model: 'qwen3.6-flash', messages: [{ role: 'user', content: nineItems }] }
+    payload: { model: 'qwen3.8-flash', messages: [{ role: 'user', content: nineItems }] }
   })
   assert.strictEqual(res.error, '消息内容格式不合法', 'content array > 8 items')
 
   res = await cloudFn.main({
     phase: PHASE_VISION,
     payload: {
-      model: 'qwen3.6-flash',
+      model: 'qwen3.8-flash',
       messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: 'https://evil.com/a.jpg' } }] }]
     }
   })
@@ -176,17 +183,51 @@ async function run() {
   const imgItem = { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,QUJD' } }
   res = await cloudFn.main({
     phase: PHASE_VISION,
-    payload: { model: 'qwen3.6-flash', messages: [{ role: 'user', content: [imgItem, imgItem, imgItem] }] }
+    payload: { model: 'qwen3.8-flash', messages: [{ role: 'user', content: [imgItem, imgItem, imgItem] }] }
   })
   assert.strictEqual(res.error, '图片数量超限', 'image count over phase limit')
 
   res = await cloudFn.main({
     phase: PHASE_VISION,
-    payload: { model: 'qwen3.6-flash', messages: [{ role: 'user', content: [{ type: 'video' }] }] }
+    payload: { model: 'qwen3.8-flash', messages: [{ role: 'user', content: [{ type: 'video' }] }] }
   })
   assert.strictEqual(res.error, '不支持的消息内容类型', 'unsupported content type')
 
   assert.strictEqual(httpsCallCount, 0, 'validation failures must never reach the model')
+
+  // 新完整报告模型必须通过服务器白名单，图片和 JSON 约束仍保留。
+  currentOpenId = 'new-report-model-user'
+  res = await cloudFn.main({
+    phase: 'full-diagnosis',
+    payload: {
+      model: 'qwen3.8-flash',
+      messages: [{ role: 'user', content: [imgItem, imgItem] }],
+      enable_thinking: false,
+      reasoning_effort: 'max',
+      max_tokens: 100000
+    }
+  })
+  assert.strictEqual(res.success, true, 'Qwen Flash report model accepted with images')
+  assert.strictEqual(lastPayload.model, 'qwen3.8-flash', 'report model forwarded unchanged')
+  assert.deepStrictEqual(lastPayload.messages[1].content, [imgItem, imgItem], 'both report images forwarded')
+  assert.deepStrictEqual(lastPayload.response_format, { type: 'json_object' }, 'report JSON mode retained')
+  assert.strictEqual(lastPayload.enable_thinking, true, 'server report thinking enabled')
+  assert.strictEqual(lastPayload.reasoning_effort, 'medium', 'server enforces the confirmed medium setting')
+  assert.strictEqual(lastPayload.max_tokens, 8192, 'server caps combined report output')
+  assert.strictEqual(lastRequestOptions.hostname, 'dashscope.aliyuncs.com', 'Alibaba host')
+  assert.strictEqual(lastRequestOptions.path, '/compatible-mode/v1/chat/completions', 'Alibaba endpoint')
+  assert.strictEqual(lastRequestOptions.headers.Authorization, 'Bearer test-api-key', 'new server credential used')
+  assert.ok(!('thinking' in lastPayload), 'no DeepSeek-only thinking parameter')
+  for (const phase of ['vision-precheck', 'chat-ai']) {
+    currentOpenId = 'thinking-policy-' + phase
+    const event = validEvent({ phase })
+    event.payload.enable_thinking = true
+    event.payload.reasoning_effort = 'max'
+    const result = await cloudFn.main(event)
+    assert.strictEqual(result.success, true)
+    assert.strictEqual(lastPayload.enable_thinking, false, phase + ' thinking forced disabled')
+    assert.ok(!('reasoning_effort' in lastPayload), phase + ' does not carry an effort')
+  }
 
   // ============================================================
   // 非白名单异常 -> 通用文案（不泄露内部错误）

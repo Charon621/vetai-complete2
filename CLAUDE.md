@@ -4,7 +4,7 @@
 
 - 仓库：本目录（GitHub 私有 Charon621/vetai-complete2），当前分支 release/v3.0
 - 形态：原生微信小程序，无框架，后端是微信云函数
-- 模型：qwen3.7-plus 做完整诊断，qwen3.6-flash 做视觉预检和对话信息抽取
+- 模型：阿里云 qwen3.8-flash（Qwen3.8-Flash）用于所有阶段；完整报告开启 medium 思考，预检与问诊关闭思考
 
 ## 目录结构
 

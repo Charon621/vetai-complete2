@@ -22,10 +22,10 @@ const SERVER_SAFETY_SYSTEM = [
 ].join('\n')
 
 const PHASE_RULES = {
-  'vision-precheck': { models: ['qwen3.6-flash'], maxTokens: 700, maxImages: 2, forceJson: true },
-  // 与客户端 MODEL_MAX_TOKENS=900 对齐，上限留余量；输出越短响应越快
-  'full-diagnosis': { models: ['qwen3.7-plus'], maxTokens: 1400, maxImages: 2, forceJson: true },
-  'chat-ai': { models: ['qwen3.6-flash', 'qwen3.7-plus'], maxTokens: 500, maxImages: 0, forceJson: false }
+  'vision-precheck': { models: ['qwen3.8-flash'], maxTokens: 700, maxImages: 2, forceJson: true },
+  // 完整报告开启 medium 思考，输出额度包含思考与报告
+  'full-diagnosis': { models: ['qwen3.8-flash'], maxTokens: 8192, maxImages: 2, forceJson: true },
+  'chat-ai': { models: ['qwen3.8-flash'], maxTokens: 500, maxImages: 0, forceJson: false }
 }
 
 // 内存限流仅作单实例突发保护；持久化配额落到云开发数据库（BUG-G1），
@@ -160,7 +160,8 @@ function getAllowedModels(rule, phase) {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean)
-  return configured.length ? configured : rule.models
+  const allowed = configured.filter((model) => rule.models.indexOf(model) >= 0)
+  return allowed.length ? allowed : rule.models
 }
 
 function checkBurstLimit(openId) {
@@ -229,8 +230,9 @@ function sanitizePayload(payload, phase) {
     // 如需更高温度需同时调整两端，避免静默钳制。
     temperature: Math.max(0, Math.min(0.5, Number(payload.temperature) || 0)),
     max_tokens: Math.max(1, Math.min(rule.maxTokens, Number(payload.max_tokens) || rule.maxTokens)),
-    enable_thinking: false
+    enable_thinking: phase === 'full-diagnosis'
   }
+  if (phase === 'full-diagnosis') sanitized.reasoning_effort = 'medium'
   if (rule.forceJson || (payload.response_format && payload.response_format.type === 'json_object')) {
     sanitized.response_format = { type: 'json_object' }
   }

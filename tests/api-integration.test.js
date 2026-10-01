@@ -85,6 +85,12 @@ async function run() {
   assert.deepStrictEqual(calls.map(function (call) { return call.phase }), ['vision-precheck', 'full-diagnosis'],
     'precheck and full diagnosis run in parallel; unvalidated KB fast path stays disabled')
   const fullCall = calls.find(function (call) { return call.phase === 'full-diagnosis' })
+  assert.strictEqual(calls[0].payload.model, 'qwen3.8-flash', 'visual precheck must use the new fast model')
+  assert.strictEqual(fullCall.payload.model, 'qwen3.8-flash', 'full diagnosis must use the new report model')
+  assert.strictEqual(fullCall.payload.enable_thinking, true, 'report thinking enabled')
+  assert.strictEqual(fullCall.payload.reasoning_effort, 'medium', 'report effort follows the confirmed medium setting')
+  assert.strictEqual(fullCall.payload.max_tokens, 8192, 'report has room for thinking and JSON')
+  assert.strictEqual(calls[0].payload.enable_thinking, false, 'precheck thinking disabled')
   const prompt = fullCall.payload.messages[1].content[0].text
   assert.ok(prompt.indexOf('临床参考核对清单') >= 0,
     'complaint-driven KB references should still be injected into full diagnosis')

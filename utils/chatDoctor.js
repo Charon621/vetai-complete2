@@ -305,7 +305,7 @@ function extractInfoByAI(phase, draft, userText, historyMessages) {
     temperature: 0,
     max_tokens: 200,
     response_format: { type: 'json_object' },
-    model: 'qwen3.6-flash'
+    model: 'qwen3.8-flash'
   }).then(function (result) {
     if (!result.success) {
       console.warn('[chatDoctor] AI提取失败:', result.error)
@@ -455,7 +455,7 @@ function generateDoctorMessageByAI(phase, draft, historyMessages, userText) {
   ], {
     temperature: isFollowUp ? 0.2 : 0.35,
     max_tokens: 400,
-    model: 'qwen3.6-flash'
+    model: 'qwen3.8-flash'
   }).then(function (result) {
     if (!result.success) {
       console.warn('[chatDoctor] AI生成失败:', result.error)

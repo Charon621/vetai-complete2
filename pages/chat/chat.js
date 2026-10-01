@@ -725,7 +725,7 @@ Page({
       ragSources: d.ragSources || [],
       ragMatchName: d._ragMatchName || '', ragMatchScore: d._ragMatchScore || 0,
       ragMatched: d._ragMatched || [],
-      modelProvider: d.modelProvider || 'qwen', modelProviderLabel: d.modelProviderLabel || 'Qwen3.7-Plus',
+      modelProvider: d.modelProvider || 'qwen', modelProviderLabel: d.modelProviderLabel || 'Qwen3.8-Flash',
       isTemporary: !draft.profileId, source: 'chat'
     })
     if (record && record.id) draft.recordId = record.id

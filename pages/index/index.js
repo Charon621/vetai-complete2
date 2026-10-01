@@ -60,7 +60,7 @@ Page({
     quickAge: '',
     quickAgeLabel: '',
     modelProvider: 'qwen',
-    modelProviderLabel: 'Qwen3.7-Plus',
+    modelProviderLabel: 'Qwen3.8-Flash',
     useKnowledgeBase: config.USE_KNOWLEDGE_BASE !== false,
     isAnalyzing: false,
     analyzingStep: 0,
@@ -501,7 +501,7 @@ Page({
   onModelProviderTap: function () {
     this.setData({
       modelProvider: 'qwen',
-      modelProviderLabel: 'Qwen3.7-Plus'
+      modelProviderLabel: 'Qwen3.8-Flash'
     })
   },
 
