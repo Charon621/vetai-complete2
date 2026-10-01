@@ -7,39 +7,58 @@ module.exports = {
   // 应用版本号：与 package.json 保持一致，「关于 VetAI」直接读取（BUG-UI39）
   APP_VERSION: '3.0.0',
 
-  // ---------- 千问 DashScope（多模态视觉模型）----------
+  // ---------- 阿里云百炼（多模态视觉模型）----------
   // 正式使用时不要在小程序前端保存 API Key。默认走微信云函数代理。
   USE_CLOUD_FUNCTION: true,
   DIAGNOSE_CLOUD_FUNCTION: 'diagnose',
   CLOUD_ENV: 'cloud1-d0gc4m26t135ca759',
   QWEN_API_KEY: '',
   QWEN_API_BASE: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-  // DashScope 多模态视觉模型名：尽量贴近官网直出，关闭混合思考模式
-  QWEN_MODEL: 'qwen3.7-plus',
-  QWEN_LABEL: 'Qwen3.7-Plus',
-  // 关闭思考模式，响应更快
-  QWEN_ENABLE_THINKING: false,
+  // 预检与完整报告均使用 Qwen3.8-Flash
+  QWEN_MODEL: 'qwen3.8-flash',
+  QWEN_LABEL: 'Qwen3.8-Flash',
+  // 完整报告开启 medium 思考；预检与问诊关闭思考
+  QWEN_ENABLE_THINKING: true,
+  QWEN_REASONING_EFFORT: 'medium',
 
   // ---------- 视觉特征驱动 RAG ----------
   // 总开关：开启时接入本地皮肤病知识库；关闭时只走模型诊断，不注入知识库、不走知识库快路径
   USE_KNOWLEDGE_BASE: true,
-  // 快路径（BUG-G8：2026-07-31 起启用）。视觉预检强命中知识库时
-  // 立即出报告（约 3-5s），不再等 plus 完整诊断；门槛严格：
-  // score≥8 + 症状匹配≥2 + top2 间隔≥3 + 组合规则/别名/3 个非泛词视觉特征。
-  // 未达强命中标准时仍走完整诊断，行为与之前一致。
+  // 快路径（BUG-G8：2026-07-31 起启用；BUG-G9 收紧证据来源；2026-10-01 加区分度门槛）。
+  // 视觉预检强命中知识库时立即出报告（约 3-5s），不再等完整诊断；门槛严格：
+  // score≥8 + 非泛词证据≥2 + top2 间隔≥VISION_RAG_MIN_GAP + 组合规则/别名/3 个非泛词视觉特征，
+  // 且至少 VISION_RAG_MIN_PRECHECK_HITS 个非泛词视觉命中来自视觉预检（照片侧）——
+  // 组合规则、别名、主诉侧视觉词都可能被主诉文本单独命中，只有预检特征能证明照片里
+  // 确实看到了该病的特征性表现。未达强命中标准时仍走完整诊断，行为与之前一致。
+  //
+  // 2026-10-01 实测（99 例）发现上面这套门槛量的是"预检模型报了几个词"，不是"有多确定"：
+  // 预检输出 2 个词时触发率 13%、3 个词 84.8%、6 个词 100%，而判对率不随之上升；
+  // 仅有的 2 个错误触发，Top1 的证据全是"别的候选也有"的通用词（区分度为 0）。
+  // 因此新增区分度硬门槛，并把"是否抢跑"与"是否够格"拆开：
+  //   够格（isStrongVisionRagHit）= 原门槛 + 区分度 ≥ VISION_RAG_MIN_DISCRIMINATIVE
+  //   抢跑（shouldResolveFastRag）= 区分度 ≥ VISION_RAG_MIN_DISCRIMINATIVE_EAGER 且非高危方向
+  // 区分度=1 的病例交给并行跑着的完整诊断出结论（知识库归因照旧保留），只损失几秒速度。
   VISION_RAG_FAST_PATH: true,
   VISION_RAG_TRACE: true,
   VISION_RAG_MAX_IMAGES: 2,
   VISION_RAG_MIN_SCORE: 8,
   VISION_RAG_MIN_SYMPTOM_MATCHES: 2,
+  VISION_RAG_MIN_PRECHECK_HITS: 1,
+  // Top1 至少要有几个"不在 Top2/Top3 视觉词表里"的非泛视觉词。0 = 关闭该检查。
+  VISION_RAG_MIN_DISCRIMINATIVE: 1,
+  // 立即出报告所需的最小区分度（低于它则等完整诊断落地后出结论）。0 = 一律立即出报告。
+  VISION_RAG_MIN_DISCRIMINATIVE_EAGER: 2,
+  // Top1 与 Top2 的最小检索分间隔。原来硬编码 3，只相当于"少命中一个词"，
+  // 实测出现间隔 3.4 就放行的病例；提到 5 让"两卡接近"真正能挡住快路径。
+  VISION_RAG_MIN_GAP: 5,
   // 预检模型：轻量快速，用于视觉特征提取；完整诊断仍用 QWEN_MODEL
-  QWEN_PRECHECK_MODEL: 'qwen3.6-flash',
+  QWEN_PRECHECK_MODEL: 'qwen3.8-flash',
 
   // ---------- 请求超时（毫秒，与 app.json networkTimeout 保持一致）----------
   API_TIMEOUT: 60000,
   PRECHECK_TIMEOUT: 18000,
-  // 输出限长提速：延迟≈输出 token 数÷出字速度，schema 已同步限字，900 足够容纳完整报告
-  MODEL_MAX_TOKENS: 900,
+  // 思考与最终报告共享输出额度，给思考及结构化报告留余量
+  MODEL_MAX_TOKENS: 8192,
 
   // ---------- 图片限制 ----------
   MAX_IMAGES: 5,

@@ -96,8 +96,8 @@ var PROVIDERS = {
     modelField: 'QWEN_MODEL',
     labelField: 'QWEN_LABEL',
     defaultBase: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-    defaultModel: 'qwen3.7-plus',
-    defaultLabel: 'Qwen3.7-Plus'
+    defaultModel: 'qwen3.8-flash',
+    defaultLabel: 'Qwen3.8-Flash'
   }
 }
 
@@ -303,13 +303,15 @@ function buildPrompt(petInfo, lesionBoxes) {
     : []
   var precheckData = petInfo.visualPrecheck || {}
   if (shouldUseRagPrompt && !visualRagCandidates.length) {
+    // 主诉兜底检索：只用主人自己写的文字 + 受控视觉词表，
+    // 不拼模型生成的 shortObservation（同 buildVisionRagQuery 的理由：
+    // 自由文本会让检索侧按裸子串命中，2026-10-01 实测单例可被顶高 9 分）。
     visualRagCandidates = kb.search({
       species: petInfo.species || '',
       breed: petInfo.breed || '',
       bodyPart: petInfo.bodyPartLabel || petInfo.bodyPart || '',
       complaint: [
         petInfo.complaint || '',
-        precheckData.shortObservation || '',
         (precheckData.visualFeatures || []).join(' ')
       ].filter(Boolean).join('\n'),
       visualFeatures: precheckData.visualFeatures || [],
@@ -1249,10 +1251,21 @@ function selectVisionRagImages(images, imageRoles) {
   return preferred.slice(0, maxImages)
 }
 
+/**
+ * 构造知识库检索 query。
+ *
+ * 注意：这里**刻意不拼接 featureData.shortObservation**。
+ * shortObservation 是预检模型自由撰写的一段描述，不受 VISUAL_VOCAB 白名单约束
+ * （与 buildFeaturePrompt 里「必须从标准词表选词」的要求互相矛盾），
+ * 而检索侧是裸子串匹配，它会和受控视觉词一样触发命中。
+ * 2026-10-01 对照实测（27 例、只切换这段文字的有无）：
+ *   判定结果被改变 7/27 = 26%，触发中判对率 88.9% → 77.8%，
+ *   单例最大加分 +9.0（皮肤肿瘤 16.0 → 25.0，仅凭一段描述跨过快路径门槛并命中'别名:肿块'）。
+ * 它仍然用于报告展示（ragSummary / lesionNameCn），只是不再参与匹配。
+ */
 function buildVisionRagQuery(petInfo, featureData) {
   var featureText = [
     petInfo.complaint || '',
-    featureData.shortObservation || '',
     featureData.lesionPattern || '',
     featureData.lesionShape || '',
     (featureData.visualFeatures || []).join(' ')
@@ -1311,8 +1324,9 @@ function buildKbAttributionResults(petInfo) {
   }
 
   var pre = petInfo.visualPrecheck || {}
+  // 同 buildVisionRagQuery：模型生成的 shortObservation 不参与检索匹配，
+  // 只保留主人主诉 + 受控视觉词表（自由文本按裸子串命中，会绕过词表门槛）。
   var visualText = [
-    pre.shortObservation || '',
     pre.lesionPattern || '',
     pre.lesionShape || '',
     pre.visualFeatures && pre.visualFeatures.length ? pre.visualFeatures.join(' ') : ''
@@ -1329,18 +1343,81 @@ function buildKbAttributionResults(petInfo) {
   }).filter(kb.isPromptWorthyResult)
 }
 
-function countMatchedType(hit, typePrefix) {
+/**
+ * 强命中判定的证据计数，口径与 kb.countPromptEvidence 对齐：
+ * 视觉命中（含预检来源'视觉预检:'与主诉来源'视觉:'）排除泛词，
+ * 病史/别名/组合全计。此前的实现把泛视觉词也计入症状匹配数，
+ * 与 kb 侧"泛词不算证据"的口径不一致，会高估弱病例的证据量。
+ */
+function countEvidenceMatches(hit) {
   if (!hit || !Array.isArray(hit.matched)) return 0
-  return hit.matched.filter(function (item) {
-    return String(item).indexOf(typePrefix) === 0
-  }).length
+  var count = 0
+  for (var i = 0; i < hit.matched.length; i++) {
+    var item = String(hit.matched[i] || '')
+    if (item.indexOf('视觉:') === 0 || item.indexOf('视觉预检:') === 0) {
+      if (kb.isGenericVisualSign(item.slice(item.indexOf(':') + 1))) continue
+      count++
+    } else if (
+      item.indexOf('病史:') === 0 ||
+      item.indexOf('别名:') === 0 ||
+      item.indexOf('组合:') === 0
+    ) {
+      count++
+    }
+  }
+  return count
 }
 
-function countEvidenceMatches(hit) {
-  return countMatchedType(hit, '视觉:') +
-    countMatchedType(hit, '病史:') +
-    countMatchedType(hit, '别名:') +
-    countMatchedType(hit, '组合:')
+/**
+ * 区分度：Top1 匹配到的非泛视觉词里，有多少个**不在 Top2/Top3 候选的视觉词表中**。
+ *
+ * 即"别人也有的词不算证据"。加入它的原因（2026-10-01 实测）：
+ * 原有门槛只看「分数够 + 证据条数够 + 有照片侧命中」，而检索分≈匹配词数×权重，
+ * 一个病完全可以靠一堆各科共有的词（结节/溃疡/增厚…）再加一条组合规则胜出——
+ * 这类 Top1 的区分度恰好为 0，实测 99 个病例中仅有的 2 个错误触发全部落在区分度 0 上：
+ *   猫粟粒性皮炎 14.8（真值：猫过敏性皮炎）证据只有 1 个共享词 + 1 条组合规则；
+ *   皮肤肿瘤 19.0（真值：嗜酸性肉芽肿复合体）结节/溃疡为数十张卡共有。
+ * 要求 ≥1 个区分性视觉词后：触发 55→50、错误 2→0（只损失 3 个原本正确的触发，仅影响速度）。
+ *
+ * 跨物种条目（如「皮肤癣菌病（犬猫）」按物种显示为犬癣/猫癣）不影响判定：
+ * 这里比对的是 visualSigns 词表本身，与显示名无关。
+ */
+function countDiscriminativeVisualHits(results) {
+  if (!results || !results.length) return 0
+  var top = results[0]
+  if (!top || !Array.isArray(top.matched)) return 0
+
+  // Top2/Top3 共有的视觉词都算"没有区分力"
+  var shared = {}
+  for (var i = 1; i < results.length && i < 3; i++) {
+    var other = results[i]
+    var signs = (other && other.visualSigns) || []
+    for (var j = 0; j < signs.length; j++) shared[signs[j]] = true
+  }
+
+  var count = 0
+  for (var k = 0; k < top.matched.length; k++) {
+    var item = String(top.matched[k] || '')
+    if (item.indexOf('视觉:') !== 0 && item.indexOf('视觉预检:') !== 0) continue
+    var word = item.slice(item.indexOf(':') + 1)
+    if (kb.isGenericVisualSign(word)) continue
+    if (shared[word]) continue
+    count++
+  }
+  return count
+}
+
+/**
+ * 历史高风险方向：肿瘤 / 自身免疫 / 内分泌 / 罕见病。
+ * 这些方向一旦被快路径判错，代价是漏诊或延误（不是"换个药膏"级别的误差），
+ * 所以即使命中也要求更高区分度才允许不等完整诊断。
+ */
+var FAST_RAG_HIGH_RISK_CATEGORIES = ['mass', 'autoimmune', 'endocrine', 'rare_warning']
+
+function isFastRagHighRiskResult(result) {
+  if (!result) return true
+  if (FAST_RAG_HIGH_RISK_CATEGORIES.indexOf(result.category) >= 0) return true
+  return result.urgency === 'urgent' || result.urgency === 'emergency'
 }
 
 /**
@@ -1394,13 +1471,24 @@ function isStrongVisionRagHit(results) {
   var second = results[1]
   var minScore = config.VISION_RAG_MIN_SCORE || 8
   var minSymptoms = config.VISION_RAG_MIN_SYMPTOM_MATCHES || 2
+  var minPrecheckHits = typeof config.VISION_RAG_MIN_PRECHECK_HITS === 'number'
+    ? config.VISION_RAG_MIN_PRECHECK_HITS : 1
   var evidenceMatches = countEvidenceMatches(top)
   if (top.score < minScore) return false
   if (evidenceMatches < minSymptoms) return false
 
   // top2 间隔检查：如果 top2 分数接近，说明存在显著混淆，
   // 应 fallback 到完整模型，让大模型做区分，而不是快路径直接定一个模棱两可的答案。
-  if (second && second.score >= 5 && (top.score - second.score) < 3) return false
+  // 门槛提到 config.VISION_RAG_MIN_GAP（原硬编码 3）：检索分≈匹配词数×权重，
+  // 间隔 3 在实测里只相当于"少命中一个词"，几乎不构成约束（曾出现间隔 3.4 就放行的病例）。
+  var minGap = typeof config.VISION_RAG_MIN_GAP === 'number' ? config.VISION_RAG_MIN_GAP : 3
+  if (second && second.score >= 5 && (top.score - second.score) < minGap) return false
+
+  // 照片证据底线（BUG-G9）：组合规则、别名、主诉侧视觉词都可能由主诉文本单独命中，
+  // 唯有'视觉预检:'标签只能来自照片提特征。强命中必须至少有 N 个来自预检的非泛词
+  // 特征命中，否则主人一段"教科书式描述"就能绕过看图直接领走一份具体病名报告。
+  // 设为 0 可关闭该检查（回退 BUG-G9 之前的行为）。
+  if (kb.countPrecheckVisualHits(top) < minPrecheckHits) return false
 
   // 强证据要求：至少有一项组合规则命中（该病特有的多条件组合），
   // 或者至少有一项别名命中（用户/模型直接提到该病名），
@@ -1414,29 +1502,103 @@ function isStrongVisionRagHit(results) {
   })
   var strongVisualHits = (top.matched || []).filter(function (m) {
     var item = String(m)
-    if (item.indexOf('视觉:') !== 0) return false
-    return !kb.isGenericVisualSign(item.slice('视觉:'.length))
+    if (item.indexOf('视觉:') !== 0 && item.indexOf('视觉预检:') !== 0) return false
+    return !kb.isGenericVisualSign(item.slice(item.indexOf(':') + 1))
   }).length
   if (!hasCombo && !hasAlias && strongVisualHits < 3) return false
+
+  // 区分度门槛（2026-10-01 新增）：Top1 至少要有 1 个"别的候选没有"的非泛视觉词。
+  // 上面所有检查都允许 Top1 靠"人人都有"的通用词 + 一条组合规则胜出，
+  // 这正是实测里仅有的 2 个错误触发的形态（详见 countDiscriminativeVisualHits）。
+  // 设为 0 可关闭该检查（回退到 2026-10-01 之前的行为）。
+  var minDiscriminative = typeof config.VISION_RAG_MIN_DISCRIMINATIVE === 'number'
+    ? config.VISION_RAG_MIN_DISCRIMINATIVE : 1
+  if (countDiscriminativeVisualHits(results) < minDiscriminative) return false
 
   return true
 }
 
-function scoreToFastProbability(score, rank) {
-  var base = Math.min(78, 42 + score * 3)
-  return Math.max(20, Math.round(base - rank * 8))
+/**
+ * 是否立刻出报告（延迟决策，与上面的"正确性门槛"分开）。
+ *
+ * 区分度只有 1 个词时，Top1 只是"险胜"——此时不抢跑，让本来就在并行跑的完整诊断
+ * 落地后再出结论（它落地后会照旧做知识库归因，所以主人并不会失去知识库结果）。
+ * 只有区分度足够强、且不属于高危方向时，才保留 3-5s 的快路径体验。
+ *
+ * 高危方向（肿瘤/自身免疫/内分泌/罕见病/急症）一律不抢跑：判错代价是漏诊，
+ * 不值得用几秒延迟去换。实测这类限制不影响准确率上限，只影响这批病例的响应时间。
+ */
+function shouldResolveFastRag(results) {
+  if (!results || !results.length) return false
+  var eager = typeof config.VISION_RAG_MIN_DISCRIMINATIVE_EAGER === 'number'
+    ? config.VISION_RAG_MIN_DISCRIMINATIVE_EAGER : 2
+  if (countDiscriminativeVisualHits(results) < eager) return false
+  if (isFastRagHighRiskResult(results[0])) return false
+  return true
+}
+
+/**
+ * 快路径候选匹配分。
+ *
+ * 旧实现是 `top 沿用 42 + 3×检索分（封顶 78）`，2026-10-01 实测 A+B 两组
+ * **55/55 个触发病例全部显示 78%「较高匹配」**——检索分只要 ≥12 就顶满，
+ * 而检索分≈匹配词数×权重，连判错的那 2 例也是 78%。
+ * 快路径没有任何大模型复核，不应该给出"较高匹配"级别的断言，因此改为：
+ *   - 上限压到 FAST_RAG_PROB_MAX（60 → confidenceToLabel 判为「中等匹配」；
+ *     要拿到「较高匹配」必须 ≥70，快路径永远到不了）
+ *   - 主体由**证据质量**决定：区分度（别人没有的词）+ 有效证据条数 + 与次优的差距，
+ *     而不是"模型报了几个词"
+ * 其余候选仍按检索分比例缩放（保持候选间相对差距不失真）。
+ */
+var FAST_RAG_PROB_MIN = 30
+var FAST_RAG_PROB_MAX = 60
+
+function fastRagTopProbability(results) {
+  if (!results || !results.length) return FAST_RAG_PROB_MIN
+  var top = results[0]
+  var discriminative = countDiscriminativeVisualHits(results)
+  var evidence = countEvidenceMatches(top)
+  var second = results[1]
+  var gap = second ? (top.score - second.score) : top.score
+  var p = 38
+  p += Math.min(discriminative, 3) * 4     // 0 / 4 / 8 / 12
+  p += Math.min(evidence, 5) * 2           // 0..10
+  p += gap >= 12 ? 8 : (gap >= 6 ? 5 : (gap >= 3 ? 2 : 0))
+  return Math.max(FAST_RAG_PROB_MIN, Math.min(FAST_RAG_PROB_MAX, p))
+}
+
+function scoreToFastProbability(score, topScore, topProbability) {
+  var topP = typeof topProbability === 'number' && topProbability > 0
+    ? Math.min(FAST_RAG_PROB_MAX, topProbability)
+    : Math.min(FAST_RAG_PROB_MAX, 38 + Math.min(22, topScore * 3))
+  if (!(topScore > 0)) return 20
+  var scaled = Math.round(topP * score / topScore)
+  return Math.max(20, Math.min(topP, scaled))
+}
+
+// matched 条目是检索内部标签（'视觉预检:圆形脱毛'/'组合:…'/'负信号:-2'），
+// 用户可见文本只保留词本身；负信号是降分标记不是支持依据，整条剔除。
+function matchedTextForDisplay(matched) {
+  return (matched || []).map(function (item) {
+    var s = String(item || '')
+    if (s.indexOf('负信号:') === 0) return ''
+    var idx = s.indexOf(':')
+    return idx >= 0 ? s.slice(idx + 1) : s
+  }).filter(Boolean).join('、')
 }
 
 function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, petInfo) {
   var top = results[0]
   var topDisplayName = displayDiagnosisForSpecies(top.name, petInfo && petInfo.species)
-  var candidates = results.slice(0, 3).map(function (hit, index) {
+  // Top1 的匹配分由证据质量决定（区分度/证据条数/与次优的差距），不再由检索分换算。
+  var topProbability = fastRagTopProbability(results)
+  var candidates = results.slice(0, 3).map(function (hit) {
     var hitName = displayDiagnosisForSpecies(hit.name, petInfo && petInfo.species)
     return {
       name: hitName,
-      probability: scoreToFastProbability(hit.score, index),
+      probability: scoreToFastProbability(hit.score, top.score, topProbability),
       reason: [
-        hit.matched && hit.matched.length ? '观察依据：' + hit.matched.join('、') : '',
+        hit.matched && hit.matched.length ? '观察依据：' + matchedTextForDisplay(hit.matched) : '',
         hit.recommendedTests && hit.recommendedTests.length ? '建议检查：' + hit.recommendedTests.slice(0, 2).join('、') : '',
         hit.typicalFeatures ? '典型特征：' + hit.typicalFeatures : ''
       ].filter(Boolean).join('；'),
@@ -1450,7 +1612,7 @@ function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, 
   var explanation = [
     observation,
     features ? '视觉预检特征：' + features : '',
-    top.matched && top.matched.length ? '支持线索：' + top.matched.join('、') : '',
+    top.matched && top.matched.length ? '支持线索：' + matchedTextForDisplay(top.matched) : '',
     top.typicalFeatures ? '参考特征：' + top.typicalFeatures : '',
     top.ddx ? '鉴别要点：' + top.ddx : '',
     top.recommendedTests && top.recommendedTests.length ? '建议检查：' + top.recommendedTests.slice(0, 4).join('、') : ''
@@ -1467,15 +1629,16 @@ function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, 
     primaryDiagnosis: topDisplayName,
     primaryDiagnosisProbability: candidates[0] ? candidates[0].probability : 50,
     diagnosisCandidates: candidates,
-    lesionNameCn: featureData.lesionPattern || topDisplayName,
+    // lesionNameCn 在结果页作主病名副标题（倾向说明）。lesionPattern 是分布词
+    // （局灶性/多发性…），当皮损名既词不达意也可能落到'未知'；短观察才是
+    // 照片里实际看到的东西，缺省时退回主病名（与主名相同时副标题自动不展示）。
+    lesionNameCn: featureData.shortObservation || topDisplayName,
     confidence: candidates[0] ? candidates[0].probability : 50,
     explanation: explanation,
     possibleMeaning: '照片表现与“' + topDisplayName + '”的部分特征相似，建议作为候选鉴别方向之一；' + uncertainty,
     homeCare: safeHomeCare,
     whenToWatch: '若范围稳定、无明显疼痛渗出、精神食欲正常，可记录照片并持续观察变化。',
-    whenToSeeVet: top.urgency === 'urgent' || top.urgency === 'emergency'
-      ? vetAdvice
-      : vetAdvice,
+    whenToSeeVet: vetAdvice,
     careSuggestion: '该结果仅作初筛参考；下一步可结合线下检查确认：' + ((top.recommendedTests || []).slice(0, 3).join('、') || '皮肤/耳道基础检查') + '。',
     vetWarning: top.urgency === 'urgent' || top.urgency === 'emergency'
       ? vetAdvice
@@ -1484,6 +1647,29 @@ function buildFastRagDiagnosis(results, featureData, providerName, providerCfg, 
     diagnosisProbabilityNote: DIAGNOSIS_SCORE_NOTE,
     ragSources: sourceList
   }, providerName, providerCfg, petInfo)
+}
+
+/**
+ * 把知识库检索结果组装成一份可直接交付的报告（buildFastRagDiagnosis + 快路径专用覆写）。
+ *
+ * 抽成函数是因为现在有两个调用点：
+ *  1. 抢跑：`shouldResolveFastRag` 通过时立即 resolve；
+ *  2. 兜底：完整诊断失败/不可用时，把已经算出来的这份预检报告交给用户
+ *     （此前这份结果会被直接丢弃，用户白等一场还拿不到任何结论）。
+ */
+function assembleFastRagData(results, featureData, providerName, providerCfg, petInfo) {
+  var data = buildFastRagDiagnosis(results, featureData, providerName, providerCfg, petInfo)
+  data.ragTitle = '临床特征匹配'
+  data.ragSummary = featureData.shortObservation || data.ragSummary
+  data.ragBasis = results[0].typicalFeatures || data.ragBasis
+  data.ragRecommendation = results[0].ddx || data.ragRecommendation
+  data.ragSources = collectSourcesFromResults(results)
+  data._fastRag = true
+  data._visualFeatures = featureData.visualFeatures
+  data._ragMatchName = results[0].name
+  data._ragMatchScore = results[0].score
+  data._ragMatched = results[0].matched || []
+  return data
 }
 
 function buildImageRejectResult(featureData, providerName, providerCfg, petInfo, imageCount) {
@@ -1542,6 +1728,9 @@ function diagnoseWithParallelPrecheck(images, petInfo, providerName, providerCfg
   return new Promise(function (resolve) {
     var settled = false
     var precheckData = null
+    // 边缘命中（够格但区分度不足，或属高危方向）时先存起来不抢跑：
+    // 若完整诊断最终拿不到结果，用它兜底，而不是让用户白等一场。
+    var deferredFastData = null
 
     // 先发预检（flash 模型，通常先回），同一 tick 紧接着发完整诊断
     var precheckPromise = extractVisualFeatures(images, petInfo, lesionBoxes, precheckCfg)
@@ -1595,38 +1784,49 @@ function diagnoseWithParallelPrecheck(images, petInfo, providerName, providerCfg
           })))
         }
         if (isStrongVisionRagHit(results)) {
-          settled = true
-          var data = buildFastRagDiagnosis(results, featureData, providerName, providerCfg, petInfo)
-          data.ragTitle = '临床特征匹配'
-          data.ragSummary = featureData.shortObservation || data.ragSummary
-          data.ragBasis = results[0].typicalFeatures || data.ragBasis
-          data.ragRecommendation = results[0].ddx || data.ragRecommendation
-          data.ragSources = collectSourcesFromResults(results)
-          data._fastRag = true
-          data._visualFeatures = featureData.visualFeatures
-          data._ragMatchName = results[0].name
-          data._ragMatchScore = results[0].score
-          data._ragMatched = results[0].matched || []
-          analytics.track('visionRag', {
-            hit: true,
-            topName: results[0].name,
-            topScore: results[0].score,
-            featureCount: featureData.visualFeatures.length
-          })
-          resolve({
-            success: true,
-            data: data,
-            raw: JSON.stringify({
-              provider: providerName,
-              model: providerCfg.model,
-              images: images.length,
-              fastRag: true,
-              visualFeatures: featureData.visualFeatures,
-              ragTop: results[0].name,
-              ragScore: results[0].score,
-              usage: featureData.usage || null
+          var fastData = assembleFastRagData(results, featureData, providerName, providerCfg, petInfo)
+          var discriminative = countDiscriminativeVisualHits(results)
+          if (shouldResolveFastRag(results)) {
+            settled = true
+            analytics.track('visionRag', {
+              hit: true,
+              topName: results[0].name,
+              topScore: results[0].score,
+              featureCount: featureData.visualFeatures.length,
+              discriminative: discriminative,
+              probability: fastData.confidence
             })
-          })
+            resolve({
+              success: true,
+              data: fastData,
+              raw: JSON.stringify({
+                provider: providerName,
+                // 快路径唯一跑过的模型是预检模型；完整诊断模型未参与本报告
+                model: precheckCfg.model,
+                images: images.length,
+                fastRag: true,
+                visualFeatures: featureData.visualFeatures,
+                ragTop: results[0].name,
+                ragScore: results[0].score,
+                discriminative: discriminative,
+                usage: featureData.usage || null
+              })
+            })
+          } else {
+            // 够格但只是「险胜」（区分度不足），或 Top1 落在肿瘤/自身免疫/内分泌/
+            // 罕见病/急症这类判错代价高的方向：不抢跑，让并行跑着的完整诊断先落地。
+            // 预检报告留在 deferredFastData 里兜底（原来这类病例要么被硬门槛整条挡掉、
+            // 要么被当作强命中直接出报告，两边都不是我们想要的）。
+            deferredFastData = fastData
+            analytics.track('visionRag', {
+              hit: false,
+              reason: 'borderline_defer',
+              topName: results[0].name,
+              topScore: results[0].score,
+              discriminative: discriminative,
+              highRisk: isFastRagHighRiskResult(results[0])
+            })
+          }
         }
       }
     }).catch(function (err) {
@@ -1637,8 +1837,53 @@ function diagnoseWithParallelPrecheck(images, petInfo, providerName, providerCfg
     })
 
     fullPromise.then(function (fullResult) {
-      if (settled) return
+      if (settled) {
+        // 快路径或烂图拦截已胜出：完整诊断的调用成本已发生但结果被丢弃。
+        // 此前这条路径无任何埋点，线上无法核算快路径实际省下/浪费了多少完整诊断。
+        analytics.track('fullDiagnosisDiscarded', {
+          success: !!(fullResult && fullResult.success)
+        })
+        return
+      }
       settled = true
+
+      // 兜底（2026-10-01）：完整诊断拿不到可用结果时，如果预检侧已有一份够格的知识库
+      // 报告，就把它交付出去。此前这条路径只会 resolve 一个失败结构，用户等了十几秒
+      // 却拿不到任何结论——而那份报告其实早就算出来了。
+      if (deferredFastData && !(fullResult && fullResult.success && fullResult.data)) {
+        analytics.track('fastRagFallback', {
+          reason: 'full_diagnosis_unavailable',
+          fullSuccess: !!(fullResult && fullResult.success)
+        })
+        resolve({
+          success: true,
+          data: deferredFastData,
+          raw: JSON.stringify({
+            provider: providerName,
+            model: precheckCfg.model,
+            images: images.length,
+            fastRag: 'fallback',
+            visualFeatures: (precheckData && precheckData.visualFeatures) || [],
+            ragTop: deferredFastData._ragMatchName,
+            ragScore: deferredFastData._ragMatchScore,
+            usage: (precheckData && precheckData.usage) || null
+          })
+        })
+        return
+      }
+
+      // 边缘命中被推迟到这里的病例：记录完整诊断是否与预检结论一致，
+      // 用来核算"不抢跑"这个决定到底救回了多少、又多余等了多少。
+      if (deferredFastData && fullResult && fullResult.success && fullResult.data) {
+        var deferredName = deferredFastData._ragMatchName
+        var fullNames = (fullResult.data.diagnosisCandidates || []).map(function (c) { return c.name })
+        analytics.track('fastRagDeferred', {
+          agreed: fullNames.indexOf(deferredName) >= 0,
+          topName: deferredName,
+          primaryDiagnosis: fullResult.data.primaryDiagnosis
+        })
+      }
+
       // 预检已返回时，用更准的视觉特征修正 KB 归因（runFullDiagnosis 内部是主诉版兜底归因）
       if (fullResult && fullResult.success && fullResult.data &&
           precheckData && precheckData.parseLevel !== 5 &&
@@ -1682,6 +1927,28 @@ function diagnoseWithParallelPrecheck(images, petInfo, providerName, providerCfg
     }, function (err) {
       if (settled) return
       settled = true
+      // 完整诊断直接抛错时同样用预检侧的知识库报告兜底（同上面的 fastRagFallback）
+      if (deferredFastData) {
+        analytics.track('fastRagFallback', {
+          reason: 'full_diagnosis_error',
+          fullSuccess: false
+        })
+        resolve({
+          success: true,
+          data: deferredFastData,
+          raw: JSON.stringify({
+            provider: providerName,
+            model: precheckCfg.model,
+            images: images.length,
+            fastRag: 'fallback',
+            visualFeatures: (precheckData && precheckData.visualFeatures) || [],
+            ragTop: deferredFastData._ragMatchName,
+            ragScore: deferredFastData._ragMatchScore,
+            usage: (precheckData && precheckData.usage) || null
+          })
+        })
+        return
+      }
       resolve({
         success: false,
         error: friendlyError(err)
@@ -1759,6 +2026,7 @@ function runFullDiagnosis(images, petInfo, providerName, providerCfg, options) {
   }
 
   payload.enable_thinking = config.QWEN_ENABLE_THINKING === true
+  if (config.QWEN_ENABLE_THINKING === true) payload.reasoning_effort = config.QWEN_REASONING_EFFORT || 'medium'
 
   // 启用 JSON 模式，确保稳定快速的结构化输出
   payload.response_format = { type: 'json_object' }
@@ -2137,5 +2405,13 @@ module.exports = {
   isStrongVisionRagHit: isStrongVisionRagHit,
   isMucosalOrOralCase: isMucosalOrOralCase,
   checkCoverageConsistency: checkCoverageConsistency,
-  friendlyError: friendlyError
+  friendlyError: friendlyError,
+  // 快路径报告的匹配分映射与 matched 标签清洗，导出供单测覆盖
+  scoreToFastProbability: scoreToFastProbability,
+  fastRagTopProbability: fastRagTopProbability,
+  countDiscriminativeVisualHits: countDiscriminativeVisualHits,
+  isFastRagHighRiskResult: isFastRagHighRiskResult,
+  shouldResolveFastRag: shouldResolveFastRag,
+  buildVisionRagQuery: buildVisionRagQuery,
+  matchedTextForDisplay: matchedTextForDisplay
 }
