@@ -222,6 +222,28 @@ assert.ok(visualOnlyResults.length > 0, 'visual-features-only query should hit K
 assert.strictEqual(visualOnlyResults[0].name, '猫癣', 'ringworm combo should fire from visual features alone')
 assert.ok(visualOnlyResults[0].matched.some(function (m) { return String(m).indexOf('组合:') === 0 }),
   'combination rule must fire without complaint text')
+// BUG-G9：预检来源的视觉命中必须带'视觉预检:'标签，供快路径判定照片证据
+assert.ok(visualOnlyResults[0].matched.some(function (m) { return String(m).indexOf('视觉预检:') === 0 }),
+  'precheck-sourced visual hits must be labeled 视觉预检:')
+
+// BUG-G9：预检特征与主诉文本同词时不得重复计分（共享'视觉'去重槽位），
+// 且预检先占位，命中标签归预检来源
+const dedupResults = kb.search({
+  species: '猫',
+  bodyPart: '',
+  complaint: '圆形脱毛 断毛',
+  visualFeatures: ['圆形脱毛', '断毛']
+})
+const dedupTop = dedupResults[0]
+const dedupVisualHits = dedupTop.matched.filter(function (m) {
+  var s = String(m)
+  return (s.indexOf('视觉:') === 0 || s.indexOf('视觉预检:') === 0) &&
+    s.slice(s.indexOf(':') + 1) === '圆形脱毛'
+})
+assert.strictEqual(dedupVisualHits.length, 1,
+  'same term from precheck and complaint must not be double-counted')
+assert.ok(dedupTop.matched.some(function (m) { return String(m) === '视觉预检:圆形脱毛' }),
+  'term present in precheck features must be attributed to precheck source')
 
 // 负信号：蠕形螨（不痒）遇到“剧烈瘙痒”应被降权并标记
 const negResults = kb.search({

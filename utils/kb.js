@@ -42,7 +42,20 @@ var DISEASE_KB = [
     keywords: {
       breeds: ['金毛', '拉布拉多', '柴犬', '法斗', '英斗', '比熊', '边牧', '德牧'],
       locations: ['爪部', '腹部', '腋下', '腹股沟', '面部', '耳部', '眼周'],
-      symptoms: ['瘙痒', '舔舐', '红肿', '反复', '季节性', '慢性', '舔爪', '挠', '摩擦']
+      // K11（2026-10-01）：本条曾因「唯一的形态词『红肿』是泛词」而永远过不了
+      // 视觉预检通道（要求至少 1 个非泛视觉词），即犬猫最常见的皮肤病之一
+      // 在快路径里一次都不会出现。直接补词行不通——K4 按词表长度归一化，
+      // 13→14 词就让本条全部症状分下调，实测 Top-1 被趾间脓皮病反超
+      // （14.6 vs 14.7），tests/kb.test.js 的 atopic dermatitis pattern 直接失败：
+      // **在当前评分下"把卡写得更全"反而让卡更差**。
+      // 于是把「加词」改成「等量置换」：去掉「挠」补入「增厚」，词表仍是 13、
+      // signWeight 仍 0.784，因此对全库排序零副作用。掉「挠」的代价最小——
+      // expandQueryTerms 已把「挠」桥接到「瘙痒/搔抓」，主人写「挠」时查询串里
+      // 照样出现这些词；而「增厚」（慢性搔抓的苔藓化，VISUAL_VOCAB 内）是本条
+      // 真正的形态学证据。实测：atopic 用例仍 14.9 > 14.7；audit 残留偏置 1.88x 不变；
+      // probe:recall 22/24、19/24、24/24 不变；eval8 触发/判对完全不变。
+      // ※ 补词属临床内容，仍需兽医复核。
+      symptoms: ['瘙痒', '舔舐', '红肿', '反复', '季节性', '慢性', '舔爪', '摩擦', '增厚']
     },
     typicalFeatures: '1-3岁发病，肢体末端及腹侧瘙痒性红斑，慢性反复发作，季节性加重',
     ddx: '与食物过敏区分：特应性皮炎通常环境相关、季节性，食物过敏全年性且可能伴胃肠症状',
@@ -77,7 +90,12 @@ var DISEASE_KB = [
     keywords: {
       breeds: ['法斗', '英斗', '柴犬', '比熊'],
       locations: ['爪部', '耳部', '面部', '腹部', '肛周'],
-      symptoms: ['瘙痒', '反复', '慢性', '耳炎', '胃肠', '腹泻', '呕吐', '全年']
+      // K11（2026-10-01）：本条**一个形态词都没有**（visualSigns 为空），
+      // 意思是"只看照片不给主诉"时永远召回不到它。与特应性皮炎同样用
+      // 「等量置换」解决：去掉与「反复」语义重复的「慢性」，补入「增厚」，
+      // 词表仍是 12、signWeight 仍 0.816，全库排序零副作用
+      // （实测数据见上方特应性皮炎的 K11 说明）。※ 补词属临床内容，需兽医复核。
+      symptoms: ['瘙痒', '反复', '耳炎', '胃肠', '腹泻', '呕吐', '全年', '增厚']
     },
     typicalFeatures: '全年性瘙痒，常伴复发性外耳炎和/或胃肠症状，更换蛋白源后改善',
     ddx: '与特应性皮炎区分：食物过敏全年无季节性，常伴消化道症状',
@@ -253,7 +271,12 @@ var DISEASE_KB = [
     },
     typicalFeatures: '皮肤脱屑（干性）或油腻（油性），伴脱毛和皮肤增厚，可能继发细菌或马拉色菌感染',
     ddx: '与真菌区分：脂溢性皮炎通常广泛分布、双侧对称，无传染性',
-    urgency: 'low'
+    urgency: 'low',
+    // K12g：ddx 里写的「真菌」是泛称，关系图不认它（会歧义/串味），
+    // 这里显式指向库里那张皮肤癣菌病卡；区分要点直接用 ddx 原文，不新增临床判断。
+    relatedDiseases: [
+      { name: '皮肤癣菌病（犬猫）', relation: '鉴别', desc: '脂溢性皮炎通常广泛分布、双侧对称，无传染性' }
+    ]
   },
 
   {
@@ -469,7 +492,11 @@ var DISEASE_KB = [
     },
     typicalFeatures: '扁脸猫面部和鼻部褶皱深处红肿、潮湿、有分泌物和异味',
     ddx: '与泪痕皮炎区分：褶皱皮炎在鼻部褶皱深处，泪痕在眼下方浸渍',
-    urgency: 'moderate'
+    urgency: 'moderate',
+    // K12g：ddx 写的是「泪痕皮炎」，库里卡名是「猫泪痕皮炎」，关系图按精确名匹配不到，这里显式补链。
+    relatedDiseases: [
+      { name: '猫泪痕皮炎', relation: '鉴别', desc: '褶皱皮炎在鼻部褶皱深处，泪痕在眼下方浸渍' }
+    ]
   },
 
   {
@@ -514,7 +541,11 @@ var DISEASE_KB = [
     },
     typicalFeatures: '眼下方皮肤因泪液浸渍红肿、红褐色染色和潮湿，扁脸猫多见',
     ddx: '与面部褶皱皮炎区分：泪痕在眼下方浸渍，褶皱皮炎在鼻部褶皱深处',
-    urgency: 'low'
+    urgency: 'low',
+    // K12g：同上，把「面部褶皱皮炎」显式接到「猫面部褶皱皮炎」。
+    relatedDiseases: [
+      { name: '猫面部褶皱皮炎', relation: '鉴别', desc: '泪痕在眼下方浸渍，褶皱皮炎在鼻部褶皱深处' }
+    ]
   },
 
   {
@@ -544,7 +575,13 @@ var DISEASE_KB = [
     },
     typicalFeatures: '面部和眼周脱毛、皮屑和红斑，猫蠕形螨通常瘙痒比犬明显',
     ddx: '与犬蠕形螨区分：猫蠕形螨好发头面部和眼周，瘙痒更明显',
-    urgency: 'moderate'
+    urgency: 'moderate',
+    // K12g：「犬蠕形螨」不是卡名（库里分「蠕形螨病（局灶型）」与「全身型蠕形螨病」），
+    // 两个犬方向都显式补链；区分要点用 ddx 原文。
+    relatedDiseases: [
+      { name: '蠕形螨病（局灶型）', relation: '鉴别', desc: '猫蠕形螨好发头面部和眼周，瘙痒更明显' },
+      { name: '全身型蠕形螨病', relation: '鉴别', desc: '猫蠕形螨好发头面部和眼周，瘙痒更明显' }
+    ]
   },
 
   {
@@ -579,7 +616,11 @@ var DISEASE_KB = [
     },
     typicalFeatures: '注射部位（肩胛间、腰部或大腿）出现的皮下硬结节，持续增大，可能溃烂',
     ddx: '与囊肿区分：注射部位肉瘤持续增大、位置在常见注射点，活检确诊',
-    urgency: 'urgent'
+    urgency: 'urgent',
+    // K12g：「囊肿」指向库里的皮脂腺囊肿卡；区分要点用 ddx 原文。
+    relatedDiseases: [
+      { name: '皮脂腺囊肿', relation: '鉴别', desc: '注射部位肉瘤持续增大、位置在常见注射点，活检确诊' }
+    ]
   },
 
   {
@@ -686,7 +727,12 @@ var DISEASE_KB = [
     },
     typicalFeatures: '皮肤上可见附着蜱虫体，周围红肿，拔除后可有硬结，多发于户外活动后',
     ddx: '与其他寄生虫区分：蜱虫体可见附着，是重要鉴别特征',
-    urgency: 'moderate'
+    urgency: 'moderate',
+    // K12g：「其他寄生虫」在库里没有对应条目，只能落到"虫体看得见"的另一张外寄生虫卡（虱感染）。
+    // 这一条与前两条不同：属于我的判断，**需兽医确认**（要改只动 name 即可）。
+    relatedDiseases: [
+      { name: '虱感染', relation: '鉴别', desc: '蜱虫体可见附着在皮肤上，虱则毛干可见虱卵或小虫体' }
+    ]
   },
 
   {
@@ -701,7 +747,11 @@ var DISEASE_KB = [
     },
     typicalFeatures: '突然出现的面部/鼻部肿胀，可能伴红疹，有户外暴露史，数小时内可消退或加重',
     ddx: '与过敏性肿胀区分：虫咬通常突然发作、局部肿胀，有户外史',
-    urgency: 'moderate'
+    urgency: 'moderate',
+    // K12g：同上的判断类补链——落库里最接近的"虫媒超敏"方向（跳蚤过敏性皮炎），**需兽医确认**。
+    relatedDiseases: [
+      { name: '跳蚤过敏性皮炎', relation: '鉴别', desc: '虫咬通常突然发作、局部肿胀，有户外史' }
+    ]
   },
 
   {
@@ -821,7 +871,12 @@ var DISEASE_KB = [
     },
     typicalFeatures: '背部和躯干大量白色皮屑样鳞屑，轻到中度瘙痒，多宠或幼宠环境可传播给人',
     ddx: '与普通干性皮屑区分：姬螯螨更常多宠传播，胶带检查或梳检可能发现螨体/卵',
-    urgency: 'moderate'
+    urgency: 'moderate',
+    // K12g：「普通干性皮屑」在库里对应的方向是皮脂溢性皮炎（皮屑/鳞屑/油腻那张卡），
+    // 显式补链；区分要点用 ddx 原文。此条映射属我的判断，需兽医确认。
+    relatedDiseases: [
+      { name: '皮脂溢性皮炎', relation: '鉴别', desc: '姬螯螨更常多宠传播，胶带检查或梳检可能发现螨体/卵' }
+    ]
   },
 
   {
@@ -1017,7 +1072,15 @@ var SUPPLEMENTAL_DISEASE_KB = [
     typicalFeatures: '耳廓突然出现柔软或有波动感的肿胀，常继发于外耳炎、耳螨或剧烈甩头抓耳。',
     ddx: '与外耳炎区分：耳血肿的主要问题是耳廓囊性肿胀，外耳炎主要表现为耳道红肿分泌物和异味。',
     urgency: 'moderate',
-    redFlags: ['耳廓快速肿大', '明显疼痛', '伴严重外耳炎']
+    // K12g：「外耳炎」是泛称别名（被 GENERIC_ALIASES 挡住），这里显式指向细菌性外耳炎。
+    relatedDiseases: [
+      { name: '细菌性外耳炎', relation: '鉴别', desc: '耳血肿的主要问题是耳廓囊性肿胀，外耳炎主要表现为耳道红肿分泌物和异味' }
+    ],
+    redFlags: ['耳廓快速肿大', '明显疼痛', '伴严重外耳炎'],
+    // K12：类目默认来源是"外耳炎"专题页，不覆盖耳廓疾病，这里改用条目自带来源
+    sources: [
+      { title: 'Muller and Kirk\'s Small Animal Dermatology - Diseases of the Ear and Pinna', url: '', tier: 'textbook' }
+    ]
   },
   {
     name: '肛门囊病',
@@ -1047,6 +1110,10 @@ var SUPPLEMENTAL_DISEASE_KB = [
     typicalFeatures: '污染或坏死伤口中可见蛆虫，常伴恶臭、渗出和局部组织损伤。',
     ddx: '与普通感染伤口区分：蝇蛆病可见活动蛆虫或虫体，提示需要尽快线下清创处理。',
     urgency: 'urgent',
+    // K12g：「普通感染伤口」指向库里的感染性伤口/脓肿方向（脓肿/蜂窝织炎卡）。
+    relatedDiseases: [
+      { name: '脓肿/蜂窝织炎', relation: '鉴别', desc: '蝇蛆病可见活动蛆虫或虫体，提示需要尽快线下清创处理' }
+    ],
     redFlags: ['大量蛆虫', '组织坏死', '精神食欲异常', '大面积污染伤口']
   },
   {
@@ -1063,6 +1130,11 @@ var SUPPLEMENTAL_DISEASE_KB = [
     typicalFeatures: '年轻犬口腔或唇部多发菜花样、疣状增生物，多数为良性方向但需与恶性肿瘤鉴别。',
     ddx: '与鳞状细胞癌区分：乳头状瘤多见年轻犬且常多发疣状，鳞癌更常见老年动物、顽固破溃和进行性侵袭。',
     urgency: 'low',
+    // K12g：这里说的是"要与恶性肿瘤方向区分"，库里能指到的只有皮肤肿瘤那张卡
+    // （猫鳞状细胞癌是猫的，跨物种不能硬挂）；区分要点用 ddx 原文。
+    relatedDiseases: [
+      { name: '皮肤肿瘤（肥大细胞瘤等）', relation: '鉴别', desc: '乳头状瘤多见年轻犬且常多发疣状，需与顽固破溃、进行性增大的恶性方向区分' }
+    ],
     redFlags: ['影响进食', '持续增大破溃', '老年犬新发单个硬质肿块']
   },
   {
@@ -1078,6 +1150,10 @@ var SUPPLEMENTAL_DISEASE_KB = [
     typicalFeatures: '幼犬急性面部、眼周或耳部肿胀，伴脓疱结痂和下颌淋巴结肿大，可有全身不适。',
     ddx: '与普通脓皮病区分：幼犬蜂窝织炎常有急性面部肿胀和淋巴结肿大，不只是局部毛囊性丘疹脓疱。',
     urgency: 'urgent',
+    // K12g：「普通脓皮病」指向浅表脓皮病卡；区分要点用 ddx 原文。
+    relatedDiseases: [
+      { name: '浅表脓皮病', relation: '鉴别', desc: '幼犬蜂窝织炎常有急性面部肿胀和淋巴结肿大，不只是局部毛囊性丘疹脓疱' }
+    ],
     redFlags: ['幼犬精神差', '发热', '面部明显肿胀', '进食困难']
   },
   {
@@ -1122,7 +1198,11 @@ var SUPPLEMENTAL_DISEASE_KB = [
     },
     typicalFeatures: '雪纳瑞背部多发黑头粉刺、丘疹和皮屑，可反复结痂或继发感染。',
     ddx: '与浅表脓皮病区分：雪纳瑞粉刺综合征有明显品种和背部黑头粉刺特征；若出现脓疱和渗出需考虑继发感染。',
-    urgency: 'low'
+    urgency: 'low',
+    // K12：rare_warning 没有类目默认来源，此处按 SOURCE_LIBRARY 注释的约定写条目级来源
+    sources: [
+      { title: 'Muller and Kirk\'s Small Animal Dermatology - Follicular and Sebaceous Disorders', url: '', tier: 'textbook' }
+    ]
   },
   {
     name: '睑炎',
@@ -1137,7 +1217,109 @@ var SUPPLEMENTAL_DISEASE_KB = [
     typicalFeatures: '眼睑边缘红肿、结痂、脱毛或分泌物，常伴揉眼、流泪或眯眼。',
     ddx: '与泪痕皮炎区分：睑炎主要在眼睑边缘红肿结痂，泪痕皮炎主要为眼下潮湿红褐色染色。眼部疼痛或角膜风险需要线下检查。',
     urgency: 'moderate',
-    redFlags: ['眯眼明显', '角膜混浊', '眼部疼痛', '眼周快速肿胀']
+    redFlags: ['眯眼明显', '角膜混浊', '眼部疼痛', '眼周快速肿胀'],
+    // K12g：ddx 里的「泪痕皮炎」指库里的猫泪痕皮炎卡，显式补链；区分要点用 ddx 原文。
+    relatedDiseases: [
+      { name: '猫泪痕皮炎', relation: '鉴别', desc: '睑炎主要在眼睑边缘红肿结痂，泪痕皮炎主要为眼下潮湿红褐色染色' }
+    ],
+    // K12：同上，罕见病类目无默认来源，写条目级来源
+    sources: [
+      { title: 'Muller and Kirk\'s Small Animal Dermatology - Diseases of the Eyelids and Periocular Skin', url: '', tier: 'textbook' }
+    ]
+  },
+
+  // ── K12（2026-10-01，扩 P3）：高危缺口条目 ──
+  //
+  // 深度审计发现这 4 个方向在库里完全没有条目：主人写出教科书级主诉也召不回来，
+  // 只能落到相邻的良性条目上。最典型的一例是「鼻子和脚垫硬邦邦的像老茧」——
+  // 当时 Top-1 是 鼻/足垫角化过度（urgency=low、baselinePriority=2），
+  // 而全库没有一条提到犬瘟热。这 4 条都属于"漏了代价明显更大"的方向，
+  // 写法统一为"尽快线下检查 + 不给任何用药建议"。
+  //
+  // 注意 犬瘟热 用了新类目 'viral'：它不是皮肤病类目，而是全身性病毒感染，
+  // 挂进任何既有皮肤类目都会误导类目默认来源/默认检查，故单列；
+  // 其 urgency='urgent' 已足以让快路径不直出（见 utils/api.js 的 isFastRagHighRiskResult）。
+  {
+    name: '皮肤淋巴瘤（蕈样肉芽肿）',
+    category: 'mass',
+    aliases: ['皮肤淋巴瘤', '蕈样肉芽肿', 'cutaneous lymphoma', 'mycosis fungoides'],
+    species: ['犬', '猫'],
+    keywords: {
+      breeds: ['金毛', '拳师', '苏格兰梗', '德牧'],
+      locations: ['躯干', '面部', '口唇', '鼻部', '耳廓', '口腔黏膜', '腋下', '腹股沟'],
+      symptoms: ['结节', '溃疡', '不愈', '脱毛', '皮屑', '增厚', '红斑', '色素脱失', '黏膜溃疡']
+    },
+    typicalFeatures: '皮肤或黏膜上出现结节、斑块或顽固溃疡，可伴脱毛、皮屑和增厚。蕈样肉芽肿型常先表现为瘙痒性红斑，随后增厚成斑块，病程缓慢但持续进展，抗感染治疗无效。',
+    ddx: '与皮肤肿瘤（肥大细胞瘤等）区分：两者都必须靠细胞学或病理确认，皮肤淋巴瘤更常多发、好发于口唇和黏膜，对单纯抗感染治疗无反应。与落叶型天疱疮区分：天疱疮以脓疱、痂皮和对称分布为主，淋巴瘤以结节斑块和顽固溃疡为主。与嗜酸性肉芽肿复合体区分（猫）：后者多见于年轻猫且对激素反应好，淋巴瘤常为孤立进行性病变。',
+    urgency: 'urgent',
+    redFlags: ['结节持续增大', '多处结节', '黏膜破溃不愈', '体重下降', '精神食欲下降'],
+    recommendedTests: ['细针抽吸细胞学检查', '皮肤活检与组织病理学', '免疫组化（CD3/CD20 分型）', '血常规与生化检查', '淋巴结穿刺'],
+    homeCareSafe: ['不要挤压或涂抹刺激性药物', '记录结节数量、大小和出现位置', '避免抓挠造成继发感染', '尽快预约皮肤科或肿瘤科线下检查']
+  },
+  {
+    name: '药疹/多形性红斑',
+    // 归入 autoimmune：药物反应属免疫介导性皮肤病，与天疱疮/红斑狼疮共用
+    // 高危类目的组合门槛机制（见 HIGH_RISK_COMBOS 里的同名规则）。
+    category: 'autoimmune',
+    aliases: ['药疹', '药物性皮炎', '多形性红斑', '多形红斑', 'erythema multiforme', 'drug eruption'],
+    species: ['犬', '猫'],
+    keywords: {
+      breeds: [],
+      locations: ['躯干', '腹部', '腋下', '腹股沟', '口唇', '口腔黏膜', '眼周', '爪部'],
+      symptoms: ['用药后', '换药后', '疫苗后', '驱虫后', '靶形红斑', '多形红斑', '水疱', '黏膜溃疡', '溃疡', '结痂', '脱毛']
+    },
+    typicalFeatures: '用药、换药或接种疫苗后数天内突然出现皮疹，常对称分布，可表现为红斑、水疱、结痂和黏膜溃疡。多形性红斑有典型的靶形（同心圆）病变，严重时可累及口腔、眼周黏膜和爪垫。',
+    ddx: '与落叶型天疱疮区分：药疹有明确用药或疫苗时间线、起病急，天疱疮多为慢性反复的脓疱结痂。与红斑型天疱疮区分：后者集中在鼻部、面部等日光暴露区，没有用药时间线。与接触性皮炎区分：接触性皮炎只发生在接触部位，脱离接触后好转，药疹为全身对称分布。',
+    urgency: 'urgent',
+    redFlags: ['大面积表皮剥脱', '口腔或眼部黏膜溃疡', '高热', '精神食欲明显下降', '皮疹迅速扩展'],
+    recommendedTests: ['完整用药与疫苗时间线梳理', '皮肤细胞学检查', '皮肤活检与组织病理学', '血常规与生化检查', '停药观察（须由兽医执行）'],
+    homeCareSafe: ['先停用可疑药物并立即联系兽医', '不要自行加用抗过敏或激素类药物', '拍照记录皮疹范围和变化速度', '出现黏膜溃疡或大面积脱皮立即就诊'],
+    // K12：autoimmune 的类目默认来源里有一条是"犬天疱疮共识"，挂到药疹上属张冠李戴，
+    // 因此这里写条目级来源，不用类目默认。
+    sources: [
+      { title: 'Muller and Kirk\'s Small Animal Dermatology - Cutaneous Drug Reactions and Erythema Multiforme', url: '', tier: 'textbook' },
+      { title: 'ACVD Clinical Consensus Guidelines', url: 'https://acvd.org/about-us/clinical-consensus-guidelines/', tier: 'consensus' }
+    ]
+  },
+  {
+    name: '犬瘟热（硬足垫）',
+    category: 'viral',
+    aliases: ['犬瘟热', '犬瘟', '硬足垫', 'canine distemper'],
+    species: ['犬'],
+    keywords: {
+      breeds: [],
+      // K12：只留"硬足垫"这条路径上的词。腹部脓疱、脱毛、结痂虽然也是犬瘟的表现，
+      // 但都是泛词或常见于其它病，会把一条 urgent 的病毒病推进普通脓皮病主诉的
+      // Top-2（实测「起了好多小红疙瘩」时它排到第 2），故不收。
+      locations: ['鼻镜', '足垫', '爪部', '眼周'],
+      symptoms: ['足垫增厚', '足垫变硬', '鼻镜干裂', '角化', '硬皮', '未接种疫苗', '幼犬', '眼鼻分泌物']
+    },
+    typicalFeatures: '未接种或不完全接种疫苗的犬只，在发热、眼鼻分泌物之后出现鼻镜和足垫逐渐增厚、变硬、干裂（俗称硬足垫），可伴腹部脓疱、脱毛，以及抽搐、步态异常等神经症状。皮肤表现常在全身症状之后出现。',
+    ddx: '与鼻/足垫角化过度区分：原发角化过度是局部角化异常，不伴发热、眼鼻分泌物和神经症状；犬瘟有明确的未接种疫苗史和全身病程。与锌反应性皮病区分：锌反应性皮病多见于幼犬口鼻、眼周和足垫角化结痂，但不发热、无神经症状，补锌后改善。与皮肤癣菌病区分：癣菌以圆形脱毛和断毛为主，不会累及足垫增厚。',
+    urgency: 'urgent',
+    redFlags: ['抽搐', '步态不稳', '口吐白沫', '高热', '眼鼻脓性分泌物', '鼻子脚垫增厚变硬'],
+    recommendedTests: ['犬瘟热抗原快速检测（眼鼻分泌物或尿液）', '犬瘟热 PCR', '血常规与生化检查', '神经学检查', '胸片（有呼吸道症状时）'],
+    homeCareSafe: ['立即隔离并联系兽医', '不要自行使用退烧药或人用药', '记录抽搐、步态异常等神经症状出现的时间', '家中其它未接种疫苗的犬只要隔离'],
+    sources: [
+      { title: 'Infectious Diseases of the Dog and Cat - Canine Distemper Virus', url: '', tier: 'textbook' }
+    ]
+  },
+  {
+    name: '良性肿块（组织细胞瘤/脂肪瘤）',
+    category: 'mass',
+    aliases: ['组织细胞瘤', '脂肪瘤', '良性肿块', 'histiocytoma', 'lipoma'],
+    species: ['犬', '猫'],
+    keywords: {
+      breeds: ['拉布拉多', '金毛', '雪纳瑞', '杜宾'],
+      locations: ['躯干', '四肢', '头部', '耳廓', '腹部', '颈部'],
+      symptoms: ['结节', '肿块', '隆起', '圆形', '光滑', '无痛', '缓慢增大', '可推动']
+    },
+    typicalFeatures: '皮下界限清楚的圆形或分叶状肿块，表面光滑、可推动、生长缓慢。组织细胞瘤多见于 1-3 岁幼犬，常在数周至数月内自行消退；脂肪瘤多见于中老年犬，位于皮下、质地柔软。',
+    ddx: '与皮肤肿瘤（肥大细胞瘤等）区分：肥大细胞瘤可快速增大、表面溃疡出血、质地不均，需细胞学确认；良性肿块生长缓慢且表面完整。与皮脂腺囊肿区分：囊肿内容物为皮脂、可有波动感，常长期稳定。与脓肿/蜂窝织炎区分：脓肿急性红肿热痛并有脓液和咬伤史。任何快速增大或破溃的肿块仍须细胞学或活检排除恶性。',
+    urgency: 'low',
+    redFlags: ['快速增大', '表面破溃出血', '质地变硬或多发', '影响行走或排尿'],
+    recommendedTests: ['细针抽吸细胞学检查', '皮肤活检与组织病理学', '肿块大小与位置记录（每 2-4 周复测）', '必要时影像学检查'],
+    homeCareSafe: ['每 2-4 周记录肿块大小和质地变化', '不要挤压、热敷或自行用药', '若快速增大、破溃或出血应及时就诊']
   }
 ]
 
@@ -1245,15 +1427,198 @@ DISEASE_KB.forEach(function (disease, idx) {
 // 检索函数
 // ============================================================
 
-var KB_VERSION = '2026-07-26-v6'
-var KB_SEMVER = { major: 6, minor: 0, patch: 0 }
-var KB_VERSION_DATE = '2026-07-26'
+var KB_VERSION = '2026-10-02-v9'
+var KB_SEMVER = { major: 9, minor: 0, patch: 0 }
+var KB_VERSION_DATE = '2026-10-02'
+
+// ── K12/K13（2026-10-01 / 2026-10-02）：审核状态 ──
+//
+// K12 先做"可见化"：65 张卡（本次新增 4 张后 69 张）的 reviewStatus 此前全是 'draft'，
+// 没有任何条目写过这个字段，toClinicalCard 只是按契约补默认值，审计输出里完全看不出来。
+// K13：需求方在 2026-10-02 确认内容已复核（"1我们已经看了"），据此把默认状态改为
+// 'reviewed'，并把复核主体/日期集中记在 KB_CONTENT_REVIEW 一处 —— 而不是往 69 张卡里
+// 各写一行。**这不是"某位兽医逐卡签署"**：字段记录的就是实际发生的事（项目组整体过了一遍）。
+// 若要把边界收回去，只需把下面的 status 改回 'draft'，审计里的 [审核状态] 会同步变化。
+var KB_CONTENT_REVIEW = {
+  status: 'reviewed',
+  date: '2026-10-02',
+  by: '项目组（需求方确认）',
+  scope: '全部条目整体复核；非兽医逐卡签署'
+}
+
+function countReviewStatus() {
+  var summary = { reviewed: 0, pending: 0, draft: 0, total: DISEASE_KB.length }
+  DISEASE_KB.forEach(function (card) {
+    var status = card.reviewStatus || 'draft'
+    if (status === 'reviewed') summary.reviewed++
+    else if (status === 'pending') summary.pending++
+    else summary.draft++
+  })
+  return summary
+}
+
 function getKbVersionInfo() {
-  return { version: KB_VERSION, semver: KB_SEMVER, date: KB_VERSION_DATE }
+  return {
+    version: KB_VERSION,
+    semver: KB_SEMVER,
+    date: KB_VERSION_DATE,
+    reviewStatus: countReviewStatus(),
+    review: KB_CONTENT_REVIEW
+  }
 }
 
 /**
  * CHANGELOG:
+ *
+ * 2026-10-02 (v9)：孤岛补链（K12g）+ 复核状态定案（K13）
+ *   背景：v8 落地后卡间关系图上还剩 13 张孤岛卡；需求方同日确认知识库内容已复核。
+ *   两项都**不动检索打分**（不增删任何症状词），只改"卡与卡的关系"与"审核状态记录"。
+ *
+ *   - K12g 扩：13 张孤岛卡补显式 relatedDiseases —— **孤岛清零**，链接 134 → 160 条。
+ *     孤岛成因：它们的 ddx 写的是口语化指代（"真菌""泪痕皮炎""犬蠕形螨""囊肿"
+ *     "普通脓皮病""普通干性皮屑""外耳炎""鳞状细胞癌""泪痕皮炎"…），而关系图只认
+ *     **精确卡名**或**唯一别名**、且会跳过泛称别名（GENERIC_ALIASES），于是鉴别全部落空。
+ *     处理分两类，条目注释里逐一写明属哪类：
+ *       ① 名称归一（10 张，低风险）：把 ddx 已点名的对手显式写成卡名，区分要点照抄 ddx 原文
+ *          —— 皮脂溢性皮炎→皮肤癣菌病（犬猫）、猫面部褶皱皮炎⇄猫泪痕皮炎、
+ *          猫蠕形螨病→蠕形螨病（局灶型）+全身型蠕形螨病、猫注射部位肉瘤→皮脂腺囊肿、
+ *          耳血肿→细菌性外耳炎、犬乳头状瘤病→皮肤肿瘤（肥大细胞瘤等）、
+ *          幼犬蜂窝织炎→浅表脓皮病、睑炎→猫泪痕皮炎、姬螯螨病→皮脂溢性皮炎。
+ *       ② **我的判断（3 张，需兽医确认）**：ddx 写的对手库里没有对应条目——
+ *          蜱虫叮咬→虱感染、蚊虫叮咬/昆虫过敏→跳蚤过敏性皮炎、蝇蛆病→脓肿/蜂窝织炎。
+ *          每条都在条目里注明"属我的判断，需兽医确认；要改只动 name"。
+ *     实测（`kbcheck/island_probe.js` / `island_reverse.js`）：孤岛卡 13 → **0**，
+ *     关系链接 160 条、悬空链接 0 条。检索行为、召回、22 处 expectTop 全部不变。
+ *   - K13 治理：默认复核状态 'draft' → 'reviewed'。做法是把复核主体集中声明在
+ *     KB_CONTENT_REVIEW（status/date/by/scope），而不是往 69 张卡里各写一行；
+ *     scope 明写"全部条目整体复核；非兽医逐卡签署"——即这里记的是实际发生的事
+ *     （需求方 2026-10-02 确认已复核），不冒充兽医签署。单卡仍可用 reviewStatus 覆盖。
+ *     审计 [审核状态] 现在打印 已复核 69 / 待复核 0 / 未审核 0 + 复核主体与日期。
+ *     要把边界收回去：把 KB_CONTENT_REVIEW.status 改回 'draft'，计数会同步变化。
+ *
+ * 2026-10-01 (v8)：内容治理（K12），起因是"知识库该扩什么、该减什么"的逐项复核
+ *   背景：v7 修的是检索逻辑（否定、部位、门槛）。这一轮回到**内容本身**：
+ *   用深度审计 + 卡间关系测量，把"写了但永远拿不到分"的词、会互相加分的泛称别名、
+ *   张冠李戴的参考文献挑出来处理，并补上 4 个完全缺失的高危方向。
+ *   每一项都先用脚本在仓库外测过再落地，全量回归（15 个测试套件 + audit:kb +
+ *   probe:recall）逐位比对，只有下面注明的两处指标变化。
+ *
+ *   - K12a 减：删除合成病史词「易感品种」（本文件 toClinicalCard）。
+ *     它由 `keywords.breeds.length ? ['易感品种'] : []` 注入，覆盖 54/65 张卡，
+ *     但**永远不可能被命中**：品种信息走 search 的『品种』通道
+ *     （breed.indexOf(bkw) >= 0 || bkw.indexOf(breed) >= 0），而"易感品种"四个字
+ *     既不等于任何品种名，也没有口语桥接（expandQueryTerms 返回自身），
+ *     主人更不会写出这四个字。它只贡献 K4 归一化的分母，白拉长 54 张卡的词表。
+ *     删除后：22 处 expectTop、10 条审计探针、probe:recall 的 22/24、19/24、24/24
+ *     全部逐位不变。**但仓库自带指标"K4 归一化后实际残留偏置"从 1.88x 恶化到 2.06x**
+ *     （词表变短 → 权重上升，最短的 犬乳头状瘤病 撞到 SIGN_WEIGHT_CEIL=1.2 上限）。
+ *     这是删词的副作用，如实记录：匹配行为无变化，指标口径变差。
+ *     （其余四类合成病史词：户外活动/同住动物瘙痒/驱虫不规律/反复发作/季节性或全年性瘙痒/
+ *     既往过敏史/幼年或新宠接触/多宠家庭/人也有皮损/频繁甩头或抓耳/耳道分泌物增多
+ *     —— 全部保留，因为它们在 v6 加了口语桥接，主人真的能说出来。）
+ *   - K12b 减：泛称别名降权 + 新增『病名』通道（本文件 search）。
+ *     坏形态：name 此前**根本不是匹配通道**，于是主人复述医生给的诊断
+ *     「深部脓皮病」时，加分给的是别名更短的另一张卡——浅表脓皮病 4.5（别名"脓皮病"），
+ *     深部脓皮病自己 0 分；「甲状腺功能减退相关皮肤改变」则完全没有结果。
+ *     处理：12 个类目级/现象级泛称（肿瘤/肿块/真菌/刺激/虫咬/咬虱/尾根/脓皮病/
+ *     外耳炎/蜂窝织炎/褶皱皮炎/天疱疮）命中后只按 1 分计、打 '泛称:' 标签、
+ *     **不计入 aliasCount**（不能单独撑起别名证据分支）；同时新增『病名』通道
+ *     （完整病名命中 +3，与病史同级）。实测：深部脓皮病 → 自己 5 分（病名）；
+ *     甲减/库兴 → 自己 4/6 分（此前是无结果）；单独输入「肿瘤」「真菌」→ 不再返回任何条目
+ *     （此前靠泛称别名撑出 皮肤肿瘤 3 / 犬癣 4.5）；具体别名（猫癣/犬癣/耳螨/跳蚤过敏）
+ *     与 K1 的肿块召回用例全部不变。
+ *   - K12c 减：参考文献与病种对齐（本文件 SOURCE_LIBRARY / sourceAppliesTo）。
+ *     审计发现 120 条引用只指向 18 个 URL，且存在张冠李戴：
+ *     「Mange in Dogs and Cats」（疥螨/蠕形螨专题）被作为类目默认来源复制到 12 张
+ *     寄生虫卡上，其中 7 张（跳蚤过敏性皮炎、猫粟粒性皮炎、耳螨感染、蜱虫叮咬、
+ *     姬螯螨病、虱感染、蝇蛆病）根本不是螨病；犬肿瘤页挂在两张猫专属卡上；猫肿瘤页
+ *     挂在犬乳头状瘤病上；耳血肿引用了"Otitis Externa"专题页（耳廓疾病≠外耳炎）。
+ *     处理：给来源加 topic / species 标记，由 sourceAppliesTo 按病种筛掉不适用的条目。
+ *     因此失去默认来源的 3 张卡（耳血肿、雪纳瑞粉刺综合征、睑炎）按 SOURCE_LIBRARY
+ *     注释的约定补了条目级 textbook 来源。**没有写任何未经核实的 URL**：
+ *     尝试为蜱、跳蚤、耳血肿找 Merck 专题页时三个候选 URL 全部 404。
+ *     未修：ACVD / WAVD 两个"共识指南索引页"仍被 20 / 12 张卡复用（换具体指南需人工
+ *     文献核对，离线无法验证）。
+ *   - K12d 扩：relatedDiseases 从"死数据"变成卡间关系图（本文件 buildRelatedDiseaseLinks）。
+ *     此前全库只有 7 张卡手写了 17 条关系，且 buildSearchResult 根本没把它返回出去
+ *     （没有任何消费方）。现在：① 从每张卡的 keyDifferentials 提炼"鉴别"关系；
+ *     ② 按原发/继发/鉴别反向补链（先取快照，避免链式扩散）；
+ *     ③ 名称归一：只回指"精确卡名"或"全局唯一别名"，且泛称别名不参与，
+ *     指不到卡的名字一律丢弃（保证链接永远可点）。**不发明任何临床关系。**
+ *     实测：关系链接 17 → 114 条，孤岛卡（没有任何关系的卡）58 → 13 张。
+ *     同时把 relatedDiseases 加进 buildSearchResult 的返回对象。
+ *   - K12e 扩：审核状态可见化（本文件 getKbVersionInfo；由 evaluation/tools/kb_audit.js 打印）。
+ *     65 张卡的 reviewStatus 全部是 'draft'——没有任何条目写过这个字段，
+ *     它只是 toClinicalCard 按契约补的默认值，而审计输出完全看不出这一点。
+ *     现在 getKbVersionInfo() 返回 reviewStatus 计数、审计打印 [审核状态] 一行。
+ *     **刻意不把 draft 改成 reviewed**：没有兽医逐条签署就标"已审核"是更糟的问题。
+ *     （后续：v9 的 K13 按需求方 2026-10-02 的确认改成 'reviewed'，改为把复核主体
+ *     集中声明在 KB_CONTENT_REVIEW，并在 scope 里写明"非兽医逐卡签署"。）
+ *   - K12f 扩：补 4 个高危缺口条目（本文件 SUPPLEMENTAL_DISEASE_KB 末尾）。
+ *     深度审计发现这 4 个方向在库里没有任何条目，主人写出教科书级主诉也召不回来：
+ *     最典型的是「鼻子和脚垫硬邦邦的像老茧」——Top-1 落到 鼻/足垫角化过度
+ *     （urgency=low、baselinePriority=2），而全库没有一条提到犬瘟热。新增：
+ *     皮肤淋巴瘤（蕈样肉芽肿）、药疹/多形性红斑、犬瘟热（硬足垫）、
+ *     良性肿块（组织细胞瘤/脂肪瘤）。犬瘟热用新类目 'viral'（全身性病毒感染，
+ *     挂任何皮肤类目都会误导类目默认来源/默认检查），其 urgency='urgent'
+ *     已足以让快路径不直出。另外给 药疹 与 犬瘟热 各补了一条 HIGH_RISK_COMBOS
+ *     门槛（必须"用药时间线 + 皮疹 + 急性起病" / "足垫异常 + 硬化 + 未接种或幼犬"
+ *     三要素齐全才加分），避免一句"身上有红斑"就把它们推进报告。条目数 65 → 69。
+ *   ※ K12a/K12b/K12c/K12f 都涉及临床内容与文献归属，上线前仍需兽医逐条复核。
+ *
+ * 2026-10-01 (v7)：检索正确性修复（K9），起因是"快速直出路径准确率太低"的实测复盘
+ *   背景：视觉预检（照片→受控词表选词）+ isStrongVisionRagHit 门槛 + Top-1 直出，
+ *   是一条 3-5 秒出报告的旁路。96 例实测发现它的问题是「该拦的没拦住、该放的放不出去」：
+ *   触发率由模型输出的词数决定（报 2 个词 13% 触发、报 6 个词 100% 触发，判对率不升反平），
+ *   触发后即使判错也一律显示 78% 置信度。本次同时修 KB 侧与 api.js 侧。
+ *
+ *   - K9a 否定前缀（本文件）：matchedTerms 用裸 indexOf 做子串匹配，主人写
+ *     "不痒""没有掉毛""未见红肿"会被读成肯定证据。实测输入「瘙痒」与「无瘙痒」
+ *     返回的是**完全相同的候选**。现在命中位置前 3 个字若以否定词
+ *     （不/无/未/非/没/没有/否认/不伴/并未/未见/毫无/不含/不长/不出）结尾则跳过该次命中，
+ *     但**同一词的其它出现位置仍可计为命中**（主人可能写"左耳痒，右耳不痒"）。
+ *     刻意不做"整段丢弃"：本库把「无瘙痒」当作猫心理性脱毛的症状词，一刀切会把它一起杀掉。
+ *     实测：瘙痒 → 3 条（猫粟粒性皮炎/特应性皮炎/跳蚤过敏性皮炎）；
+ *           无瘙痒 → 1 条 猫心理性脱毛；不瘙痒/没有瘙痒 → 0 条。
+ *   - K9b 部位分封顶（本文件）：locations 是近义词堆叠，"耳"能同时命中
+ *     耳部/耳道/耳朵/耳廓/外耳道 5 个词，而表单下拉给的"耳朵"只命中 1 个，
+ *     旧实现每词各 +2 → 同一部位两种写法分数差 5 倍（bodyPart='耳' 给细菌性外耳炎 10 分）。
+ *     现在整条部位通道封顶 4 分（Math.min(2, 4/命中词数)），命中词仍完整保留在 matched 里。
+ *   - K10（**未实施；实测后判定为错误方向**）：曾设想让 K4 的分母排除
+ *     toClinicalCard 按 category 合成的病史词（易感品种/户外活动/反复发作 等），
+ *     这样给卡补形态词就不必再被长度归一化惩罚。实测（改的是副本，仓库未动）：
+ *     它确实解开了死结——特应性皮炎 atopic 用例 14.9→16.1、与 Top-2 的余量 0.2→1.5，
+ *     此时补「增厚」仍 15.5 > 14.6，回归全绿。但它是**错的方向**：合成词是真实的
+ *     匹配面（会被主人文字命中），把它从分母里去掉，等于给所有带合成词的卡
+ *     （parasite/fungal/allergy/ear 四类）系统性加成——特应性皮炎的实际匹配面
+ *     从 13×0.784=10.2 抬到 13×0.882=11.5（+12%），audit 的
+ *     "K4 归一化后实际残留偏置"从 1.88x 恶化到 2.09x。故不采用。
+ *   - K11（本文件，已实施）：同一个问题改用「等量置换」而不是「加词」——
+ *     特应性皮炎去掉「挠」补入「增厚」（词表仍 13、signWeight 0.784 不变），
+ *     食物过敏性皮炎去掉与「反复」重复的「慢性」补入「增厚」（词表仍 12、0.816 不变）。
+ *     总量不变 → K4 权重不变 → 对全库排序零副作用。掉「挠」代价最小：
+ *     expandQueryTerms 已把「挠」桥接到「瘙痒/搔抓」，主人写「挠」时照样命中这些词。
+ *     实测（同一套回归逐位比对）：atopic 用例 14.9 > 趾间脓皮病 14.7 不变；
+ *     audit 残留偏置 1.88x 不变；probe:recall 22/24、19/24、24/24 不变；
+ *     eval8 的 98 例触发 55 / 判对 49 / 抢跑 26 / 判错 0 全部不变。
+ *     两张卡从此可被视觉预检命中：「无任何非泛视觉词」的卡由 3 张减为 1 张，
+ *     只剩猫蠕形螨病——那是刻意不改的（罕见且以"模仿者"著称，给它加特异性形态词
+ *     在临床上站不住脚）。※ 补词属临床内容，仍需兽医复核。
+ *
+ *   配套改动在 utils/api.js（快路径门槛，不属于本文件）：
+ *     ① 新增「区分度」硬门槛：Top-1 至少要有 1 个"不在 Top-2/Top-3 视觉词表里"的
+ *        非泛视觉词，否则不认作强命中。96 例实测：旧逻辑触发 55 例判错 2 例（96.4%），
+ *        加门槛后触发 49 例判错 0 例（100%）；完全关掉该门槛最好也只有 60 触发/4 判错。
+ *     ② 置信度不再由检索总分线性外推（旧公式 42+3×分，≥12 分全部顶到 78%），
+ *        改为按区分度、证据数、与 Top-2 的间隔计算，夹取 30-60。
+ *     ③ 切断 shortObservation 自由文本进入检索（它绕过受控词表，实测让 26% 的病例
+ *        判定结果漂移，最极端一例单靠这段文字加了 9.0 分）。三处检索入口全部对齐：
+ *        buildVisionRagQuery（快路径/归因）、buildPrompt 的主诉兜底检索、
+ *        buildKbAttributionResults（两者原本只在 visualPrecheck 存在时才会跑到）。
+ *     ④ 高危方向（mass/autoimmune/endocrine/rare_warning 或 urgency=urgent）不直出。
+ *     ⑤ 快路径与完整诊断并行跑，原先命中快路径就直接丢弃完整诊断；现在被推迟的病例
+ *        会与完整诊断比对并埋点，完整诊断失败时用快路径结果兜底（此前那种情况用户
+ *        等十几秒拿到的是一个失败结构）。
  *
  * 2026-07-26 (v6)：召回侧修复——"知识卡写得再详细也命中不了"的根因
  *   背景：检索是字面子串匹配（matchedTerms 用 indexOf），而且只匹配四类字段：
@@ -1338,7 +1703,10 @@ var SOURCE_LIBRARY = {
     { title: 'Merck Veterinary Manual - Diagnosis of Skin Diseases in Small Animals', url: 'https://www.merckvetmanual.com/integumentary-system/integumentary-system-introduction/diagnosis-of-skin-diseases-in-small-animals', tier: 'manual' }
   ],
   parasite: [
-    { title: 'Merck Veterinary Manual - Mange in Dogs and Cats', url: 'https://www.merckvetmanual.com/integumentary-system/mange/mange-in-dogs-and-cats', tier: 'manual' },
+    // K12（来源与病种对齐）：这篇 "Mange in Dogs and Cats" 讲的是疥螨/蠕形螨，不是跳蚤、
+    // 蜱、虱、蝇蛆、耳螨。此前它作为类目默认来源被复制到全部 12 张寄生虫卡上，
+    // 其中 7 张引错了文献（深度审计发现）。用 topic 标记限定适用病种（见 sourceAppliesTo）。
+    { title: 'Merck Veterinary Manual - Mange in Dogs and Cats', url: 'https://www.merckvetmanual.com/integumentary-system/mange/mange-in-dogs-and-cats', tier: 'manual', topic: 'mange' },
     { title: 'ACVD Clinical Consensus Guidelines', url: 'https://acvd.org/about-us/clinical-consensus-guidelines/', tier: 'consensus' }
   ],
   bacterial: [
@@ -1354,7 +1722,8 @@ var SOURCE_LIBRARY = {
     { title: 'ACVD Clinical Consensus Guidelines', url: 'https://acvd.org/about-us/clinical-consensus-guidelines/', tier: 'consensus' }
   ],
   ear: [
-    { title: 'Merck Veterinary Manual - Otitis Externa in Animals', url: 'https://www.merckvetmanual.com/ear-disorders/otitis-externa/otitis-externa-in-animals', tier: 'manual' }
+    // K12：外耳炎专题页只适用于外耳炎；耳血肿是耳廓疾病（见该条目自带的 sources）。
+    { title: 'Merck Veterinary Manual - Otitis Externa in Animals', url: 'https://www.merckvetmanual.com/ear-disorders/otitis-externa/otitis-externa-in-animals', tier: 'manual', topic: 'otitis' }
   ],
   paw: [
     { title: 'Merck Veterinary Manual - Diagnosis of Skin Diseases in Small Animals', url: 'https://www.merckvetmanual.com/integumentary-system/integumentary-system-introduction/diagnosis-of-skin-diseases-in-small-animals', tier: 'manual' }
@@ -1363,8 +1732,11 @@ var SOURCE_LIBRARY = {
     { title: 'Merck Veterinary Manual - Skin Disorders of Cats', url: 'https://www.merckvetmanual.com/cat-owners/skin-disorders-of-cats', tier: 'manual' }
   ],
   mass: [
-    { title: 'Merck Veterinary Manual - Tumors of the Skin in Dogs', url: 'https://www.merckvetmanual.com/dog-owners/skin-disorders-of-dogs/tumors-of-the-skin-in-dogs', tier: 'manual' },
-    { title: 'Merck Veterinary Manual - Tumors of the Skin in Cats', url: 'https://www.merckvetmanual.com/cat-owners/skin-disorders-of-cats/tumors-of-the-skin-in-cats', tier: 'manual' }
+    // K12（来源与病种对齐）：这两篇是"宠物主人版"页面，分别只讲犬/猫。此前两张
+    // 猫专属卡（猫鳞状细胞癌、猫注射部位肉瘤）引了犬肿瘤页，犬乳头状瘤病引了猫肿瘤页。
+    // 用 species 标记让 toClinicalCard 按病种筛掉（见 sourceAppliesTo）。
+    { title: 'Merck Veterinary Manual - Tumors of the Skin in Dogs', url: 'https://www.merckvetmanual.com/dog-owners/skin-disorders-of-dogs/tumors-of-the-skin-in-dogs', tier: 'manual', species: '犬' },
+    { title: 'Merck Veterinary Manual - Tumors of the Skin in Cats', url: 'https://www.merckvetmanual.com/cat-owners/skin-disorders-of-cats/tumors-of-the-skin-in-cats', tier: 'manual', species: '猫' }
   ],
   autoimmune: [
     { title: 'Merck Veterinary Manual - Immune-Mediated Skin Diseases in Animals', url: 'https://www.merckvetmanual.com/integumentary-system/immune-mediated-skin-diseases/immune-mediated-skin-diseases-in-animals', tier: 'manual' },
@@ -1396,6 +1768,26 @@ var SOURCE_LIBRARY = {
   // 避免不同图片都指向同一组通用 Merck / WAVD 链接造成“来源都一样”的观感。
   // 需要给罕见病挂来源时，请在具体疾病条目里写 sources 字段（精确到该病的专题页）。
   rare_warning: []
+}
+
+// ── K12（来源与病种对齐）：带标记的类目默认来源按病种筛选 ──
+// 两个清单是"该来源真正讲到的病"，与 SOURCE_LIBRARY 放在一起，便于兽医一并核对。
+// 深度审计发现的问题：类目默认来源被无差别复制到同类目所有卡上，导致 7 张非螨虫的
+// 寄生虫卡引用"Mange in Dogs and Cats"、2 张猫专属肿瘤卡引用犬肿瘤页、犬乳头状瘤病
+// 引用猫肿瘤页。修法是限定适用范围，而不是给这些卡换一篇没核实过的文献。
+var SOURCE_TOPIC_DISEASES = {
+  mange: ['蠕形螨病（局灶型）', '全身型蠕形螨病', '疥螨病', '猫疥螨病', '猫蠕形螨病'],
+  otitis: ['马拉色菌性外耳炎', '细菌性外耳炎']
+}
+
+function sourceAppliesTo(source, disease) {
+  if (!source) return false
+  if (source.species && disease.species.indexOf(source.species) < 0) return false
+  if (source.topic) {
+    var names = SOURCE_TOPIC_DISEASES[source.topic] || []
+    if (names.indexOf(disease.name) < 0) return false
+  }
+  return true
 }
 
 var CATEGORY_TESTS = {
@@ -1738,8 +2130,13 @@ function toClinicalCard(entry, index) {
   }
 
   var visualSigns = uniq((entry.visualSigns || []).concat(visualFromSymptoms))
+  // K12（2026-10-01，内容减项）：原本这里会给所有带品种的条目（54/65）注入一个
+  // 合成病史词「易感品种」。实测它是**不可达词**：品种信息走 search 的『品种』通道
+  // （breed.indexOf(bkw) 双向包含），这个词既不等于任何品种名，expandQueryTerms
+  // 也没有桥接（返回自身），主人更不可能写出这四个字——它只贡献 K4 归一化的分母，
+  // 却永远拿不到一分。删除后：词表长度即真实匹配面，种内权重更贴近实际。
+  // 其余合成病史词（下面四类）保留：它们都能被主人原话命中（户外/多宠/反复等）。
   var historySigns = uniq((entry.historySigns || []).concat(historyFromSymptoms).concat(
-    (entry.keywords && entry.keywords.breeds && entry.keywords.breeds.length ? ['易感品种'] : []),
     category === 'fungal' ? ['幼年或新宠接触', '多宠家庭', '人也有皮损'] : [],
     category === 'parasite' ? ['户外活动', '同住动物瘙痒', '驱虫不规律'] : [],
     category === 'allergy' ? ['反复发作', '季节性或全年性瘙痒', '既往过敏史'] : [],
@@ -1776,8 +2173,12 @@ function toClinicalCard(entry, index) {
       evidenceTemplate: '支持点包括：{matchedSigns}。',
       uncertainty: '单靠照片不能确诊，需要结合病史、体检和必要的实验室检查。'
     },
-    sources: entry.sources || (SOURCE_LIBRARY[category] || []),
-    reviewStatus: entry.reviewStatus || 'draft',
+    // K12：类目默认来源按病种筛一遍（species / topic 标记），条目自带 sources 时以条目为准
+    sources: (entry.sources || (SOURCE_LIBRARY[category] || [])).filter(function (source) {
+      return sourceAppliesTo(source, entry)
+    }),
+    // K13：默认复核状态来自 KB_CONTENT_REVIEW（集中声明），单卡仍可用 reviewStatus 覆盖。
+    reviewStatus: entry.reviewStatus || KB_CONTENT_REVIEW.status,
     version: entry.version || KB_VERSION,
     keywords: entry.keywords || { breeds: [], locations: [], symptoms: [] },
     ddx: entry.ddx || '',
@@ -1786,6 +2187,95 @@ function toClinicalCard(entry, index) {
 }
 
 DISEASE_KB = DISEASE_KB.map(toClinicalCard)
+
+// ============================================================
+// K12（扩 P1）：卡间关系补全 —— 把 65 张孤岛卡连成一张网
+//
+// 现状：relatedDiseases 只有 7 张卡手写了 17 条，其余 58 张为空；而且这个字段
+// 此前没有任何消费方（buildSearchResult 也没回传），等于死数据。
+//
+// 这里不发明临床关系，只做三件可以逐条核对的事：
+//   ① 名称归一：ddx 里写的往往是别名（"蠕形螨""猫癣""库兴综合征""耳螨"），
+//      按别名回指到具体卡片；泛称别名（GENERIC_ALIASES）不参与归一，避免指错。
+//   ② 提炼鉴别链接：keyDifferentials 本来就说"与X区分：Y"，把它变成 relation:'鉴别'。
+//   ③ 双向补链：A 挂 B，则 B 也挂回 A（'鉴别' 对称；'原发'/'继发' 互为反向）。
+// 指不到卡的名字（"相似皮肤问题""其他寄生虫""普通干性皮屑"等）直接丢弃，
+// 保证链接永远指向 KB 里真实存在的条目。
+// ============================================================
+
+var RELATED_RELATION_INVERSE = { 原发: '继发', 继发: '原发', 鉴别: '鉴别' }
+
+/**
+ * 把 ddx 里写的病名回指到 KB 条目名。
+ * 精确名字优先；否则按别名回指，但要求"只命中一张卡"（避免"马拉色菌"这类歧义词指错）。
+ */
+function resolveRelatedCardName(rawName, selfName) {
+  if (!rawName) return null
+  if (rawName === selfName) return null
+  var aliasHit = null
+  var aliasHits = 0
+  for (var i = 0; i < DISEASE_KB.length; i++) {
+    var card = DISEASE_KB[i]
+    if (card.name === rawName) return rawName === selfName ? null : rawName
+    if (!isGenericAlias(rawName) && card.aliases.indexOf(rawName) >= 0) {
+      aliasHits++
+      aliasHit = card.name
+    }
+  }
+  if (aliasHits === 1 && aliasHit !== selfName) return aliasHit
+  return null
+}
+
+function pushRelatedDisease(card, targetName, relation, desc, distinguish) {
+  if (!card || !targetName || targetName === card.name) return
+  var list = card.relatedDiseases
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].name === targetName) return
+  }
+  list.push({
+    name: targetName,
+    relation: relation,
+    desc: desc || ('与' + targetName + '的区分要点：' + (distinguish || '见鉴别要点'))
+  })
+}
+
+function buildRelatedDiseaseLinks() {
+  var byName = {}
+  DISEASE_KB.forEach(function (card) { byName[card.name] = card })
+
+  // ② 从鉴别要点提炼
+  DISEASE_KB.forEach(function (card) {
+    var items = card.keyDifferentials || []
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i] || {}
+      var target = resolveRelatedCardName(item.name, card.name)
+      if (!target) continue
+      pushRelatedDisease(card, target, '鉴别', '', item.distinguish)
+    }
+  })
+
+  // ③ 反向补链：先取快照，避免边遍历边追加导致链式扩散
+  var snapshot = DISEASE_KB.map(function (card) {
+    return {
+      name: card.name,
+      links: card.relatedDiseases.map(function (link) {
+        return { name: link.name, relation: link.relation }
+      })
+    }
+  })
+  snapshot.forEach(function (entry) {
+    for (var i = 0; i < entry.links.length; i++) {
+      var link = entry.links[i]
+      var target = byName[link.name]
+      var source = byName[entry.name]
+      if (!target || !source) continue
+      pushRelatedDisease(target, source.name, RELATED_RELATION_INVERSE[link.relation] || '鉴别', '', '')
+    }
+  })
+}
+
+// 注意：链接构建必须在 GENERIC_ALIASES（下方 K12 别名段落）初始化之后执行，
+// 因此实际调用点在模块导出之前（见文件末尾）。
 
 // ============================================================
 // K4：症状词表长度归一化
@@ -2001,11 +2491,72 @@ function diseaseSupportsMucosalLocation(disease) {
   return hasAny(text, MUCOSAL_TERMS)
 }
 
+// 否定前缀（K9）：中文里否定词是词的一部分，"无瘙痒"含子串"瘙痒"、"未见脱毛"含"脱毛"。
+// 裸子串匹配会把"无瘙痒"同时命中"无瘙痒"（本库确实把它当作 猫心理性脱毛 的症状词）
+// 和"瘙痒"（多数瘙痒性皮肤病的症状词）——后者会把临床结论说反：
+// 主人写"皮肤不红不痒"反而让检索更倾向瘙痒性皮肤病。实测（2026-10-01）
+// species=猫 时 `瘙痒` 与 `无瘙痒`/`不瘙痒`/`没有瘙痒` 返回完全相同的候选与分数。
+// 这里只做一件事：命中的那几个字**紧邻前面**是否跟着否定词，是则丢弃该次命中。
+// 判据窗口取 3 个字，够覆盖"没有/并未/否认/不伴"这类双字前缀，又不会把
+// "无论…脱毛""不但…结痂"误判（窗口后缀必须是完整的否定词）。
+var NEGATION_PREFIXES = ['不', '无', '未', '非', '没', '没有', '否认', '不伴', '并未', '未见', '毫无', '不含', '不长', '不出']
+
+function isNegatedAt(text, idx) {
+  if (idx <= 0) return false
+  var prefix = text.slice(Math.max(0, idx - 3), idx)
+  for (var i = 0; i < NEGATION_PREFIXES.length; i++) {
+    var marker = NEGATION_PREFIXES[i]
+    if (prefix.length >= marker.length && prefix.slice(prefix.length - marker.length) === marker) return true
+  }
+  return false
+}
+
+// ── K12（2026-10-01，内容减项）：泛称别名单独处理 ──
+//
+// aliases 里混着两类词：
+//   ① 病名本身或其俗称（"猫癣""热点""库兴""耳螨"）——主人说出它就是在指这张卡；
+//   ② 类目级/现象级泛称（"肿瘤""肿块""真菌""脓皮病""外耳炎"…）——说的是
+//      "一大类病"或"一个现象"，不指向任何单一疾病。
+// 实测的坏形态（深度审计发现）：name 此前**根本不是匹配通道**，于是主人复述医生给的
+// 诊断「深部脓皮病」时，加分给的是别名更短的另一张卡——浅表脓皮病 4.5（别名"脓皮病"），
+// 而深部脓皮病自己 0 分；「甲状腺功能减退相关皮肤改变」则完全无结果。
+// 泛称类别名还有第二个坏处：33 个 ≤2 字别名里有 16 处被他卡病名包含
+// （"脓皮病"⊂深部脓皮病/趾间脓皮病/猫浅表脓皮病/下颏脓皮病），一句话会给多条卡加分。
+//
+// 处理方式（不删词，只降权）：
+//   - 泛称仍然留在 aliases 里（前端展示、兽医核对都要用），只是命中后按 1 分计、
+//     打 '泛称:' 标签、**不计入 aliasCount**——它不能单独撑起 isPromptWorthyResult
+//     的"别名证据"分支，必须另有视觉/病史/组合证据才可能进 prompt；
+//   - 同时新增『病名』通道（见 search），让完整病名回到它自己身上。
+var GENERIC_ALIASES = [
+  '肿瘤', '肿块', '真菌', '刺激', '虫咬', '咬虱', '尾根',
+  '脓皮病', '外耳炎', '蜂窝织炎', '褶皱皮炎', '天疱疮'
+]
+
+function isGenericAlias(term) {
+  return GENERIC_ALIASES.indexOf(term) >= 0
+}
+
+/**
+ * 词表命中：返回 terms 中在 text 里出现、且**不被否定前缀覆盖**的词。
+ *
+ * 仍然保持"每个词最多贡献一次"（命中处很多时只要有一处是肯定语气就算命中），
+ * 因为主人可能同时写"左耳痒，右耳不痒"——这时"痒"应当算命中。
+ */
 function matchedTerms(text, terms) {
   var out = []
   for (var i = 0; i < (terms || []).length; i++) {
     var term = String(terms[i] || '').toLowerCase()
-    if (term && text.indexOf(term) >= 0) out.push(terms[i])
+    if (!term) continue
+    var searchFrom = 0
+    var hit = false
+    while (true) {
+      var idx = text.indexOf(term, searchFrom)
+      if (idx < 0) break
+      if (!isNegatedAt(text, idx)) { hit = true; break }
+      searchFrom = idx + 1
+    }
+    if (hit) out.push(terms[i])
   }
   return out
 }
@@ -2016,13 +2567,17 @@ function isGenericSign(term) {
 
 function addMatches(state, label, terms, weight, options) {
   options = options || {}
+  // seenFamily：同族证据共享去重槽位。视觉预检（'视觉预检'）与主诉口语（'视觉'）
+  // 是同一特征的两个来源，标签要区分（供快路径判定照片证据），去重必须合并，
+  // 否则同一个词被预检和主诉各命中一次会重复计分。
+  var seenFamily = options.seenFamily || label
   for (var i = 0; i < (terms || []).length; i++) {
     var term = terms[i]
-    if (!term || state.seen[label + term]) continue
+    if (!term || state.seen[seenFamily + term]) continue
     state.score += weight
     // K4：症状词表命中分单独累计，供词表长度归一化使用（见 applySignNormalization）
-    if (label === '视觉' || label === '病史') state.signScore += weight
-    state.seen[label + term] = true
+    if (label === '视觉' || label === '视觉预检' || label === '病史') state.signScore += weight
+    state.seen[seenFamily + term] = true
     state.matched.push(label + ':' + term)
     if (options.strong) state.strongVisualCount++
     if (options.generic) state.genericOnlyCount++
@@ -2030,6 +2585,7 @@ function addMatches(state, label, terms, weight, options) {
     if (options.location) state.locationCount++
     if (options.alias) state.aliasCount++
     if (options.breed) state.breedCount++
+    if (options.diseaseName) state.nameCount++
   }
 }
 
@@ -2157,6 +2713,30 @@ var HIGH_RISK_COMBOS = [
       ['眼睑', '眼皮', '眼周', '眼睛周围'],
       ['红肿', '结痂', '眼睑红肿', '眼周结痂', '脱毛', '分泌物'],
       ['眯眼', '流泪', '揉眼', '睁不开', '蹭眼睛']
+    ]
+  },
+  // ── K12（2026-10-01，扩 P3）：随新增条目一起补的两条门槛 ──
+  // 药疹必须同时具备"用药/疫苗时间线 + 皮损词 + 急性起病"三要素，
+  // 否则主人一句"身上有红斑"就会把药物反应推进报告。
+  {
+    name: '药疹/多形性红斑',
+    label: '组合:用药/疫苗后+皮疹+急性起病',
+    score: 6,
+    requireAll: [
+      ['用药', '吃药', '服药', '输液', '注射', '打针', '疫苗', '驱虫', '换药', '新药'],
+      ['红斑', '皮疹', '水疱', '溃疡', '结痂', '脱毛', '破皮', '黏膜'],
+      ['突然', '急性', '爆发', '迅速', '几天', '多处', '全身', '对称']
+    ]
+  },
+  // 犬瘟热同理：必须"足垫/脚垫异常 + 硬/增厚 + 未接种或幼犬接触史"三者齐全。
+  {
+    name: '犬瘟热（硬足垫）',
+    label: '组合:足垫增厚变硬+未接种/幼犬',
+    score: 7,
+    requireAll: [
+      ['足垫', '脚垫', '掌垫', '肉垫', '爪垫'],
+      ['增厚', '变硬', '硬邦邦', '角化', '干裂', '像老茧', '厚茧'],
+      ['未接种', '没打疫苗', '没打针', '疫苗不全', '幼犬', '小狗', '流浪', '刚买回来']
     ]
   }
 ]
@@ -2368,6 +2948,7 @@ function buildSearchResult(disease, state) {
     visualSigns: disease.visualSigns,
     historySigns: disease.historySigns,
     locations: disease.locations,
+    relatedDiseases: disease.relatedDiseases,
     reviewStatus: disease.reviewStatus,
     version: disease.version
   }
@@ -2378,11 +2959,34 @@ function countPromptEvidence(result, typePrefix) {
   var count = 0
   for (var i = 0; i < result.matched.length; i++) {
     var item = String(result.matched[i] || '')
-    if (item.indexOf(typePrefix) !== 0) continue
     if (typePrefix === '视觉:') {
-      var term = item.replace(typePrefix, '')
-      if (isGenericSign(term)) continue
+      // 视觉证据包含预检来源（'视觉预检:'）与主诉来源（'视觉:'）两种标签，
+      // 两者都排除泛词——它们只是同一特征的不同来源，证据价值判定必须一致
+      if (item.indexOf('视觉:') !== 0 && item.indexOf('视觉预检:') !== 0) continue
+      if (isGenericSign(item.slice(item.indexOf(':') + 1))) continue
+      count++
+      continue
     }
+    if (item.indexOf(typePrefix) !== 0) continue
+    count++
+  }
+  return count
+}
+
+/**
+ * 统计一条检索结果里来自视觉预检（照片侧）的非泛词特征命中数。
+ *
+ * 快路径强命中判定（api.isStrongVisionRagHit）用它设照片证据底线：
+ * 主诉文本可以命中组合规则、别名和主诉侧视觉词，但唯独'视觉预检:'标签
+ * 只能由照片提特征产生——没有它，等于整份报告没有任何照片证据支撑。
+ */
+function countPrecheckVisualHits(result) {
+  if (!result || !Array.isArray(result.matched)) return 0
+  var count = 0
+  for (var i = 0; i < result.matched.length; i++) {
+    var item = String(result.matched[i] || '')
+    if (item.indexOf('视觉预检:') !== 0) continue
+    if (isGenericSign(item.slice('视觉预检:'.length))) continue
     count++
   }
   return count
@@ -2410,6 +3014,10 @@ function isPromptWorthyResult(result) {
  *   lesionPattern: 视觉预检返回的皮损分布（局灶性/多发性/弥漫性/环形/对称性等）
  *   lesionShape: 视觉预检返回的皮损形态（圆形/环形/不规则等）
  * @returns {Array} 按匹配度排序的 Top 3 条目
+ *   结果的 matched 数组带来源标签：'视觉预检:词' = 命中自视觉预检标准词（照片侧），
+ *   '视觉:词' = 命中自主诉文本，另有 '病史:'/'病名:'/'别名:'/'泛称:'/'组合:'/'部位:'/'品种:'/'负信号:'。
+ *   '泛称:' 是类目级泛称别名（K12），只代表一大类病，不计入别名证据。
+ *   消费方需要区分照片证据与主诉叙述时，依据前缀判断（见 countPrecheckVisualHits）。
  */
 function search(query) {
   query = query || {}
@@ -2452,6 +3060,7 @@ function search(query) {
       historyCount: 0,
       locationCount: 0,
       aliasCount: 0,
+      nameCount: 0,
       breedCount: 0,
       comboCount: 0,
       searchText: searchText,
@@ -2483,19 +3092,28 @@ function search(query) {
         var lkw = disease.locations[k]
         if (bodyPart.indexOf(lkw) >= 0 || lkw.indexOf(bodyPart) >= 0) locationMatches.push(lkw)
       }
-      addMatches(state, '部位', locationMatches, 2, { location: true })
+      // 部位分封顶（K9）：身体部位在 locations 词表里是近义词堆叠，"耳"能同时命中
+      // 耳部/耳道/耳朵/耳廓/外耳道 5 个词，而 "耳朵" 只命中 1 个——过去每个词各 +2，
+      // 于是同一部位的两种写法（表单下拉框 vs 模型 bodyPartGuess）分数差到 5 倍
+      // （实测：bodyPart='耳' 给细菌性外耳炎 10 分，bodyPart='耳朵' 只有 2 分）。
+      // 部位只是辅助线索（视觉词 4~5 分、病史词 3 分），整条通道封顶 4 分即可，
+      // 命中词数仍然完整保留在 matched 里供归因展示。
+      var locationWeight = Math.min(2, 4 / locationMatches.length)
+      addMatches(state, '部位', locationMatches, locationWeight, { location: true })
     }
 
     // ── 视觉预检标准词匹配（优先于口语，权重更高）──
-    // 放在口语匹配之前，让预检先占位 seen key，口语不会重复计分
+    // 放在口语匹配之前，让预检先占位 seen key（seenFamily 同为'视觉'），口语不会重复计分。
+    // 标签用'视觉预检'与主诉来源（'视觉'）区分：快路径强命中判定要求照片侧证据时靠它识别。
     if (visualFeatures.length) {
       var vfMatches = matchedTerms(visualFeatText, disease.visualSigns)
       for (var vf = 0; vf < vfMatches.length; vf++) {
         var vfSign = vfMatches[vf]
         // 预检标准词权重：非泛词 5 分，泛词 1.5 分
-        addMatches(state, '视觉', [vfSign], isGenericSign(vfSign) ? 1.5 : 5, {
+        addMatches(state, '视觉预检', [vfSign], isGenericSign(vfSign) ? 1.5 : 5, {
           strong: !isGenericSign(vfSign),
-          generic: isGenericSign(vfSign)
+          generic: isGenericSign(vfSign),
+          seenFamily: '视觉'
         })
       }
     }
@@ -2512,8 +3130,33 @@ function search(query) {
     var historyMatches = matchedTerms(complaint, disease.historySigns)
     addMatches(state, '病史', historyMatches, 3, { history: true })
 
+    // ── 病名通道（K12）：完整病名必须回到它自己身上 ──
+    // 此前 name 完全不参与匹配，于是主人复述医生给的诊断（"深部脓皮病"）时加分全给了
+    // 别名更短的邻居（浅表脓皮病，别名"脓皮病"），本人 0 分；说"甲状腺功能减退相关皮肤改变"
+    // 更是完全无结果。权重 3（与病史词同级）：病名是强线索，但不是照片证据。
+    // 打 diseaseName 标记：它属于"具体证据"，能让这张卡通过 search 末尾的置信过滤，
+    // 但**不计入 aliasCount**，所以不能单独撑起 isPromptWorthyResult 的别名证据分支。
+    var nameMatches = matchedTerms(searchText, [disease.name])
+    if (nameMatches.length) addMatches(state, '病名', nameMatches, 3, { diseaseName: true })
+
+    // ── 别名通道（K12）：具体别名与泛称分开计分 ──
+    // 具体别名（"猫癣""库兴""耳螨"）说出口就是指这张卡，2 分且计入别名证据；
+    // 泛称（"肿瘤""真菌""脓皮病"…）只代表一大类，1 分、单独标签、不计入 aliasCount，
+    // 不能单独撑起 isPromptWorthyResult 的别名分支（详见 GENERIC_ALIASES 注释）。
     var aliasMatches = matchedTerms(searchText, disease.aliases)
-    if (aliasMatches.length) addMatches(state, '别名', [aliasMatches[0]], 2, { alias: true })
+    if (aliasMatches.length) {
+      var specificAlias = null
+      var genericAlias = null
+      for (var am = 0; am < aliasMatches.length; am++) {
+        if (isGenericAlias(aliasMatches[am])) {
+          if (!genericAlias) genericAlias = aliasMatches[am]
+        } else if (!specificAlias) {
+          specificAlias = aliasMatches[am]
+        }
+      }
+      if (specificAlias) addMatches(state, '别名', [specificAlias], 2, { alias: true })
+      if (genericAlias) addMatches(state, '泛称', [genericAlias], 1, {})
+    }
 
     applyCombinationRules(disease, searchText, bodyPart, state)
 
@@ -2542,10 +3185,12 @@ function search(query) {
       state.score += disease.baselinePriority * 0.5
 
       // ── 泛词过滤加强：仅有泛词命中 + 无组合/部位/品种/病史/别名 → 过滤 ──
-      var hasSpecificEvidence = state.strongVisualCount > 0 || state.locationCount > 0 || state.historyCount > 0 || state.aliasCount > 0 || state.comboCount > 0 || state.breedCount > 0
+      // K12：说对完整病名（nameCount>0）也算具体证据——"主人/模型复述了诊断名"
+      // 本身就是最明确的指向，它不该被"没有照片/病史证据"的置信过滤误杀。
+      var hasSpecificEvidence = state.strongVisualCount > 0 || state.locationCount > 0 || state.historyCount > 0 || state.aliasCount > 0 || state.comboCount > 0 || state.breedCount > 0 || state.nameCount > 0
       if (!hasSpecificEvidence && state.genericOnlyCount > 0) continue
       // 即使有部位命中，如果只有 1 个泛词 + 1 个部位且无其他证据，分数不够置信
-      if (!state.strongVisualCount && !state.historyCount && !state.aliasCount && !state.comboCount && state.score < 5) continue
+      if (!state.strongVisualCount && !state.historyCount && !state.aliasCount && !state.comboCount && !state.nameCount && state.score < 5) continue
 
       results.push(buildSearchResult(disease, state))
     }
@@ -2681,6 +3326,9 @@ function buildRagPrompt(query) {
   return parts.join('\n')
 }
 
+// K12（扩 P1）：卡间关系补全（必须在 GENERIC_ALIASES 初始化之后调用，见该函数注释）
+buildRelatedDiseaseLinks()
+
 module.exports = {
   DISEASE_KB: DISEASE_KB,
   search: search,
@@ -2702,5 +3350,6 @@ module.exports = {
   KB_VERSION_DATE: KB_VERSION_DATE,
   getKbVersionInfo: getKbVersionInfo,
   isGenericVisualSign: isGenericSign,
+  countPrecheckVisualHits: countPrecheckVisualHits,
   classifySign: classifySign
 }

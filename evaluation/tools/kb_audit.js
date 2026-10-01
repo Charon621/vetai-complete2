@@ -69,7 +69,11 @@ const BREEDLESS_BY_DESIGN = [
   '姬螯螨病（行走的皮屑）',
   '虱感染',
   '细菌性甲感染',
-  '真菌性甲感染（甲癣）'
+  '真菌性甲感染（甲癣）',
+  // K12（扩 P3）：药物反应由用药/疫苗暴露决定，犬瘟热由免疫状态与接触史决定，
+  // 都不存在品种易感性；给它们编品种会制造假的品种先验。
+  '药疹/多形性红斑',
+  '犬瘟热（硬足垫）'
 ]
 
 /** 字段完整性 */
@@ -379,6 +383,10 @@ function audit() {
     tool: 'kb_audit',
     kbVersion: kb.KB_VERSION,
     entryCount: DB.length,
+    // K12（扩 P2）：审核状态计数——把"全部条目未审核"这件事从"看不出来"变成可读输出。
+    // K13 起同时带上复核主体/日期/范围（KB_CONTENT_REVIEW 的集中声明）。
+    reviewStatus: kb.getKbVersionInfo().reviewStatus,
+    review: kb.getKbVersionInfo().review,
     fieldCompleteness: checkFieldCompleteness(DB),
     aliasCollisions: checkAliasCollisions(DB),
     nameOverlap: checkNameOverlap(DB),
@@ -452,6 +460,24 @@ function printReport(r) {
     console.log('    ' + r.comboCoverage.highRiskWithoutCombo.join('、'))
   }
   console.log('')
+
+  // K12/K13：审核状态。K12 先做可见化（默认 draft 是 toClinicalCard 补的）；
+  // K13 起默认状态由 kb.KB_CONTENT_REVIEW 集中声明（需求方 2026-10-02 确认已复核），
+  // 单卡仍可用 reviewStatus 覆盖。把 KB_CONTENT_REVIEW.status 改回 'draft' 即可收回。
+  if (r.reviewStatus) {
+    console.log('[审核状态] 已复核 ' + r.reviewStatus.reviewed +
+      ' / 待复核 ' + r.reviewStatus.pending +
+      ' / 未审核 ' + r.reviewStatus.draft +
+      '（共 ' + r.reviewStatus.total + ' 条）')
+    if (r.review && r.review.by) {
+      console.log('  复核主体：' + r.review.by + '，日期 ' + r.review.date +
+        '，范围：' + r.review.scope)
+    }
+    if (!r.reviewStatus.reviewed) {
+      console.log('  提示：全部条目仍是未审核状态，临床内容上线前需兽医逐条复核')
+    }
+    console.log('')
+  }
 
   console.log('[品种先验访问器] getBreedSusceptibility: ' +
     (r.hasBreedSusceptibilityAccessor ? '已实现' : '未实现（B2 品种先验注入将不生效）'))
