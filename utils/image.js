@@ -727,6 +727,20 @@ function saveImagesPermanent(paths) {
  * 单张落盘失败（或未落盘）时 displayPath 退化为 base64，
  * 保证功能不中断（与两页原有降级策略一致）。
  */
+// 只记录阶段和耗时，不输出图片内容或文件路径；便于关联 SDK 的匿名 timeout。
+function traceImageStep(stage, index, work) {
+  if (!config.VISION_RAG_TRACE) return work()
+  var startedAt = Date.now()
+  console.log('[VetAI] image step start:', stage, index + 1)
+  return work().then(function (result) {
+    console.log('[VetAI] image step done:', stage, index + 1, Date.now() - startedAt + 'ms')
+    return result
+  }, function (error) {
+    console.warn('[VetAI] image step failed:', stage, index + 1, Date.now() - startedAt + 'ms')
+    throw error
+  })
+}
+
 function prepareImages(tempPaths, opts) {
   opts = opts || {}
   var pageContext = opts.pageContext || null
@@ -751,10 +765,14 @@ function prepareImages(tempPaths, opts) {
   if (paths.length === 0) return Promise.resolve(finish([]))
 
   var total = paths.length
-  return paths.reduce(function (chain, p) {
+  return paths.reduce(function (chain, p, index) {
     return chain.then(function (acc) {
-      return processImage(p, pageContext).then(function (b64) {
-        var saving = savePermanent ? saveImagePermanent(b64) : Promise.resolve(null)
+      return traceImageStep('process', index, function () {
+        return processImage(p, pageContext)
+      }).then(function (b64) {
+        var saving = savePermanent ? traceImageStep('save', index, function () {
+          return saveImagePermanent(b64)
+        }) : Promise.resolve(null)
         return saving.then(function (saved) {
           acc.push({
             base64: b64,
@@ -773,8 +791,10 @@ function prepareImages(tempPaths, opts) {
   }, Promise.resolve([])).then(function (items) {
     if (!checkQuality) return finish(items)
     // 质量检测对落盘后的本地路径做，避免真机对超长 data URL 静默失效（BUG-B3）
-    return Promise.all(items.map(function (item) {
-      return checkImageQuality(item.displayPath, pageContext)
+    return Promise.all(items.map(function (item, index) {
+      return traceImageStep('quality', index, function () {
+        return checkImageQuality(item.displayPath, pageContext)
+      })
     })).then(function (qualityFlags) {
       for (var i = 0; i < items.length; i++) items[i].quality = qualityFlags[i]
       return finish(items)
