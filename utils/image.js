@@ -69,7 +69,7 @@ function processImage(path, pageContext) {
           return
         }
         // 尺寸达标但文件仍可能过大（高质量 JPEG），超 800KB 仍走质量压缩
-        wx.getFileInfo({
+        wx.getFileSystemManager().getFileInfo({
           filePath: path,
           success: function (fileInfo) {
             if (fileInfo && fileInfo.size > 800 * 1024) {
@@ -376,7 +376,9 @@ function checkImageQuality(imagePath, pageContext) {
             if (!res || !res[0] || !res[0].node) { resolveFallback('canvas_not_found'); return }
 
             var canvas = res[0].node
-            var ctx = canvas.getContext('2d')
+            var ctx
+            try { ctx = canvas.getContext('2d', { willReadFrequently: true }) } catch (e) {}
+            if (!ctx) ctx = canvas.getContext('2d')
             canvas.width = sw
             canvas.height = sh
             ctx.clearRect(0, 0, sw, sh)

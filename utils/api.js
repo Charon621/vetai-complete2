@@ -975,7 +975,7 @@ function doCloudRequest(payload, phase) {
       },
       success: function (res) {
         if (config.VISION_RAG_TRACE) {
-          console.log('[VetAI] cloud request done:', requestPhase, Date.now() - startedAt + 'ms')
+          console.log('[VetAI] cloud response received:', requestPhase, Date.now() - startedAt + 'ms')
         }
         var result = (res && res.result) || {}
         // 兼容旧版云函数：如果云端直接返回 OpenAI/DashScope 原始响应，也按成功处理。

@@ -10,7 +10,7 @@
 //     落盘成功/失败时 displayPath 降级、质检兜底
 // wx 通过 global.wx 最小 stub（文件系统 / getImageInfo 可控行为）。
 // 说明：processImage 的真机压缩链路（compressImage/canvas）依赖渲染层，
-// 本套件只走 data URL 直通路径，压缩链路不在纯逻辑测试范围内。
+// 文件大小分支用 stub 验证；实际压缩效果和 canvas 渲染不在本套件范围内。
 // 直接 node tests/image.test.js 执行，无测试框架
 // ============================================================
 
@@ -119,6 +119,37 @@ async function run() {
   assert.strictEqual(passthrough, 'data:image/jpeg;base64,RAW', 'data url passes through untouched')
   const emptyPath = await imageUtil.processImage('', null)
   assert.strictEqual(emptyPath, '', 'empty path resolves as-is')
+
+  // 新文件 API：小图直接读、大文件压缩，取大小失败仍可读原图。
+  const originalGetImageInfo = wx.getImageInfo
+  wx.getImageInfo = function (opts) { opts.success({ width: 640, height: 480 }) }
+  let fileSize = 100 * 1024
+  let fileInfoFails = false
+  const compressedPaths = []
+  fsStub.getFileInfo = function (opts) {
+    assert.strictEqual(opts.filePath, '/tmp/photo.jpg')
+    if (fileInfoFails) opts.fail({ errMsg: 'getFileInfo:fail stub' })
+    else opts.success({ size: fileSize })
+  }
+  wx.compressImage = function (opts) {
+    compressedPaths.push(opts.src)
+    opts.success({ tempFilePath: '/tmp/compressed.jpg' })
+  }
+  readFileHandler = function (opts) {
+    opts.success({ data: opts.filePath === '/tmp/compressed.jpg' ? 'COMPRESSED' : 'ORIGINAL' })
+  }
+  assert.strictEqual(await imageUtil.processImage('/tmp/photo.jpg', null), 'data:image/jpeg;base64,ORIGINAL')
+  assert.strictEqual(compressedPaths.length, 0, 'small files skip compression')
+  fileSize = 900 * 1024
+  assert.strictEqual(await imageUtil.processImage('/tmp/photo.jpg', null), 'data:image/jpeg;base64,COMPRESSED')
+  assert.deepStrictEqual(compressedPaths, ['/tmp/photo.jpg'], 'large files still compress')
+  fileInfoFails = true
+  assert.strictEqual(await imageUtil.processImage('/tmp/photo.jpg', null), 'data:image/jpeg;base64,ORIGINAL')
+  assert.strictEqual(compressedPaths.length, 1, 'file info failure falls back to reading original')
+  wx.getImageInfo = originalGetImageInfo
+  delete wx.compressImage
+  delete fsStub.getFileInfo
+  readFileHandler = null
 
   // ---------- base64ToLocalFile：前缀剥离 / 扩展名 / 目录 ----------
   writeFileCalls = []

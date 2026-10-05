@@ -262,8 +262,11 @@ async function run() {
   assert.strictEqual(res.error, '客户端提示词版本不受支持，请更新小程序', 'unknown prompt version rejected')
 
   res = await cloudFn.main(validEvent({ promptVersion: 'vetai-derm-v2.0.0' }))
-  assert.strictEqual(res.success, true, 'current prompt version accepted')
-  assert.strictEqual(res.promptVersion, 'vetai-derm-v2.0.0', 'server echoes its prompt version')
+  assert.strictEqual(res.success, true, 'previous prompt version remains compatible')
+  assert.strictEqual(res.promptVersion, 'vetai-derm-v2.0.1', 'server echoes its prompt version')
+
+  res = await cloudFn.main(validEvent({ promptVersion: require('../utils/api').PROMPT_VERSION }))
+  assert.strictEqual(res.success, true, 'actual client prompt version accepted')
 
   // ============================================================
   // 幂等：同 openId+requestId 第二次命中缓存，模型只调一次

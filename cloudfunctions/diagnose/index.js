@@ -5,10 +5,10 @@ cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
 })
 
-const PROMPT_VERSION = 'vetai-derm-v2.0.0'
+const PROMPT_VERSION = 'vetai-derm-v2.0.1'
 // 兼容版本窗口（BUG-G2）：小程序审核期间新旧版本共存，
 // 硬拒单一版本会让老版本用户全部不可用；可用环境变量 PROMPT_VERSIONS 追加。
-const SUPPORTED_PROMPT_VERSIONS = ['vetai-derm-v2.0.0', 'vetai-derm-v1.9.0']
+const SUPPORTED_PROMPT_VERSIONS = ['vetai-derm-v2.0.1', 'vetai-derm-v2.0.0', 'vetai-derm-v1.9.0']
   .concat(String(process.env.PROMPT_VERSIONS || '').split(',').map((v) => v.trim()).filter(Boolean))
 const MAX_EVENT_BYTES = 3.2 * 1024 * 1024
 const MAX_TEXT_CHARS = 30000
