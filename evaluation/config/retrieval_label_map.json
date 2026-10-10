@@ -1,0 +1,718 @@
+{
+  "kind": "retrieval_label_map",
+  "map_version": "1.0.0",
+  "created_on": "2026-10-03",
+  "taxonomy_scope": "kb_card_labels",
+  "purpose": "BUG-28/B02-2：把检索评测的疾病标签与知识卡分开——病族/亚型/物种范围/等价集合/粒度显式版本化，供病族折叠与角色指标消费。不修改产品排序。",
+  "usage_rules": [
+    "等价集合只在显式声明处生效；父子卡、局灶/全身亚型、跨病原物种专卡一律不默认等价。",
+    "未在本映射登记的标签（含 KB 外正确标签）按其自身参与集合计分，折叠视图中单列 unmapped，不判病错或物种错。",
+    "reference_code 仅在 evaluation/reference_data/label_ontology.json 的 product_kb_name 与卡名逐字相等时登记，只是口径对照，不从卡片制造金标准。",
+    "本映射只登记知识卡标签，不定义“所有正确答案”；双层口径（病族/亚型、主病/并存）在评分解读前明确，不得靠合并标签虚增成绩。",
+    "family_code / subtype_code / 等价集合的病族粒度是工程分组，临床使用前需独立临床复核；变更必须升 map_version 并可重算旧结果。"
+  ],
+  "granularity_vocabulary": {
+    "disease_family_card": "病族通用卡（该病族在本物种范围的主卡）",
+    "species_variant_card": "同一病族的物种专卡（与通用卡不默认等价）",
+    "severity_subtype_card": "同一病族的严重度/范围亚型卡（如局灶型 vs 全身型，不默认等价）",
+    "presentation_card": "以综合征/表现命名的卡（与底层病族同族但粒度不同，不默认等价）",
+    "non_etiologic_card": "事件/形态/良性结构卡（创伤、叮咬、囊肿、血肿等，不是独立病因标签）"
+  },
+  "equivalence_sets": {
+    "pyoderma_superficial_species_pair": {
+      "members": [
+        "浅表脓皮病",
+        "猫浅表脓皮病"
+      ],
+      "basis": "同一浅表细菌性脓皮病病族的犬/猫物种显示变体；等价仅在各自物种病例内成立（物种过滤后同屏不会同时出现）",
+      "declared_by": "B02-2 DEC-01 示例；待临床复核"
+    },
+    "solar_dermatitis_species_pair": {
+      "members": [
+        "日光性皮炎",
+        "猫日光性皮炎"
+      ],
+      "basis": "紫外线相关皮炎的犬/猫物种显示变体；与知识库既有「晒伤」别名归属一致",
+      "declared_by": "B02-2 工程分组；待临床复核"
+    }
+  },
+  "labels": {
+    "急性湿性皮炎（热点）": {
+      "family_code": "acute_moist_dermatitis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "INFL_ACUTE_MOIST_DERMATITIS"
+    },
+    "特应性皮炎（环境过敏）": {
+      "family_code": "atopic_dermatitis",
+      "subtype_code": "canine_and_feline",
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "ALG_ATOPIC_DERMATITIS"
+    },
+    "跳蚤过敏性皮炎": {
+      "family_code": "flea_allergy_dermatitis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "PAR_FLEA_ALLERGY_DERMATITIS"
+    },
+    "食物过敏性皮炎": {
+      "family_code": "food_adverse_reaction",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "ALG_ADVERSE_FOOD_REACTION"
+    },
+    "浅表脓皮病": {
+      "family_code": "pyoderma_superficial",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": "pyoderma_superficial_species_pair",
+      "reference_code": "INF_PYODERMA_SUPERFICIAL"
+    },
+    "深部脓皮病": {
+      "family_code": "pyoderma_deep",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "INF_PYODERMA_DEEP"
+    },
+    "蠕形螨病（局灶型）": {
+      "family_code": "demodicosis",
+      "subtype_code": "canine_localized",
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "severity_subtype_card",
+      "equivalence_set": null,
+      "reference_code": "PAR_DEMODICOSIS_LOCALIZED"
+    },
+    "全身型蠕形螨病": {
+      "family_code": "demodicosis",
+      "subtype_code": "canine_generalized",
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "severity_subtype_card",
+      "equivalence_set": null,
+      "reference_code": "PAR_DEMODICOSIS_GENERALIZED"
+    },
+    "疥螨病": {
+      "family_code": "sarcoptiform_mange",
+      "subtype_code": "sarcoptes_scabiei",
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "PAR_SARCOPTIC_MANGE"
+    },
+    "马拉色菌皮炎": {
+      "family_code": "malassezia_associated",
+      "subtype_code": "cutaneous",
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "INF_MALASSEZIA_DERMATITIS"
+    },
+    "皮肤癣菌病（犬猫）": {
+      "family_code": "dermatophytosis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "INF_DERMATOPHYTOSIS"
+    },
+    "趾间脓皮病（趾间炎）": {
+      "family_code": "interdigital_pyoderma",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "INFL_INTERDIGITAL_PYODERMA"
+    },
+    "肢端舔舐性肉芽肿": {
+      "family_code": "acral_lick_granuloma",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "INFL_ACRAL_LICK_GRANULOMA"
+    },
+    "皮脂溢性皮炎": {
+      "family_code": "seborrheic_dermatitis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "INFL_SEBORRHEIC_DERMATITIS"
+    },
+    "皮肤褶皱皮炎": {
+      "family_code": "skin_fold_dermatitis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "INFL_SKIN_FOLD_DERMATITIS"
+    },
+    "锌反应性皮病": {
+      "family_code": "zinc_responsive_dermatosis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "NUTR_ZINC_RESPONSIVE"
+    },
+    "日光性皮炎": {
+      "family_code": "solar_dermatitis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": "solar_dermatitis_species_pair",
+      "reference_code": "PHYS_SOLAR_DERMATITIS"
+    },
+    "接触性皮炎": {
+      "family_code": "contact_dermatitis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "ALG_CONTACT_DERMATITIS"
+    },
+    "肛周瘘管": {
+      "family_code": "perianal_fistula",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "IMM_PERIANAL_FISTULA"
+    },
+    "落叶型天疱疮": {
+      "family_code": "pemphigus_complex",
+      "subtype_code": "pemphigus_foliaceus",
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "severity_subtype_card",
+      "equivalence_set": null,
+      "reference_code": "IMM_PEMPHIGUS_FOLIACEUS"
+    },
+    "猫粟粒性皮炎（跳蚤过敏）": {
+      "family_code": "flea_allergy_dermatitis",
+      "subtype_code": "feline_miliary_presentation",
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "presentation_card",
+      "equivalence_set": null
+    },
+    "嗜酸性肉芽肿复合体": {
+      "family_code": "eosinophilic_granuloma_complex",
+      "subtype_code": null,
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "FEL_EOSINOPHILIC_GRANULOMA_COMPLEX"
+    },
+    "猫痤疮": {
+      "family_code": "feline_acne",
+      "subtype_code": null,
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "FEL_CHIN_ACNE"
+    },
+    "猫心理性脱毛": {
+      "family_code": "psychogenic_alopecia",
+      "subtype_code": null,
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "FEL_PSYCHOGENIC_ALOPECIA"
+    },
+    "猫浆细胞性足炎": {
+      "family_code": "plasma_cell_pododermatitis",
+      "subtype_code": null,
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "FEL_PLASMA_CELL_PODODERMATITIS"
+    },
+    "猫日光性皮炎": {
+      "family_code": "solar_dermatitis",
+      "subtype_code": "feline",
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "species_variant_card",
+      "equivalence_set": "solar_dermatitis_species_pair"
+    },
+    "猫鳞状细胞癌": {
+      "family_code": "cutaneous_squamous_cell_carcinoma",
+      "subtype_code": "feline",
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "species_variant_card",
+      "equivalence_set": null
+    },
+    "猫面部褶皱皮炎": {
+      "family_code": "skin_fold_dermatitis",
+      "subtype_code": "feline_facial",
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "species_variant_card",
+      "equivalence_set": null
+    },
+    "猫尾根腺炎（尾部皮脂腺炎）": {
+      "family_code": "stud_tail",
+      "subtype_code": null,
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "猫疥螨病": {
+      "family_code": "sarcoptiform_mange",
+      "subtype_code": "notoedres_cati",
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "species_variant_card",
+      "equivalence_set": null
+    },
+    "猫泪痕皮炎": {
+      "family_code": "tear_staining",
+      "subtype_code": null,
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "presentation_card",
+      "equivalence_set": null
+    },
+    "猫皮肤脆弱症": {
+      "family_code": "feline_skin_fragility_syndrome",
+      "subtype_code": null,
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "presentation_card",
+      "equivalence_set": null
+    },
+    "猫蠕形螨病": {
+      "family_code": "demodicosis",
+      "subtype_code": "feline",
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "species_variant_card",
+      "equivalence_set": null
+    },
+    "猫浅表脓皮病": {
+      "family_code": "pyoderma_superficial",
+      "subtype_code": "feline",
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "species_variant_card",
+      "equivalence_set": "pyoderma_superficial_species_pair"
+    },
+    "猫注射部位肉瘤": {
+      "family_code": "injection_site_sarcoma",
+      "subtype_code": null,
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "猫甲状腺功能亢进相关皮肤改变": {
+      "family_code": "endocrine_skin_change",
+      "subtype_code": "feline_hyperthyroidism",
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "species_variant_card",
+      "equivalence_set": null
+    },
+    "猫过敏性皮炎（非跳蚤非食物）": {
+      "family_code": "atopic_dermatitis",
+      "subtype_code": "feline_non_flea_non_food",
+      "species_scope": [
+        "猫"
+      ],
+      "target_granularity": "species_variant_card",
+      "equivalence_set": null,
+      "reference_code": "FEL_ALLERGIC_DERMATITIS_OTHER"
+    },
+    "耳螨感染": {
+      "family_code": "otodectic_mange",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "马拉色菌性外耳炎": {
+      "family_code": "malassezia_associated",
+      "subtype_code": "otic_externa",
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "presentation_card",
+      "equivalence_set": null
+    },
+    "细菌性外耳炎": {
+      "family_code": "bacterial_otitis_externa",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "皮脂腺囊肿": {
+      "family_code": "sebaceous_cyst",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "non_etiologic_card",
+      "equivalence_set": null
+    },
+    "蜱虫叮咬": {
+      "family_code": "tick_bite_event",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "non_etiologic_card",
+      "equivalence_set": null
+    },
+    "蚊虫叮咬/昆虫过敏": {
+      "family_code": "insect_bite_hypersensitivity",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "presentation_card",
+      "equivalence_set": null
+    },
+    "皮肤肿瘤（肥大细胞瘤等）": {
+      "family_code": "cutaneous_neoplasia",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "脓肿/蜂窝织炎": {
+      "family_code": "abscess_cellulitis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "皮肤创伤/擦伤": {
+      "family_code": "trauma_abrasion",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "non_etiologic_card",
+      "equivalence_set": null
+    },
+    "压力性胼胝/肘部胼胝": {
+      "family_code": "pressure_callus",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "non_etiologic_card",
+      "equivalence_set": null
+    },
+    "鼻/足垫角化过度": {
+      "family_code": "nasopad_hyperkeratosis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "甲状腺功能减退相关皮肤改变": {
+      "family_code": "endocrine_skin_change",
+      "subtype_code": "canine_hypothyroidism",
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "ENDO_HYPOTHYROID_SKIN"
+    },
+    "库兴综合征相关皮肤改变": {
+      "family_code": "endocrine_skin_change",
+      "subtype_code": "canine_hyperadrenocorticism",
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null,
+      "reference_code": "ENDO_HYPERADRENOCORTICISM_SKIN"
+    },
+    "姬螯螨病（行走的皮屑）": {
+      "family_code": "cheyletiellosis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "虱感染": {
+      "family_code": "pediculosis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "脓疱病": {
+      "family_code": "pyoderma_superficial",
+      "subtype_code": "puppy_impetigo",
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "presentation_card",
+      "equivalence_set": null
+    },
+    "下颏脓皮病（犬痤疮）": {
+      "family_code": "canine_acne",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "细菌性甲感染": {
+      "family_code": "bacterial_paronychia",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "真菌性甲感染（甲癣）": {
+      "family_code": "dermatophytosis",
+      "subtype_code": "onychomycosis",
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "presentation_card",
+      "equivalence_set": null
+    },
+    "耳血肿": {
+      "family_code": "aural_hematoma",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "non_etiologic_card",
+      "equivalence_set": null
+    },
+    "肛门囊病": {
+      "family_code": "anal_sac_disease",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "蝇蛆病（伤口蛆症）": {
+      "family_code": "myiasis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "犬乳头状瘤病": {
+      "family_code": "canine_papillomatosis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "幼犬蜂窝织炎": {
+      "family_code": "juvenile_cellulitis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "盘状红斑狼疮": {
+      "family_code": "discoid_lupus_erythematosus",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "红斑型天疱疮": {
+      "family_code": "pemphigus_complex",
+      "subtype_code": "pemphigus_erythematosus",
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "severity_subtype_card",
+      "equivalence_set": null
+    },
+    "雪纳瑞粉刺综合征": {
+      "family_code": "schnauzer_comedo_syndrome",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "睑炎": {
+      "family_code": "blepharitis",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "皮肤淋巴瘤（蕈样肉芽肿）": {
+      "family_code": "cutaneous_lymphoma",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "药疹/多形性红斑": {
+      "family_code": "drug_eruption_erythema_multiforme",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "犬瘟热（硬足垫）": {
+      "family_code": "canine_distemper_hard_pad",
+      "subtype_code": null,
+      "species_scope": [
+        "犬"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    },
+    "良性肿块（组织细胞瘤/脂肪瘤）": {
+      "family_code": "benign_skin_mass",
+      "subtype_code": null,
+      "species_scope": [
+        "犬",
+        "猫"
+      ],
+      "target_granularity": "disease_family_card",
+      "equivalence_set": null
+    }
+  },
+  "unmapped_policy": "foldByFamily 将未登记标签列入 unmapped 并保留原名次；集合指标照常按标签自身计分"
+}

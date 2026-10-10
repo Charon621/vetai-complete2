@@ -208,6 +208,48 @@ function getSummary() {
   }
 }
 
+/**
+ * 快路径漏斗汇总：把 visionRag 事件按结局归类，并统计强命中门槛逐关失败分布。
+ *
+ * 用途：判断快路径命中率低的根因——
+ *   precheck_hits / strong_evidence 占比高 → 预检只给出泛词，优先改预检提示词与受控词表；
+ *   gap / discriminative 占比高 → 知识卡之间本来区分不开，调门槛无济于事；
+ *   borderline_defer 占比高 → 够格但被抢跑门槛拦下，可考虑"轻量复核后交付"。
+ * failedGates 是多选（一单可同时挂多关），gateAny 统计"挂了这一关"的单数，
+ * gateFirst 只统计第一个失败关卡。纯函数，便于单测。
+ */
+function summarizeVisionRag(events) {
+  var list = Array.isArray(events) ? events : []
+  var summary = { total: 0, hit: 0, byReason: {}, gateFirst: {}, gateAny: {}, precheckMs: null }
+  var durations = []
+  for (var i = 0; i < list.length; i++) {
+    var e = list[i]
+    if (!e || e.event !== 'visionRag') continue
+    var d = e.data || {}
+    summary.total++
+    var reason = d.hit === true ? 'hit' : (d.reason || 'unknown')
+    if (d.hit === true) summary.hit++
+    summary.byReason[reason] = (summary.byReason[reason] || 0) + 1
+    if (reason === 'gate_failed') {
+      if (d.gate) summary.gateFirst[d.gate] = (summary.gateFirst[d.gate] || 0) + 1
+      var failed = Array.isArray(d.failedGates) ? d.failedGates : []
+      for (var j = 0; j < failed.length; j++) {
+        summary.gateAny[failed[j]] = (summary.gateAny[failed[j]] || 0) + 1
+      }
+    }
+    if (typeof d.precheckMs === 'number' && d.precheckMs >= 0) durations.push(d.precheckMs)
+  }
+  if (durations.length) {
+    durations.sort(function (a, b) { return a - b })
+    summary.precheckMs = {
+      count: durations.length,
+      p50: durations[Math.floor((durations.length - 1) * 0.5)],
+      p90: durations[Math.floor((durations.length - 1) * 0.9)]
+    }
+  }
+  return summary
+}
+
 function formatTime(date) {
   var y = date.getFullYear()
   var m = padZero(date.getMonth() + 1)
@@ -232,5 +274,6 @@ module.exports = {
   buildCalibrationSamples: buildCalibrationSamples,
   getEvents: getEvents,
   clearEvents: clearEvents,
-  getSummary: getSummary
+  getSummary: getSummary,
+  summarizeVisionRag: summarizeVisionRag
 }

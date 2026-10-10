@@ -1,0 +1,9 @@
+const assert=require('assert'),kb=require('../utils/kb'),api=require('../utils/api')
+const expanded=kb.expandQueryFacts('腹部小红疙瘩，背部另有渐大硬块');assert(expanded.expansions.some(e=>e.concept==='丘疹'&&e.site==='腹部'));assert(expanded.expansions.some(e=>e.concept==='肿块'&&e.site==='背部'))
+const separate=kb.search({species:'犬',complaint:'左耳有黄绿色分泌物，右爪明显疼痛'});assert(!separate.some(r=>r.comboEvidence.some(e=>e.actualMatchedConditions.some(g=>g.includes('疼痛'))&&e.site==='左耳')))
+const baseline={species:'猫',bodyPart:'背部',complaint:'背部圆形脱毛断毛鳞屑',visualFeatures:['圆形脱毛','断毛','鳞屑']};const skin=kb.search(baseline);const negative=kb.search(Object.assign({},baseline,{complaint:baseline.complaint+'，口腔没有溃疡'}));assert(skin.some(r=>r.canonicalName==='皮肤癣菌病（犬猫）'));assert(negative.some(r=>r.canonicalName==='皮肤癣菌病（犬猫）'));assert(!api.isMucosalOrOralCase({complaint:'口腔没事，背部脱毛鳞屑'},null));assert(api.isMucosalOrOralCase({complaint:'舌面有溃疡',bodyPartLabel:'舌头'},null))
+for(const distribution of ['全身大面积脱毛，脸上不痒','脸上局部脱毛不痒']){const hits=kb.search({species:'犬',bodyPart:'面部',complaint:distribution});assert(!hits.some(r=>r.canonicalName==='蠕形螨病（局灶型）'&&r.comboEvidence.some(e=>e.ruleId==='morphology-10')))}
+const limited=kb.search({species:'犬',bodyPart:'面部',complaint:'面部只有一小块脱毛，其他体区未见病灶，不痒'});assert(limited.some(r=>r.canonicalName==='蠕形螨病（局灶型）'&&r.comboEvidence.some(e=>e.ruleId==='morphology-10')))
+const cushing=kb.searchOneScope({species:'犬',bodyPart:'躯干',complaint:'躯干掉毛喝水多'}).find(r=>r.canonicalName==='库兴综合征相关皮肤改变');assert(cushing);const combo=cushing.comboEvidence.find(e=>e.ruleId.indexOf('high-risk-')===0);assert(combo);assert(!JSON.stringify(combo.actualMatchedConditions).includes('对称'));assert(!JSON.stringify(combo.actualMatchedConditions).includes('皮肤变薄'))
+assert(cushing.matched.filter(m=>m.startsWith('组合:')).every(m=>!m.includes('皮肤变薄')))
+console.log('B10 lesion partition / mucosal negation / subtype scope / actual OR evidence passed')

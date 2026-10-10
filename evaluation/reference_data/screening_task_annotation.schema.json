@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "screening_task_annotation",
+  "created_on": "2026-10-04",
+  "purpose": "BUG-30/B14-1：初筛任务可答性独立标注。终诊 manifest 的 final_label/gold_tier 回答『这个动物最终是什么病』；本表回答『在初筛时点的允许输入下，哪些任务可答、病因是否应弃答』。两者必须分开填写、分开评分，不得互相推导。",
+  "file": "screening_task_annotation.template.csv",
+  "columns": {
+    "case_id": "必填。与 case_manifest 同一 case 标识，用于交叉引用；本表不复制终诊标签。",
+    "input_snapshot_id": "必填。初筛输入快照标识；(case_id, screening_timepoint, input_snapshot_id) 组合唯一。",
+    "input_sha256": "输入快照内容哈希；同一 input_snapshot_id 必须对应同一哈希（strict 模式强制非空）。",
+    "allowed_input_fields": "必填。分号分隔，取值 ⊆ images/owner_text/history/profile/precheck_features/lab_results/prior_records。标注者只能基于这里列出的输入盲法判断，不得参考系统输出。",
+    "screening_timepoint": "必填枚举：intake_photo（首诊拍照时）/ intake_history（首诊问诊时）/ pre_full_diagnosis（完整诊断发起前）/ post_workup（基础检查后）。",
+    "task_scope": "必填。分号分隔 ⊆ image_etiology（基于图像命名病因）/ image_morphology（图像形态描述）/ history_triage（病史与分诊）/ recommended_tests（建议检查方向）。",
+    "answerability": "必填枚举：answerable（所列任务在允许输入下可完成）/ limited（部分可答）/ unanswerable（不可答）/ needs_adjudication。",
+    "should_abstain": "0/1。病因（或 abstention_scope 所列任务）在此时点应弃答。",
+    "abstention_scope": "should_abstain=1 时必填。分号分隔 ⊆ etiology/subtype/morphology/recommended_tests/urgency。",
+    "acceptable_primary_labels": "分号分隔的 label_ontology.json code。允许病因候选时的可接受主病集合；etiology 弃答时必须为空。KB 外但参考允许的病名照样登记在本体 code 上——不以 69 卡覆盖范围定义正确答案。",
+    "required_coexisting_labels": "分号分隔的本体 code。真实并存病（多病召回评价用），与主病分开。",
+    "permitted_differentials": "分号分隔的本体 code。允许出现但不计主病/并存命中的鉴别方向；不得扩展主病答案。",
+    "allowable_candidate_granularity": "必填枚举：etiology（必须具体病因）/ family（病族级候选可接受，如亚型无法判断但病族可答）/ morphology_only（只允许形态描述）/ none（不允许候选）。",
+    "urgency": "必填，参考标准四等级：monitor/routine/urgent/emergency。注意与产品 low/moderate 不同口径。",
+    "recommended_test_scope": "必填枚举：none / basic_workup（基础排查方向）/ specific_confirmatory（具体确认检查方向）。",
+    "annotator_id_hash": "strict 模式必填。标注者标识（脱敏哈希）。",
+    "annotation_version": "strict 模式必填。标注版本，修订必须升版本。",
+    "retainable_candidate_codes": "分号分隔的本体 code。B14-2：排除规则评价的『本来应保留』参照集合（人工盲法基于允许输入填写，不得从系统输出反推）。",
+    "exclusion_evidence": "自由文本。记录系统排除规则的证据结构说明，供 B16 评分时区分『正确过滤/误杀/无法评定』。"
+  },
+  "discipline_rules": [
+    "R1 终诊与初筛分离：G1 病因已知 + 画质2 + 允许输入缺排查依据 → 病因应弃答（should_abstain=1, abstention_scope 含 etiology）且形态/分诊可答是完全合法的组合，校验器不得阻断。",
+    "R2 画质1（受限）：image_etiology 不得标为 answerable；形态/分诊可答。画质0：图像类任务不可答，但 history_triage 保持可答（病史危险信号仍可触发紧急就医建议）。",
+    "R3 etiology 弃答行不得同时给出 acceptable_primary_labels / required_coexisting_labels（自相矛盾）。",
+    "R4 应弃答标签必须由标注者基于 allowed_input_fields 盲法独立填写；不得从系统输出反推（协议纪律，校验器只能防格式不能证心）。",
+    "R5 具备预注册充分输入且任务允许候选的病例，若系统全部空候选，评分侧判过度弃答——本表提供 should_abstain/allowable_candidate_granularity 作为判定基准。",
+    "R6 亚型无法判断但病族可答：allowable_candidate_granularity=family + abstention_scope 含 subtype，允许病族候选同时对亚型弃答。",
+    "R7 草稿（draft）模式缺项只警告；完整性（strict）模式缺 annotator_id_hash/annotation_version/input_sha256 或违反跨字段规则即阻断。"
+  ],
+  "enums": {
+    "screening_timepoint": ["intake_photo", "intake_history", "pre_full_diagnosis", "post_workup"],
+    "task_scope": ["image_etiology", "image_morphology", "history_triage", "recommended_tests"],
+    "answerability": ["answerable", "limited", "unanswerable", "needs_adjudication"],
+    "abstention_scope": ["etiology", "subtype", "morphology", "recommended_tests", "urgency"],
+    "allowable_candidate_granularity": ["etiology", "family", "morphology_only", "none"],
+    "urgency": ["monitor", "routine", "urgent", "emergency"],
+    "recommended_test_scope": ["none", "basic_workup", "specific_confirmatory"],
+    "allowed_input_fields": ["images", "owner_text", "history", "profile", "precheck_features", "lab_results", "prior_records"]
+  }
+}

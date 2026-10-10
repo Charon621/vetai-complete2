@@ -1,0 +1,6 @@
+{
+  "mapping_version": "urgency-v1",
+  "purpose": "产品分诊等级与独立参考等级的预注册口径对照，不是临床签署",
+  "product_to_reference": {"low": "monitor", "moderate": "routine", "urgent": "urgent", "emergency": "emergency"},
+  "reference_order": ["monitor", "routine", "urgent", "emergency"]
+}

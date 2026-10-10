@@ -1,0 +1,629 @@
+// 由 tools/build-knowledge-bundle.js 从 knowledge/*.json 生成，请勿手改。
+// 小程序 require 不支持 .json，故以 .js 形式提供证据台账与当前版本号。
+module.exports = {
+  "ledger": {
+    "schema_version": 2,
+    "version": "evidence-2026.10.08.2",
+    "scenario": "犬猫反复瘙痒：食物因素与环境过敏鉴别",
+    "coverage": "两张知识卡的重要鉴别与检查结论；未覆盖字段不自动获得核验状态。",
+    "sources": [
+      {
+        "id": "AAHA-ALLERGY-2023",
+        "title": "2023 AAHA Management of Allergic Skin Diseases in Dogs and Cats Guidelines",
+        "url": "https://www.aaha.org/wp-content/uploads/globalassets/02-guidelines/2023-aaha-management-of-allergic-skin-diseases-in-dogs-and-cats-guidelines/resources/2023-aaha-management-of-allergic-skin-diseases-guidelines.pdf",
+        "publisher": "American Animal Hospital Association",
+        "publication_date": "2023-10-28",
+        "retrieved_on": "2026-10-08",
+        "review_due": "2027-04-06",
+        "version": "JAAHA 59:6 Nov/Dec 2023; 30-page PDF",
+        "access": "public_readable",
+        "original_import_provenance": "unknown",
+        "verification_method": "后补核验；通过公开全文核对页码和章节，不声称历史来源已找回",
+        "redistribution": "不复制全文；仅存短定位片段和链接"
+      }
+    ],
+    "spans": [
+      {
+        "id": "S1",
+        "source_id": "AAHA-ALLERGY-2023",
+        "pdf_page": 7,
+        "section": "Section 1 / Step Six: Diet Trial",
+        "quote": "no historical or physical examination findings",
+        "quote_role": "短片段仅作原文定位；需结合完整章节核验",
+        "species": [
+          "犬"
+        ]
+      },
+      {
+        "id": "S2",
+        "source_id": "AAHA-ALLERGY-2023",
+        "pdf_page": 9,
+        "section": "Section 1 / Assessing a Diet Trial",
+        "quote": "reintroducing the original diet",
+        "quote_role": "短片段仅作原文定位；需结合完整章节核验",
+        "species": [
+          "犬"
+        ]
+      },
+      {
+        "id": "S3",
+        "source_id": "AAHA-ALLERGY-2023",
+        "pdf_page": 4,
+        "section": "Section 1 / Step Two: Minimum Dermatologic Database",
+        "quote": "Minimum Dermatologic Database",
+        "quote_role": "短片段仅作原文定位；需结合完整章节核验",
+        "species": [
+          "犬"
+        ]
+      },
+      {
+        "id": "S4",
+        "source_id": "AAHA-ALLERGY-2023",
+        "pdf_page": 4,
+        "section": "Section 1 / Step Four: Treat Secondary Infections and Ectoparasites",
+        "quote": "Secondary Infections and Ectoparasites",
+        "quote_role": "短片段仅作原文定位；需结合完整章节核验",
+        "species": [
+          "犬"
+        ]
+      },
+      {
+        "id": "S5",
+        "source_id": "AAHA-ALLERGY-2023",
+        "pdf_page": 18,
+        "section": "Section 3 / Step Six: Diet Trial",
+        "quote": "elimination diet trial",
+        "quote_role": "短片段仅作原文定位；需结合完整章节核验",
+        "species": [
+          "猫"
+        ]
+      },
+      {
+        "id": "S6",
+        "source_id": "AAHA-ALLERGY-2023",
+        "pdf_page": 18,
+        "section": "Section 3 / Feline Atopic Skin Syndrome Diagnosis",
+        "quote": "",
+        "quote_role": "短片段仅作原文定位；需结合完整章节核验",
+        "species": [
+          "猫"
+        ]
+      },
+      {
+        "id": "S7",
+        "source_id": "AAHA-ALLERGY-2023",
+        "pdf_page": 16,
+        "section": "Section 3 / Step Two: Minimum Dermatologic Database",
+        "quote": "",
+        "quote_role": "短片段仅作原文定位；需结合完整章节核验",
+        "species": [
+          "猫"
+        ]
+      },
+      {
+        "id": "S8",
+        "source_id": "AAHA-ALLERGY-2023",
+        "pdf_page": 16,
+        "section": "Section 3 / Step Four: Treat Ectoparasites and Secondary Infections",
+        "quote": "",
+        "quote_role": "短片段仅作原文定位；需结合完整章节核验",
+        "species": [
+          "猫"
+        ]
+      }
+    ],
+    "claims": [
+      {
+        "id": "ALG-1-DIFF",
+        "card_id": "atopic_dermatitis_犬_猫",
+        "card_name": "特应性皮炎（环境过敏）",
+        "field": "ddx",
+        "original_fragment": "单靠照片、病史和体检不能可靠区分",
+        "field_sha256": "2011bc3a893612d0642d461388a9b8618f0774475e32a4725515aa34d6377f20",
+        "statement": "犬的病史和体检不足以可靠区分食物因素与特应性皮炎。",
+        "evidence": [
+          "S1"
+        ],
+        "applicability": {
+          "species": [
+            "犬"
+          ],
+          "conditions": [
+            "犬瘙痒鉴别场景；临床检查由兽医实施"
+          ]
+        },
+        "status": "source_verified",
+        "limitation": "照片能力边界是基于该证据的产品限制，原文不是照片诊断试验；不自动扩展为猫的同一表型规则。",
+        "review": {
+          "reviewer": "Codex",
+          "role": "automated_source_comparison",
+          "reviewed_on": "2026-10-08",
+          "decision": "source_verified",
+          "clinical_reviewer": null,
+          "clinical_signed_at": null,
+          "note": "本次记录为原文比对，尚无新增兽医签署。"
+        },
+        "history": [
+          {
+            "date": "2026-10-08",
+            "action": "retrospective_verification",
+            "historical_origin": "unknown"
+          },
+          {
+            "date": "2026-10-08",
+            "action": "species_specific_locator_review",
+            "reviewer": "Codex",
+            "note": "核对犬猫章节范围，引用按病例物种选择原文页码。"
+          }
+        ],
+        "evidence_sha256": "d19c6aebdb7e86422c5d3ca33c4a7cd0bd5dc6779a1fb0f49ccf1f8af8121986"
+      },
+      {
+        "id": "ALG-1-DIET",
+        "card_id": "atopic_dermatitis_犬_猫",
+        "card_name": "特应性皮炎（环境过敏）",
+        "field": "recommendedTests",
+        "original_fragment": "兽医监督的饮食排除试验或环境过敏专科评估",
+        "field_sha256": "fbc284ce6dfcac996ad0ce402f37c674a2de72b008c5d08eed0b57aa0a6eace1",
+        "statement": "食物因素的判断需结合规范饮食试验及再激发。",
+        "evidence": [
+          "S2",
+          "S5"
+        ],
+        "applicability": {
+          "species": [
+            "犬",
+            "猫"
+          ],
+          "conditions": [
+            "已有病史和体检；由兽医制定并解释试验"
+          ]
+        },
+        "status": "source_verified",
+        "limitation": "普通换粮好转不足以确认；环境过敏专科评估的具体内容不由此条核验。",
+        "review": {
+          "reviewer": "Codex",
+          "role": "automated_source_comparison",
+          "reviewed_on": "2026-10-08",
+          "decision": "source_verified",
+          "clinical_reviewer": null,
+          "clinical_signed_at": null,
+          "note": "本次记录为原文比对，尚无新增兽医签署。"
+        },
+        "history": [
+          {
+            "date": "2026-10-08",
+            "action": "retrospective_verification",
+            "historical_origin": "unknown"
+          },
+          {
+            "date": "2026-10-08",
+            "action": "species_specific_locator_review",
+            "reviewer": "Codex",
+            "note": "核对犬猫章节范围，引用按病例物种选择原文页码。"
+          }
+        ],
+        "evidence_sha256": "667b01c294555ca970585faab9794b6a6afb7a985d07756acf157b327e18f994"
+      },
+      {
+        "id": "ALG-1-EXAMS",
+        "card_id": "atopic_dermatitis_犬_猫",
+        "card_name": "特应性皮炎（环境过敏）",
+        "field": "recommendedTests",
+        "original_fragment": "皮肤或耳道细胞学检查继发感染",
+        "field_sha256": "fbc284ce6dfcac996ad0ce402f37c674a2de72b008c5d08eed0b57aa0a6eace1",
+        "statement": "瘙痒排查应结合细胞学，耳部检查按表现决定。",
+        "evidence": [
+          "S3",
+          "S7"
+        ],
+        "applicability": {
+          "species": [
+            "犬",
+            "猫"
+          ],
+          "conditions": [
+            "皮肤表现由兽医评估；耳部细胞学适用于存在耳病表现时"
+          ]
+        },
+        "status": "source_verified",
+        "limitation": "不把所有检查固定用于每个病例。",
+        "review": {
+          "reviewer": "Codex",
+          "role": "automated_source_comparison",
+          "reviewed_on": "2026-10-08",
+          "decision": "source_verified",
+          "clinical_reviewer": null,
+          "clinical_signed_at": null,
+          "note": "本次记录为原文比对，尚无新增兽医签署。"
+        },
+        "history": [
+          {
+            "date": "2026-10-08",
+            "action": "retrospective_verification",
+            "historical_origin": "unknown"
+          },
+          {
+            "date": "2026-10-08",
+            "action": "species_specific_locator_review",
+            "reviewer": "Codex",
+            "note": "核对犬猫章节范围，引用按病例物种选择原文页码。"
+          }
+        ],
+        "evidence_sha256": "8f20dd556ee349cde5d31938c3c809a05094d46ac410872f95e34c881a3b6bc4"
+      },
+      {
+        "id": "ALG-1-PARASITES",
+        "card_id": "atopic_dermatitis_犬_猫",
+        "card_name": "特应性皮炎（环境过敏）",
+        "field": "recommendedTests",
+        "original_fragment": "核对驱虫措施并排查外寄生虫",
+        "field_sha256": "fbc284ce6dfcac996ad0ce402f37c674a2de72b008c5d08eed0b57aa0a6eace1",
+        "statement": "评估过敏时需同时处理寄生虫与继发感染因素。",
+        "evidence": [
+          "S4",
+          "S8"
+        ],
+        "applicability": {
+          "species": [
+            "犬",
+            "猫"
+          ],
+          "conditions": [
+            "瘙痒或疑似过敏场景；核对实际驱虫史与检查"
+          ]
+        },
+        "status": "source_verified",
+        "limitation": "不能凭一张照片排除这些因素，也不在产品中提供处方方案。",
+        "review": {
+          "reviewer": "Codex",
+          "role": "automated_source_comparison",
+          "reviewed_on": "2026-10-08",
+          "decision": "source_verified",
+          "clinical_reviewer": null,
+          "clinical_signed_at": null,
+          "note": "本次记录为原文比对，尚无新增兽医签署。"
+        },
+        "history": [
+          {
+            "date": "2026-10-08",
+            "action": "retrospective_verification",
+            "historical_origin": "unknown"
+          },
+          {
+            "date": "2026-10-08",
+            "action": "species_specific_locator_review",
+            "reviewer": "Codex",
+            "note": "核对犬猫章节范围，引用按病例物种选择原文页码。"
+          }
+        ],
+        "evidence_sha256": "96dd52465482140cbe3777f3958d2b780f0afdb01b75d72c9883bdf19209486a"
+      },
+      {
+        "id": "ALG-2-DIFF",
+        "card_id": "food_allergy_犬_猫",
+        "card_name": "食物过敏性皮炎",
+        "field": "ddx",
+        "original_fragment": "单靠照片、病史和体检不能可靠区分",
+        "field_sha256": "c6b83bb691937e1acf9e907c1de13b3def15c19698cc4fcbbb39619365e70328",
+        "statement": "犬的病史和体检不足以可靠区分食物因素与特应性皮炎。",
+        "evidence": [
+          "S1"
+        ],
+        "applicability": {
+          "species": [
+            "犬"
+          ],
+          "conditions": [
+            "犬瘙痒鉴别场景；临床检查由兽医实施"
+          ]
+        },
+        "status": "source_verified",
+        "limitation": "照片能力边界是基于该证据的产品限制，原文不是照片诊断试验；不自动扩展为猫的同一表型规则。",
+        "review": {
+          "reviewer": "Codex",
+          "role": "automated_source_comparison",
+          "reviewed_on": "2026-10-08",
+          "decision": "source_verified",
+          "clinical_reviewer": null,
+          "clinical_signed_at": null,
+          "note": "本次记录为原文比对，尚无新增兽医签署。"
+        },
+        "history": [
+          {
+            "date": "2026-10-08",
+            "action": "retrospective_verification",
+            "historical_origin": "unknown"
+          },
+          {
+            "date": "2026-10-08",
+            "action": "species_specific_locator_review",
+            "reviewer": "Codex",
+            "note": "核对犬猫章节范围，引用按病例物种选择原文页码。"
+          }
+        ],
+        "evidence_sha256": "d19c6aebdb7e86422c5d3ca33c4a7cd0bd5dc6779a1fb0f49ccf1f8af8121986"
+      },
+      {
+        "id": "ALG-2-DIET",
+        "card_id": "food_allergy_犬_猫",
+        "card_name": "食物过敏性皮炎",
+        "field": "recommendedTests",
+        "original_fragment": "兽医监督的饮食排除试验",
+        "field_sha256": "2f7fb03664c2979d8933c26cbfa6359abef014ef11eff6c6cffe840e3250aa8a",
+        "statement": "食物因素的判断需结合规范饮食试验及再激发。",
+        "evidence": [
+          "S2",
+          "S5"
+        ],
+        "applicability": {
+          "species": [
+            "犬",
+            "猫"
+          ],
+          "conditions": [
+            "已有病史和体检；由兽医制定并解释试验"
+          ]
+        },
+        "status": "source_verified",
+        "limitation": "普通换粮好转不足以确认；环境过敏专科评估的具体内容不由此条核验。",
+        "review": {
+          "reviewer": "Codex",
+          "role": "automated_source_comparison",
+          "reviewed_on": "2026-10-08",
+          "decision": "source_verified",
+          "clinical_reviewer": null,
+          "clinical_signed_at": null,
+          "note": "本次记录为原文比对，尚无新增兽医签署。"
+        },
+        "history": [
+          {
+            "date": "2026-10-08",
+            "action": "retrospective_verification",
+            "historical_origin": "unknown"
+          },
+          {
+            "date": "2026-10-08",
+            "action": "species_specific_locator_review",
+            "reviewer": "Codex",
+            "note": "核对犬猫章节范围，引用按病例物种选择原文页码。"
+          }
+        ],
+        "evidence_sha256": "667b01c294555ca970585faab9794b6a6afb7a985d07756acf157b327e18f994"
+      },
+      {
+        "id": "ALG-2-EXAMS",
+        "card_id": "food_allergy_犬_猫",
+        "card_name": "食物过敏性皮炎",
+        "field": "recommendedTests",
+        "original_fragment": "皮肤或耳道细胞学检查继发感染",
+        "field_sha256": "2f7fb03664c2979d8933c26cbfa6359abef014ef11eff6c6cffe840e3250aa8a",
+        "statement": "瘙痒排查应结合细胞学，耳部检查按表现决定。",
+        "evidence": [
+          "S3",
+          "S7"
+        ],
+        "applicability": {
+          "species": [
+            "犬",
+            "猫"
+          ],
+          "conditions": [
+            "皮肤表现由兽医评估；耳部细胞学适用于存在耳病表现时"
+          ]
+        },
+        "status": "source_verified",
+        "limitation": "不把所有检查固定用于每个病例。",
+        "review": {
+          "reviewer": "Codex",
+          "role": "automated_source_comparison",
+          "reviewed_on": "2026-10-08",
+          "decision": "source_verified",
+          "clinical_reviewer": null,
+          "clinical_signed_at": null,
+          "note": "本次记录为原文比对，尚无新增兽医签署。"
+        },
+        "history": [
+          {
+            "date": "2026-10-08",
+            "action": "retrospective_verification",
+            "historical_origin": "unknown"
+          },
+          {
+            "date": "2026-10-08",
+            "action": "species_specific_locator_review",
+            "reviewer": "Codex",
+            "note": "核对犬猫章节范围，引用按病例物种选择原文页码。"
+          }
+        ],
+        "evidence_sha256": "8f20dd556ee349cde5d31938c3c809a05094d46ac410872f95e34c881a3b6bc4"
+      },
+      {
+        "id": "ALG-2-PARASITES",
+        "card_id": "food_allergy_犬_猫",
+        "card_name": "食物过敏性皮炎",
+        "field": "recommendedTests",
+        "original_fragment": "核对驱虫措施并排查外寄生虫",
+        "field_sha256": "2f7fb03664c2979d8933c26cbfa6359abef014ef11eff6c6cffe840e3250aa8a",
+        "statement": "评估过敏时需同时处理寄生虫与继发感染因素。",
+        "evidence": [
+          "S4",
+          "S8"
+        ],
+        "applicability": {
+          "species": [
+            "犬",
+            "猫"
+          ],
+          "conditions": [
+            "瘙痒或疑似过敏场景；核对实际驱虫史与检查"
+          ]
+        },
+        "status": "source_verified",
+        "limitation": "不能凭一张照片排除这些因素，也不在产品中提供处方方案。",
+        "review": {
+          "reviewer": "Codex",
+          "role": "automated_source_comparison",
+          "reviewed_on": "2026-10-08",
+          "decision": "source_verified",
+          "clinical_reviewer": null,
+          "clinical_signed_at": null,
+          "note": "本次记录为原文比对，尚无新增兽医签署。"
+        },
+        "history": [
+          {
+            "date": "2026-10-08",
+            "action": "retrospective_verification",
+            "historical_origin": "unknown"
+          },
+          {
+            "date": "2026-10-08",
+            "action": "species_specific_locator_review",
+            "reviewer": "Codex",
+            "note": "核对犬猫章节范围，引用按病例物种选择原文页码。"
+          }
+        ],
+        "evidence_sha256": "96dd52465482140cbe3777f3958d2b780f0afdb01b75d72c9883bdf19209486a"
+      },
+      {
+        "id": "ALG-FOOD-TYPICAL",
+        "card_id": "food_allergy_犬_猫",
+        "card_name": "食物过敏性皮炎",
+        "field": "typicalFeatures",
+        "original_fragment": "更换蛋白源后改善",
+        "field_sha256": "aecc75b6cd68942d9c8a7aae1857f3b166257ea223895a5df0d11560673d5a8f",
+        "statement": "换粮后变化只能作为待核实的病史线索。",
+        "evidence": [
+          "S2",
+          "S5"
+        ],
+        "applicability": {
+          "species": [
+            "犬",
+            "猫"
+          ],
+          "conditions": [
+            "区分普通换粮与规范饮食试验"
+          ]
+        },
+        "status": "partial_support",
+        "limitation": "原卡缺少再激发条件；此片段不能独立作为确诊或强命中依据。",
+        "review": {
+          "reviewer": "Codex",
+          "role": "automated_source_comparison",
+          "reviewed_on": "2026-10-08",
+          "decision": "partial_support",
+          "clinical_reviewer": null,
+          "clinical_signed_at": null,
+          "note": "本次记录为原文比对，尚无新增兽医签署。"
+        },
+        "history": [
+          {
+            "date": "2026-10-08",
+            "action": "retrospective_verification",
+            "historical_origin": "unknown"
+          },
+          {
+            "date": "2026-10-08",
+            "action": "species_specific_locator_review",
+            "reviewer": "Codex",
+            "note": "核对犬猫章节范围，引用按病例物种选择原文页码。"
+          }
+        ],
+        "evidence_sha256": "667b01c294555ca970585faab9794b6a6afb7a985d07756acf157b327e18f994"
+      },
+      {
+        "id": "ALG-ATOPY-AGE",
+        "card_id": "atopic_dermatitis_犬_猫",
+        "card_name": "特应性皮炎（环境过敏）",
+        "field": "typicalFeatures",
+        "original_fragment": "1-3岁发病",
+        "field_sha256": "edb7db2a59b1f44e84ecdc8e23c7c52c67b5ed3e8b389812911ef2c19b2fa204",
+        "statement": "原卡年龄与分布描述尚需逐项补证。",
+        "evidence": [],
+        "applicability": {
+          "species": [
+            "犬",
+            "猫"
+          ],
+          "conditions": [
+            "本批核验覆盖鉴别与检查，未核实此处全部年龄/分布断言"
+          ]
+        },
+        "status": "pending",
+        "limitation": "保留原内容与待核实状态，不将整卡标记为已完成证据核验。",
+        "review": {
+          "reviewer": "Codex",
+          "role": "automated_source_comparison",
+          "reviewed_on": "2026-10-08",
+          "decision": "pending",
+          "clinical_reviewer": null,
+          "clinical_signed_at": null,
+          "note": "本次记录为原文比对，尚无新增兽医签署。"
+        },
+        "history": [
+          {
+            "date": "2026-10-08",
+            "action": "retrospective_verification",
+            "historical_origin": "unknown"
+          },
+          {
+            "date": "2026-10-08",
+            "action": "species_specific_locator_review",
+            "reviewer": "Codex",
+            "note": "核对犬猫章节范围，引用按病例物种选择原文页码。"
+          }
+        ],
+        "evidence_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "id": "ALG-CAT-SCOPE",
+        "card_id": "atopic_dermatitis_犬_猫",
+        "card_name": "特应性皮炎（环境过敏）",
+        "field": "ddx",
+        "original_fragment": "季节性、发病年龄和胃肠症状只能提供线索",
+        "field_sha256": "2011bc3a893612d0642d461388a9b8618f0774475e32a4725515aa34d6377f20",
+        "statement": "猫需使用猫专属的排除流程解释过敏方向。",
+        "evidence": [
+          "S6"
+        ],
+        "applicability": {
+          "species": [
+            "猫"
+          ],
+          "conditions": [
+            "猫；先核对其他相似疾病"
+          ]
+        },
+        "status": "partial_support",
+        "limitation": "犬的年龄和分布描述不能直接移植到猫；本记录仅支持猫的排除流程。",
+        "review": {
+          "reviewer": "Codex",
+          "role": "automated_source_comparison",
+          "reviewed_on": "2026-10-08",
+          "decision": "partial_support",
+          "clinical_reviewer": null,
+          "clinical_signed_at": null,
+          "note": "本次记录为原文比对，尚无新增兽医签署。"
+        },
+        "history": [
+          {
+            "date": "2026-10-08",
+            "action": "retrospective_verification",
+            "historical_origin": "unknown"
+          },
+          {
+            "date": "2026-10-08",
+            "action": "species_specific_locator_review",
+            "reviewer": "Codex",
+            "note": "核对犬猫章节范围，引用按病例物种选择原文页码。"
+          }
+        ],
+        "evidence_sha256": "ec65d1957a2be10eb1439f8ba25651ccd0029fa792ad64b7b27b96d4cfa492a0"
+      }
+    ]
+  },
+  "release": {
+    "id": "kb-2026.10.09.1"
+  }
+}

@@ -1,3 +1,4 @@
+var recordEvidence = require('../../utils/recordEvidence')
 var api = require('../../utils/api')
 var config = require('../../utils/config')
 var storage = require('../../utils/storage')
@@ -243,15 +244,55 @@ Page({
     }
     var names = profiles.map(function (p) { return p.petName || '未命名' })
     names.push('临时问诊（不选宠物）')
+    if (names.length <= 6) {
+      wx.showActionSheet({
+        itemList: names,
+        success: function (res) {
+          if (res.tapIndex === profiles.length) {
+            self._clearSelectedProfile()
+          } else {
+            self._applyProfile(profiles[res.tapIndex])
+          }
+        },
+        // 用户取消静默；真正的失败（如超上限）已通过上方分页规避
+        fail: function () {}
+      })
+      return
+    }
+    // BUG-UI75：itemList 上限 6 项（config.MAX_PROFILES=20），档案多于 5 只时
+    // showActionSheet 直接 fail 且无提示，用户点击无任何反应。降级为分页
+    // ActionSheet：每页 3 只 + 上一页/下一页，「临时问诊」常驻每页末位。
+    this._showPetSheetPage(profiles, 0)
+  },
+
+  _showPetSheetPage: function (profiles, page) {
+    var self = this
+    var PER_PAGE = 3
+    var start = page * PER_PAGE
+    var pageProfiles = profiles.slice(start, start + PER_PAGE)
+    var items = pageProfiles.map(function (p) { return p.petName || '未命名' })
+    var actions = pageProfiles.map(function (p) { return { type: 'profile', profile: p } })
+    if (page > 0) {
+      items.unshift('上一页')
+      actions.unshift({ type: 'prev' })
+    }
+    if (start + PER_PAGE < profiles.length) {
+      items.push('下一页（还有 ' + (profiles.length - start - PER_PAGE) + ' 只）')
+      actions.push({ type: 'next' })
+    }
+    items.push('临时问诊（不选宠物）')
+    actions.push({ type: 'temp' })
     wx.showActionSheet({
-      itemList: names,
+      itemList: items,
       success: function (res) {
-        if (res.tapIndex === profiles.length) {
-          self._clearSelectedProfile()
-        } else {
-          self._applyProfile(profiles[res.tapIndex])
-        }
-      }
+        var action = actions[res.tapIndex]
+        if (!action) return
+        if (action.type === 'profile') self._applyProfile(action.profile)
+        else if (action.type === 'temp') self._clearSelectedProfile()
+        else if (action.type === 'prev') self._showPetSheetPage(profiles, page - 1)
+        else if (action.type === 'next') self._showPetSheetPage(profiles, page + 1)
+      },
+      fail: function () {}
     })
   },
 
@@ -370,6 +411,9 @@ Page({
           processTempFiles(tempFiles)
         },
         fail: function (err) {
+          // 用户主动取消不算错误，静默返回（与 chat 页 onUploadPhoto 口径一致，BUG-UI76）
+          var errText = (err && err.errMsg) || ''
+          if (errText.indexOf('cancel') >= 0) return
           console.error('[VetAI] chooseImage failed:', err)
           wx.showToast({ title: '无法打开相册或相机', icon: 'none' })
         }
@@ -668,9 +712,16 @@ Page({
           .then(function (res) {
             if (res.success) {
               setTimeout(function () {
-                self.setData({ isAnalyzing: false, imagePaths: paths }); self._stopAnalyzingTimer()
+                // BUG-B5：imagePaths 已替换为落盘后的永久路径，同步刷新预览网格，
+                // 避免残留指向旧临时文件的 previewItems（点开是裂图）。
+                // _imageBase64List 不清空：其顺序与 imagePaths 一一对应，
+                // 清空反而会让下一轮加图/删图时四数组错位。
+                self.setData({ isAnalyzing: false, imagePaths: paths }, function () {
+                  self.refreshUiState()
+                })
+                self._stopAnalyzingTimer()
                 var d = res.data
-                var record = storage.addRecord({
+                var record = storage.addRecord(Object.assign(recordEvidence.fields(d), {
                   petName: petInfo.petName, petType: petInfo.petType,
                   petTypeLabel: petInfo.petTypeLabel, breed: petInfo.breed,
                   gender: petInfo.gender, genderLabel: petInfo.genderLabel,
@@ -708,7 +759,7 @@ Page({
                   ragMatched: d._ragMatched || [],
                   yoloConfidence: 0, bbox: [], detections: [],
                   notes: d.notes, rawResponse: res.raw
-                })
+                }))
                 wx.navigateTo({ url: '/pages/result/result?id=' + record.id })
               }, 300)
             } else {

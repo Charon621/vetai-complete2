@@ -329,11 +329,15 @@ Page({
           wx.openLocation({ latitude: res.latitude, longitude: res.longitude, name: res.name || '宠物医院', address: res.address || '', scale: 15 })
         }
       },
-      fail: function () {
+      fail: function (err) {
+        // BUG-UI78：用户取消选点不再二次拉起定位授权（与 result 页口径一致）
+        var msg = (err && err.errMsg) || ''
+        if (msg.indexOf('cancel') >= 0) return
         wx.getLocation({
           type: 'gcj02',
           success: function (loc) {
-            wx.openLocation({ latitude: loc.latitude, longitude: loc.longitude, name: '附近宠物医院', scale: 14 })
+            // 这里打开的是当前位置而不是医院 POI，命名必须诚实，避免误导
+            wx.openLocation({ latitude: loc.latitude, longitude: loc.longitude, name: '当前位置', address: '请在地图中搜索附近宠物医院', scale: 14 })
           },
           fail: function () {
             wx.showToast({ title: '需要定位权限才能查找医院', icon: 'none' })
@@ -652,6 +656,15 @@ Page({
     var summary = analytics.getSummary()
     var lines = ['=== VetAI 埋点日志 ===', '导出时间: ' + new Date().toLocaleString('zh-CN'), '']
     lines.push('汇总: 总事件' + summary.total + ', upload=' + summary.upload + ', submit=' + summary.submit + ', modelReturn=' + summary.modelReturn + ', feedback=' + summary.feedback + ', error=' + summary.error)
+    // 快路径漏斗：结局分布 + 门槛逐关失败分布 + 预检耗时，用于定位命中率低的根因
+    var rag = analytics.summarizeVisionRag(events)
+    if (rag.total > 0) {
+      lines.push('快路径: 共' + rag.total + '单, 抢跑命中=' + rag.hit + ', 结局=' + JSON.stringify(rag.byReason))
+      lines.push('门槛首个失败=' + JSON.stringify(rag.gateFirst) + ', 门槛任一失败=' + JSON.stringify(rag.gateAny))
+      if (rag.precheckMs) {
+        lines.push('预检耗时: ' + rag.precheckMs.count + '单, p50=' + rag.precheckMs.p50 + 'ms, p90=' + rag.precheckMs.p90 + 'ms')
+      }
+    }
     lines.push('')
     for (var i = events.length - 1; i >= 0; i--) {
       var e = events[i]

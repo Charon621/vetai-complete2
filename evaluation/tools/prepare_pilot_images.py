@@ -6,8 +6,8 @@ with images captured from multispectral imaging device",
 https://doi.org/10.17632/5dbht54kw7.1 (CC BY 4.0).
 
 These assets are development-only examples. They are not a diagnostic gold
-standard and must never enter the frozen benchmark described in
-``evaluation/gold_standard/annotation_guide.md``.
+standard. See the optional annotation guidance in
+``evaluation/reference_data/annotation_guide.md``.
 """
 
 from __future__ import annotations

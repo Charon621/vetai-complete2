@@ -1,0 +1,484 @@
+{
+  "schema_version": 1,
+  "version": "retrieval-scenarios-2026.10.08.1",
+  "purpose": "同输入、同口径比较三种本地检索策略",
+  "independence": "题库独立于实现文件及原有探针维护；为本次新写合成题，作者与实现者相同，不代表独立专家或临床外部验证。",
+  "revision_policy": "可以增补修订，修改升版本并保留运行记录；不得删除失败用例来改善成绩。",
+  "cases": [
+    {
+      "case_id": "RAG-001",
+      "scenario": "common",
+      "scenario_group_id": "new-synthetic-001",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "犬",
+        "bodyPart": "爪部",
+        "complaint": "反复舔爪，每到春天都会挠，腹部也有红斑。"
+      },
+      "expected_relevant_cards": [
+        "特应性皮炎（环境过敏）",
+        "食物过敏性皮炎"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-002",
+      "scenario": "common",
+      "scenario_group_id": "new-synthetic-002",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "犬",
+        "bodyPart": "腹部",
+        "complaint": "肚皮有几颗脓疱，周围有一圈皮屑。"
+      },
+      "expected_relevant_cards": [
+        "浅表脓皮病"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-003",
+      "scenario": "common",
+      "scenario_group_id": "new-synthetic-003",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "猫",
+        "bodyPart": "下巴",
+        "complaint": "下巴有黑头粉刺，其他部位没有变化。"
+      },
+      "expected_relevant_cards": [
+        "猫痤疮"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-004",
+      "scenario": "common",
+      "scenario_group_id": "new-synthetic-004",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "猫",
+        "bodyPart": "耳部",
+        "complaint": "总是甩头抓耳，耳道里有咖啡渣一样的东西。"
+      },
+      "expected_relevant_cards": [
+        "耳螨感染"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-005",
+      "scenario": "colloquial",
+      "scenario_group_id": "new-synthetic-005",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "犬",
+        "bodyPart": "爪部",
+        "complaint": "一到换季就抱着脚丫啃，晚上在垫子上蹭来蹭去。"
+      },
+      "expected_relevant_cards": [
+        "特应性皮炎（环境过敏）"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-006",
+      "scenario": "colloquial",
+      "scenario_group_id": "new-synthetic-006",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "猫",
+        "bodyPart": "下巴",
+        "complaint": "嘴巴下面像撒了一层黑芝麻，还有油油的小黑点。"
+      },
+      "expected_relevant_cards": [
+        "猫痤疮"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-007",
+      "scenario": "colloquial",
+      "scenario_group_id": "new-synthetic-007",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "犬",
+        "bodyPart": "耳部",
+        "complaint": "耳朵里黏糊糊的，闻着酸臭，总歪脑袋蹭沙发。"
+      },
+      "expected_relevant_cards": [
+        "马拉色菌性外耳炎"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-008",
+      "scenario": "colloquial",
+      "scenario_group_id": "new-synthetic-008",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "猫",
+        "bodyPart": "背部",
+        "complaint": "毛缺了一小圈，露出来的皮上有碎屑。"
+      },
+      "expected_relevant_cards": [
+        "皮肤癣菌病（犬猫）"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-009",
+      "scenario": "negation",
+      "scenario_group_id": "new-synthetic-009",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "猫",
+        "bodyPart": "下巴",
+        "complaint": "下巴有黑头，没有耳垢，也不甩头。"
+      },
+      "expected_relevant_cards": [
+        "猫痤疮"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-010",
+      "scenario": "negation",
+      "scenario_group_id": "new-synthetic-010",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "犬",
+        "bodyPart": "腹部",
+        "complaint": "腹部有脓疱，没有黑头，也没有耳道分泌物。"
+      },
+      "expected_relevant_cards": [
+        "浅表脓皮病"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-011",
+      "scenario": "negation",
+      "scenario_group_id": "new-synthetic-011",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "犬",
+        "bodyPart": "",
+        "complaint": "没有瘙痒，没有脱毛，没有红斑。"
+      },
+      "expected_relevant_cards": [],
+      "expected_behavior": "no_candidates",
+      "label_rationale": "无当前可用皮损依据或物种不在犬猫范围，不应返回病因参考卡。"
+    },
+    {
+      "case_id": "RAG-012",
+      "scenario": "negation",
+      "scenario_group_id": "new-synthetic-012",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "猫",
+        "bodyPart": "",
+        "complaint": "以前下巴有黑头，现在没有黑头也没有脱毛。"
+      },
+      "expected_relevant_cards": [],
+      "expected_behavior": "no_candidates",
+      "label_rationale": "无当前可用皮损依据或物种不在犬猫范围，不应返回病因参考卡。"
+    },
+    {
+      "case_id": "RAG-013",
+      "scenario": "multiple_sites",
+      "scenario_group_id": "new-synthetic-013",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "猫",
+        "bodyPart": "下巴",
+        "complaint": "下巴有黑头，左耳有咖啡渣耳垢并且抓耳。"
+      },
+      "expected_relevant_cards": [
+        "猫痤疮",
+        "耳螨感染"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-014",
+      "scenario": "multiple_sites",
+      "scenario_group_id": "new-synthetic-014",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "犬",
+        "bodyPart": "腹部",
+        "complaint": "腹部有脓疱，右耳有油腻的黄褐色分泌物和酸臭。"
+      },
+      "expected_relevant_cards": [
+        "浅表脓皮病",
+        "马拉色菌性外耳炎"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-015",
+      "scenario": "multiple_sites",
+      "scenario_group_id": "new-synthetic-015",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "猫",
+        "bodyPart": "下巴",
+        "complaint": "下巴有黑头，背部另一处圆形脱毛伴鳞屑。"
+      },
+      "expected_relevant_cards": [
+        "猫痤疮",
+        "皮肤癣菌病（犬猫）"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-016",
+      "scenario": "multiple_sites",
+      "scenario_group_id": "new-synthetic-016",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "犬",
+        "bodyPart": "爪部",
+        "complaint": "爪部每年春季反复舔咬，腹部另一处有脓疱和表皮环。"
+      },
+      "expected_relevant_cards": [
+        "特应性皮炎（环境过敏）",
+        "浅表脓皮病"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-017",
+      "scenario": "conflict",
+      "scenario_group_id": "new-synthetic-017",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "犬",
+        "bodyPart": "爪部",
+        "complaint": "每年春天爪部瘙痒，但换粮后也有好转，食物过敏和环境过敏还没有检查区分。"
+      },
+      "expected_relevant_cards": [
+        "特应性皮炎（环境过敏）",
+        "食物过敏性皮炎"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-018",
+      "scenario": "conflict",
+      "scenario_group_id": "new-synthetic-018",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "犬",
+        "bodyPart": "腹部",
+        "complaint": "皮肤反复瘙痒，主人猜是食物过敏，但没有做饮食排除试验。"
+      },
+      "expected_relevant_cards": [
+        "食物过敏性皮炎",
+        "特应性皮炎（环境过敏）"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-019",
+      "scenario": "conflict",
+      "scenario_group_id": "new-synthetic-019",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "猫",
+        "bodyPart": "下巴",
+        "complaint": "我手上起红疹，猫下巴只有黑头，没有圆形脱毛。"
+      },
+      "expected_relevant_cards": [
+        "猫痤疮"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-020",
+      "scenario": "conflict",
+      "scenario_group_id": "new-synthetic-020",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "犬",
+        "bodyPart": "耳部",
+        "complaint": "以前爪部红肿，现在耳朵有黄褐色分泌物和酸臭，爪部已恢复。"
+      },
+      "expected_relevant_cards": [
+        "马拉色菌性外耳炎"
+      ],
+      "expected_behavior": "retrieve_reference",
+      "label_rationale": "按问题中的事实检索应核对的参考卡；不是病例诊断。"
+    },
+    {
+      "case_id": "RAG-021",
+      "scenario": "unanswerable",
+      "scenario_group_id": "new-synthetic-021",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "兔",
+        "bodyPart": "背部",
+        "complaint": "背部脱毛有皮屑。"
+      },
+      "expected_relevant_cards": [],
+      "expected_behavior": "no_candidates",
+      "label_rationale": "无当前可用皮损依据或物种不在犬猫范围，不应返回病因参考卡。"
+    },
+    {
+      "case_id": "RAG-022",
+      "scenario": "unanswerable",
+      "scenario_group_id": "new-synthetic-022",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "猫",
+        "bodyPart": "",
+        "complaint": "照片拍糊了，具体皮肤变化和部位都看不清。"
+      },
+      "expected_relevant_cards": [],
+      "expected_behavior": "no_candidates",
+      "label_rationale": "无当前可用皮损依据或物种不在犬猫范围，不应返回病因参考卡。"
+    },
+    {
+      "case_id": "RAG-023",
+      "scenario": "unanswerable",
+      "scenario_group_id": "new-synthetic-023",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "犬",
+        "bodyPart": "",
+        "complaint": "精神正常，想了解怎么拍照。"
+      },
+      "expected_relevant_cards": [],
+      "expected_behavior": "no_candidates",
+      "label_rationale": "无当前可用皮损依据或物种不在犬猫范围，不应返回病因参考卡。"
+    },
+    {
+      "case_id": "RAG-024",
+      "scenario": "unanswerable",
+      "scenario_group_id": "new-synthetic-024",
+      "input_origin": "synthetic_engineering",
+      "feature_origin": "none",
+      "label_author": "Codex",
+      "professional_review": false,
+      "development_exposure": "exposed_during_this_implementation",
+      "query": {
+        "species": "猫",
+        "bodyPart": "",
+        "complaint": "如果以后出现脱毛是不是猫癣？"
+      },
+      "expected_relevant_cards": [],
+      "expected_behavior": "no_candidates",
+      "label_rationale": "无当前可用皮损依据或物种不在犬猫范围，不应返回病因参考卡。"
+    }
+  ]
+}

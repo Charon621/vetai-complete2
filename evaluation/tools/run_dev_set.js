@@ -306,6 +306,7 @@ function main() {
     return
   }
 
+  if (opts.live) { console.error('unsupported: no authorized live adapter; executionStatus=not_run');process.exitCode=2;return }
   console.log('=== VetAI 开发集审计（DEV_ONLY，不计算诊断准确率）===\n')
 
   const cases = loadDevCases(opts.limit)

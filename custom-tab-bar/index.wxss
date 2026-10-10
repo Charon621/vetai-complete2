@@ -70,15 +70,16 @@
   align-items: center;
   justify-content: center;
   gap: 4rpx;
-  transition: transform 180ms ease;
+  transition: none;
 }
 
-.tab-item:active { transform: scale(0.96); }
+/* BUG-UI75：按压缩放在切页时被截断会造成图标回弹，选中反馈交给滑块。 */
 
 .tab-item.on .tab-icon-box { transform: translateY(-3rpx) scale(1.08); }
 
 @media (prefers-reduced-motion: reduce) {
-  .tab-lens, .tab-item, .tab-text, .tab-icon-box { transition-duration: 0ms; }
+  .tab-lens, .tab-item, .tab-text, .tab-bar .tab-icon-box { transition-duration: 0ms; }
+  .tab-lens.is-moving { animation-duration: 1ms; }
 }
 
 .tab-icon-box {
@@ -87,7 +88,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 260ms cubic-bezier(0.18, 0.82, 0.22, 1);
+  transition: none;
+}
+
+/* 只有正在显示的源页播放，且与滑块同时结束；缓存页直接定位。 */
+.is-switching .tab-icon-box {
+  transition: transform 180ms cubic-bezier(0.18, 0.82, 0.22, 1);
 }
 
 .tab-icon {
@@ -99,7 +105,7 @@
   font-size: 22rpx;
   line-height: 1.25;
   color: #4F483E;
-  transition: color 220ms ease;
+  transition: none;
 }
 
 .tab-text.on {

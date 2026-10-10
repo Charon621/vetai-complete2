@@ -323,12 +323,15 @@ function arrayBufferToBase64(buffer) {
   if (typeof wx !== 'undefined' && typeof wx.arrayBufferToBase64 === 'function') {
     return wx.arrayBufferToBase64(buffer)
   }
-  // 手动分块编码（避免栈溢出）
+  // 手动分块编码（避免栈溢出）。分块大小必须是 3 的倍数：base64 每 3 字节一组，
+  // 非 3 倍数的分块边界会把边界字节在上一组当 byte3、下一组当 byte1 各编码一次，
+  // 输出损坏（实测 >8192 字节即错，照片几乎全部超过）。分块只影响字符串拼接，
+  // 不影响编码流本身。
   var bytes = new Uint8Array(buffer)
   var len = bytes.byteLength
   var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
   var result = ''
-  var chunkSize = 8192
+  var chunkSize = 3 * 8192
   for (var i = 0; i < len; i += chunkSize) {
     var end = Math.min(i + chunkSize, len)
     for (var j = i; j < end; j += 3) {

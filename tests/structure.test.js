@@ -8,6 +8,14 @@ const files = []
 function walk(dir) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (entry) {
     if (entry.name === 'node_modules' || entry.name === '.git') return
+    // 独立协作网页使用 ESM/TypeScript，由其类型检查和构建校验；必须排除小程序打包。
+    if (dir === root && entry.name === 'collaboration-web') {
+      const projectConfig = JSON.parse(fs.readFileSync(path.join(root, 'project.config.json'), 'utf8'))
+      assert.ok(projectConfig.packOptions.ignore.some(function (item) {
+        return item.type === 'folder' && item.value === 'collaboration-web'
+      }), 'collaboration website must be excluded from mini-program packaging')
+      return
+    }
     const fullPath = path.join(dir, entry.name)
     if (entry.isDirectory()) walk(fullPath)
     else files.push(fullPath)

@@ -199,51 +199,64 @@ Page({
   },
 
   // 圈选坐标（0-1 归一化，相对完整原图）映射到 aspectFill 裁切容器。
-  // 容器是报告页拱窗照片（.dx-arch 168×208rpx），宽高比不是 1，需按容器比例计算裁切
+  // 容器是报告页拱窗照片（.dx-arch），宽高比不是 1，需按容器比例计算裁切。
+  // BUG-UI77：比例此前硬编码 168/208，BUG-UI57 把 .dx-arch 改为 140×172rpx 后
+  // JS 常量未同步，圈选框系统性偏移（越靠边误差越大）。改为运行时实测节点
+  // 尺寸；节点未渲染或查询失败时退回 140/172（与 result.wxss 的当前值一致，
+  // 兜底不再指向过时尺寸）。
   _loadLesionOverlays: function (lesionBoxes) {
     var self = this
-    var containerAspect = 168 / 208
+    var FALLBACK_ASPECT = 140 / 172
     var items = (this.data.record.imageItems || []).slice()
     var pending = 0
     var changed = false
-    items.forEach(function (item, i) {
-      var box = lesionBoxes[i]
-      if (!item || !box || typeof box.x !== 'number') return
-      pending++
-      wx.getImageInfo({
-        src: item.path,
-        success: function (info) {
-          var iw = info.width
-          var ih = info.height
-          if (!iw || !ih) return
-          // aspectFill：图片等比缩放到恰好盖满容器，超出的一边居中裁切
-          var imageAspect = iw / ih
-          var dwF = Math.max(1, imageAspect / containerAspect)
-          var dhF = Math.max(1, containerAspect / imageAspect)
-          var oxF = (1 - dwF) / 2
-          var oyF = (1 - dhF) / 2
-          var left = (oxF + box.x * dwF) * 100
-          var top = (oyF + box.y * dhF) * 100
-          var width = box.width * dwF * 100
-          var height = box.height * dhF * 100
-          left = Math.max(0, Math.min(100, left))
-          top = Math.max(0, Math.min(100, top))
-          width = Math.max(0, Math.min(100 - left, width))
-          height = Math.max(0, Math.min(100 - top, height))
-          if (width >= 2 && height >= 2) {
-            items[i].lesionStyle = 'left:' + left.toFixed(2) + '%;top:' + top.toFixed(2) +
-              '%;width:' + width.toFixed(2) + '%;height:' + height.toFixed(2) + '%;'
-            changed = true
+    var finish = function () {
+      if (pending === 0 && changed) {
+        self.setData({ 'record.imageItems': items })
+      }
+    }
+    wx.createSelectorQuery().selectAll('.dx-arch').boundingClientRect(function (rects) {
+      var containerAspect = (rects && rects.length && rects[0].width && rects[0].height)
+        ? rects[0].width / rects[0].height
+        : FALLBACK_ASPECT
+      items.forEach(function (item, i) {
+        var box = lesionBoxes[i]
+        if (!item || !box || typeof box.x !== 'number') return
+        pending++
+        wx.getImageInfo({
+          src: item.path,
+          success: function (info) {
+            var iw = info.width
+            var ih = info.height
+            if (!iw || !ih) return
+            // aspectFill：图片等比缩放到恰好盖满容器，超出的一边居中裁切
+            var imageAspect = iw / ih
+            var dwF = Math.max(1, imageAspect / containerAspect)
+            var dhF = Math.max(1, containerAspect / imageAspect)
+            var oxF = (1 - dwF) / 2
+            var oyF = (1 - dhF) / 2
+            var left = (oxF + box.x * dwF) * 100
+            var top = (oyF + box.y * dhF) * 100
+            var width = box.width * dwF * 100
+            var height = box.height * dhF * 100
+            left = Math.max(0, Math.min(100, left))
+            top = Math.max(0, Math.min(100, top))
+            width = Math.max(0, Math.min(100 - left, width))
+            height = Math.max(0, Math.min(100 - top, height))
+            if (width >= 2 && height >= 2) {
+              items[i].lesionStyle = 'left:' + left.toFixed(2) + '%;top:' + top.toFixed(2) +
+                '%;width:' + width.toFixed(2) + '%;height:' + height.toFixed(2) + '%;'
+              changed = true
+            }
+          },
+          complete: function () {
+            pending--
+            finish()
           }
-        },
-        complete: function () {
-          pending--
-          if (pending === 0 && changed) {
-            self.setData({ 'record.imageItems': items })
-          }
-        }
+        })
       })
-    })
+      finish()
+    }).exec()
   },
 
   buildDisplayRecord: function (record) {

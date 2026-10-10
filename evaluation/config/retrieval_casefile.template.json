@@ -1,0 +1,82 @@
+{
+  "kind": "retrieval_casefile",
+  "casefile_version": "1.0.0",
+  "created_on": "",
+  "created_by": "",
+  "purpose": "",
+  "schema_doc": {
+    "case_id": "必填。用例唯一标识，全文件不得重复。",
+    "complaint": "必填。主人主诉原文（或标注来源的改写文本）；检索输入本体。",
+    "species": "必填。犬/猫（当前初筛能力范围）。",
+    "bodyPart": "必填。部位，与 recall_probe 的 b 字段一致；无部位信息填 ''。",
+    "visualFeatures": "必填数组。进入 withVisual 通道的视觉特征词；可为空数组（等价于只有 textOnly 通道有意义）。",
+    "expected": "必填非空数组。该主诉『最该想到的方向』（知识卡 canonical name）。这只是检索方向集合，不是临床参考标准，不得在报告中写成诊断正确率。",
+    "input_origin": "必填。owner_verbatim（主人原话，需有采集许可）/ expert_edited（专家编辑）/ manual_simulation（人工手写模拟，不得称真实口语）/ synthetic_challenge（合成压力组，报告须单独列出）。",
+    "feature_origin": "real_precheck / manual_simulation / none / unknown；如实记录特征来源。",
+    "source_case_id": "同源母本用例 id 或 null。同一 source_case_id 的全部用例（含模板改写、衍生图）必须绑定同一 scenario_group_id 与同一 split（校验器 E7）。",
+    "scenario_group_id": "场景组 id 或 null。模板改写/同源病例必须同组；同组不得跨 split（校验器 E6）。",
+    "split": "development / regression / independent；独立题库与实现分开维护，允许对照实验。",
+    "development_exposure": "exposed / not_exposed / unknown；接触结果后如实更新。",
+    "labeler": "标注者标识；未专业复核的合成用例须注明。",
+    "role": "可选对象 {primary_target:[], coexisting_targets:[], permitted_differentials:[]}。只有独立标注的主病/并存角色才会启用 primary/coexisting 指标；不填时这些指标一律 NA，绝不把 expected 擅自解释为主病。permitted_differentials 不扩展主病答案。"
+  },
+  "discipline_rules": [
+    "用例修订升版本，保留旧运行记录。",
+    "同一来源、动物或改写组不得跨数据用途重复计数。",
+    "independent 表示独立维护的对照题库，可运行各检索策略；开发接触情况如实记录。",
+    "合成用例仅衡量工程行为，不代表临床效果。"
+  ],
+  "cases": [
+    {
+      "case_id": "SCHEMA_EXAMPLE_1",
+      "complaint": "（示例，非可运行数据）狗狗最近老是挠，好久没驱虫了",
+      "species": "犬",
+      "bodyPart": "躯干",
+      "visualFeatures": [
+        "红斑",
+        "结痂"
+      ],
+      "expected": [
+        "跳蚤过敏性皮炎",
+        "疥螨病"
+      ],
+      "input_origin": "manual_simulation",
+      "feature_origin": "manual_simulation",
+      "source_case_id": null,
+      "scenario_group_id": "SCHEMA_EXAMPLE_GROUP",
+      "split": "development",
+      "development_exposure": "exposed",
+      "labeler": null,
+      "role": null
+    },
+    {
+      "case_id": "SCHEMA_EXAMPLE_2",
+      "complaint": "（示例，非可运行数据）猫耳朵掉毛，我手上也起红疹",
+      "species": "猫",
+      "bodyPart": "耳部",
+      "visualFeatures": [
+        "圆形脱毛"
+      ],
+      "expected": [
+        "皮肤癣菌病（犬猫）"
+      ],
+      "input_origin": "expert_edited",
+      "feature_origin": "real_precheck",
+      "source_case_id": null,
+      "scenario_group_id": "SCHEMA_EXAMPLE_GROUP_2",
+      "split": "independent",
+      "development_exposure": "not_exposed",
+      "labeler": "annotator_xxx",
+      "role": {
+        "primary_target": [
+          "皮肤癣菌病（犬猫）"
+        ],
+        "coexisting_targets": [],
+        "permitted_differentials": [
+          "猫疥螨病"
+        ]
+      }
+    }
+  ],
+  "schema_example_note": "cases 里的两条只是字段示例（SCHEMA_EXAMPLE_*），不是可运行用例；实际 casefile 必须替换为真实标注内容并通过 validateCasefile 校验。"
+}

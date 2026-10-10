@@ -1,6 +1,51 @@
-# Project Output Location
+# 项目维护规则
 
-- Keep project source code, configuration, tests, and files required by the application in this repository.
-- Put generated deliverables and disposable artifacts in `E:\CodexOutputs\vetai-complete2` by default. This includes PDFs, Word documents, PowerPoint files, exported images, rendered previews, temporary reports, and document QA outputs.
-- Do not place generated deliverables or temporary output directories in this repository unless the user explicitly requests it or the application requires the file at runtime.
-- Create task-specific subdirectories under `E:\CodexOutputs\vetai-complete2` when that keeps outputs organized.
+本文件适用于整个仓库。`CLAUDE.md` 提供项目概览，知识维护命令与操作边界见 `docs/knowledge-operations.md`；维护与输出约定统一以本文件为准。用户在当前任务中的明确要求优先，已经授权的工作无需重复确认。
+
+## 工作区与输出位置
+
+- 修改前先查看 `git status`，保留已有未提交修改；不得通过重置、清理或版本恢复覆盖他人的工作。
+- 源代码、配置、测试及其必要夹具、项目说明文档、运行必需的知识台账和当前版本指针保留在仓库。
+- 生成交付物和临时产物放在仓库外，包括 PDF、Word、PPT、导出图片、渲染预览、评测报告、版本包与备份。除用户明确要求或应用运行需要外，不在仓库新建这些产物或输出目录。
+- 持久输出目录优先使用 `VETAI_OUTPUT_DIR` 指定的仓库外绝对路径；未指定时，Windows 使用 `E:\CodexOutputs\vetai-complete2`，macOS/Linux 使用 `~/CodexOutputs/vetai-complete2`。按任务建立子目录。
+- 一次性调试产物可用系统临时目录；正式版本包、操作日志和回退备份须放持久输出目录并纳入备份。没有实际生成交付物时，不必附输出目录。
+
+## 何时同步维护知识
+
+- 修改疾病卡结论、适用物种或条件、来源、证据状态，以及检索规则、权重、别名、否定处理、部位归属或知识上下文拼接时，都要检查受影响的证据绑定、评测题和版本记录。
+- 修改评测标签、指标、台账结构或发布恢复工具时，同步检查使用它们的测试和说明文档。
+- 保留现有疾病卡与检索框架，按本次任务范围增量修改。切换默认检索策略须有同题对照结果支持，不因新增策略就自动启用。
+
+## 证据台账
+
+- 新增或修改重要结论时，在 `knowledge/evidence-ledger.json` 中关联卡片、字段或片段、原文链接及页码/章节、适用物种、成立条件、限制、来源版本和实际审核记录。涉及原有字段登记或修订记录时，也要同步对应的 `evaluation/config/` 文件。
+- 找不到历史出处时如实记录未知；后来找到的支持材料只能登记为本次补证，不得冒充最初编写来源。保留冲突和不确定性，不为完善台账而编造引文。
+- `source_verified` 仅表示已对照原文支持指定结论；部分支持用 `partial_support`，尚未核实用 `pending`。自动资料比对不得写成兽医签署；记录真实核验主体、角色、时间和依据。
+- 字段、来源版本或引用片段变化后，重新核实相关绑定，再更新哈希与审核记录。禁止只重算哈希来消除失效检查。来源复查日期到期后，需要实际复查原文，不能仅顺延日期。
+- 小程序运行时不能 require JSON。台账变化后必须运行 `npm run knowledge:bundle` 重新生成 `utils/knowledgeBundle.js`，不得手改该生成文件；测试会校验其中的台账内容与 JSON 一致。
+- 不要求一次补齐全库；未覆盖内容保持原有状态，不能因为同卡或同批其他结论已核实就自动获得已核验状态。
+
+## 评测与检索修改
+
+- 评测题保存在 `evaluation/datasets/`，与检索实现分离；持续覆盖常见问题、口语表达、否定、多部位、证据冲突和无法回答。根据本次变更补充相关案例，不规定固定题数。
+- 记录题目来源、标注方式、版本及是否已用于开发。合成工程题的结果不能称为独立专家验证、临床准确率或临床安全证明。
+- 对照策略必须使用同一批题、同一输入和同一指标；报告总体与分场景结果、失败案例及新增退化。保留未通过的案例，不删除难题或放宽答案来制造提升。发现标注错误可以修订，但须说明理由、升版本并重新运行对照。
+- 不把预期答案或候选卡特有关键词注入检索输入。允许重复评测；额外临床验证按用户明确要求另行安排。
+- 混合检索没有显示改善时，保留现有默认策略，如实记录结果和局限。
+
+## 校验、发布与回退
+
+- 知识内容、证据绑定或检索运行行为有变化时，运行 `npm run audit:evidence`、`npm run eval:retrieval` 和 `npm test`，阅读实际结果。命令成功退出不等于检索效果提升；既有失败要保留，新退化须解释并处理后再发布。
+- 纯说明文档修改检查链接、命令和规则一致性即可，无需全量测试或新建知识版本。台账结构、评测或发布工具修改须验证相应契约；影响运行行为时执行上述完整检查。测试清单以 `tools/run-tests.js` 为准，不在文档写死套件数量。
+- 每批完成核验的知识变更，先用 `npm run knowledge:plan -- --from 上一版本ID` 检查范围，校验完成后用 `npm run knowledge:publish -- --id 新版本ID --reason "本批修改与核验说明"` 建立可回退的本地版本。ID 不复用、不覆盖旧包；不能把未核实结论标为已核实来发布。发布前先运行 `npm run knowledge:bundle -- --release <新版本ID>`，使包内的小程序台账与发布后的版本指针一致；发布后运行 `npm run knowledge:bundle -- --check` 确认同步。
+- 版本包会包含全部 `utils/*.js` 等受管理文件；发布前检查是否夹带其他未完成修改。若存在冲突，先保留现场并明确范围，不能默默把无关工作纳入本批。
+- 换机器或缺失历史版本包时，先查找备份；无法取得时如实说明历史回退不可用，在校验后建立新基线，不伪造前序记录。
+- 发布后运行 `npm run knowledge:status` 和 `npm run knowledge:monitor`，检查文件漂移、证据失效与复查提醒。告警需处理或明确记录，不得描述为全部正常。
+- 回退使用 `npm run knowledge:restore -- --id 目标版本ID`，先检查未发布修改，不能绕过覆盖保护。台账结构或恢复工具变更时，在临时副本验证历史版本恢复，避免用真实工作区演练。
+- 本地版本包仅恢复其中列出的文件，不代表整个 Git 仓库，也不会自动部署小程序或云函数。发布或恢复后，按实际需要重新测试、编译、预览和部署，明确区分本地完成与线上生效。
+
+## 持续检查与交付说明
+
+- 每次知识维护都检查来源复查日期与受影响绑定；定期复查需有实际执行者或另行配置的任务，不能把手动命令描述成已经自动运行。
+- 线上问题应转为可复现、脱敏的评测案例，再核对证据和修正实现。本地埋点只保留必要计数、耗时与版本信息，不新增主诉、图片或身份信息采集。
+- 交付时说明本批影响范围、证据状态、实际执行的检查与结果、遗留问题，以及是否生成本地版本或部署。生成报告和版本包时提供实际路径；受阻或未执行的步骤须明确说明。

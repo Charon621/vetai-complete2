@@ -25,6 +25,7 @@ import argparse
 import csv
 import json
 import math
+import os
 import random
 from collections import Counter, defaultdict
 from typing import Dict, Hashable, List, Optional, Sequence, Tuple
@@ -64,7 +65,7 @@ def _two_sided_p(z: float) -> float:
 def wilson_interval(successes: int, total: int, confidence: float = 0.95) -> Dict[str, float]:
     """Wilson 得分区间。
 
-    小样本下比 Wald 区间稳健得多；40 例可行性基准必须用这个而不是 p±1.96·SE，
+    小样本下比 Wald 区间稳健得多；小样本比例估计推荐用这个而不是 p±1.96·SE，
     否则在接近 0 或 1 的比例上会给出越界或过窄的区间。
     """
     if total <= 0:
@@ -557,8 +558,13 @@ def pivot_long_form(
         for key in value_keys:
             entry["%s__a" % key] = (a_row.get(key) or "").strip()
             entry["%s__b" % key] = (b_row.get(key) or "").strip()
-        # 长格式里没有动物哈希时，退化为按病例聚类（每例自成一簇）
-        entry["animal_id_hash"] = (a_row.get("animal_id_hash") or cid).strip() or cid
+        # 长格式里没有动物哈希时，退化为按病例聚类（每例自成一簇）；
+        # 是否由专家行提供动物字段单独记录，供 B15-2 与 manifest 对照
+        a_animal = (a_row.get("animal_id_hash") or "").strip()
+        b_animal = (b_row.get("animal_id_hash") or "").strip()
+        entry["animal_id_hash"] = a_animal or b_animal or cid
+        entry["animal_from_expert"] = bool(a_animal or b_animal)
+        entry["animal_conflict"] = bool(a_animal and b_animal and a_animal != b_animal)
         paired.append(entry)
 
     return {
@@ -571,9 +577,69 @@ def pivot_long_form(
     }
 
 
+def load_animal_manifest(path: str) -> Dict[str, Dict[str, str]]:
+    """B15-2（BUG-32）：读取 case_manifest，建立 case_id → 动物/衍生组 的唯一映射。
+
+    manifest 是动物聚类的唯一权威：专家表里的动物字段只是冗余核对。
+    manifest 内同一 case_id 出现两个动物哈希 = 数据错误，直接阻断。"""
+    if not os.path.exists(path):
+        raise FileNotFoundError("manifest 不存在：%s" % path)
+    mapping: Dict[str, Dict[str, str]] = {}
+    with open(path, "r", encoding="utf-8-sig", newline="") as fh:
+        for idx, row in enumerate(csv.DictReader(fh), start=2):
+            cid = (row.get("case_id") or "").strip()
+            animal = (row.get("animal_id_hash") or "").strip()
+            if not cid or not animal:
+                raise ValueError("manifest 第 %d 行缺 case_id 或 animal_id_hash" % idx)
+            group = (row.get("derivative_group_id") or "").strip()
+            if cid in mapping:
+                if mapping[cid]["animal_id_hash"] != animal:
+                    raise ValueError("case '%s' 在 manifest 中对应两个动物：%s vs %s（同例双动物阻断）"
+                                     % (cid, mapping[cid]["animal_id_hash"][:8], animal[:8]))
+            mapping[cid] = {"animal_id_hash": animal, "derivative_group_id": group}
+    return mapping
+
+
+def apply_manifest_join(paired: List[dict],
+                        manifest_map: Dict[str, Dict[str, str]],
+                        allow_case_clusters: bool = False) -> Dict[str, object]:
+    """把 manifest 的动物哈希强制 join 到成对行上（B15-2）。
+
+    阻断条件：missing join（case 不在 manifest）、专家与 manifest 动物矛盾、
+    专家表内同例双动物。allow_case_clusters=True 只允许在开发统计里退化为
+    病例级聚类，报告必须带 development_only 标记；正式评分禁止退化。"""
+    notes: Dict[str, object] = {"joined": 0, "fallback_case_clusters": [],
+                                "cluster_source": "manifest"}
+    for entry in paired:
+        cid = entry.get("case_id") or ""
+        m = manifest_map.get(cid)
+        if m is None:
+            if not allow_case_clusters:
+                raise ValueError("case '%s' 不在 manifest 中（missing join）：正式评分禁止退化为病例聚类" % cid)
+            notes["fallback_case_clusters"].append(cid)
+            notes["cluster_source"] = "case_level_development_only"
+            continue
+        if entry.get("animal_conflict"):
+            raise ValueError("case '%s' 专家表内出现两个不同动物哈希（同例双动物阻断）" % cid)
+        if entry.get("animal_from_expert") and entry["animal_id_hash"] != m["animal_id_hash"]:
+            raise ValueError("case '%s' 专家动物 %s 与 manifest 动物 %s 矛盾；以 manifest 为准前必须先解决矛盾"
+                             % (cid, entry["animal_id_hash"][:8], m["animal_id_hash"][:8]))
+        entry["animal_id_hash"] = m["animal_id_hash"]
+        if m.get("derivative_group_id"):
+            entry["derivative_group_id"] = m["derivative_group_id"]
+        notes["joined"] += 1
+    return notes
+
+
 def score_long_form_csv(path: str,
-                        cluster_key: str = "animal_id_hash") -> Dict[str, object]:
-    """直接对 expert_annotation_form 长格式表计算裁决前一致性。"""
+                        cluster_key: str = "animal_id_hash",
+                        manifest_path: Optional[str] = None,
+                        allow_case_clusters: bool = False) -> Dict[str, object]:
+    """直接对 expert_annotation_form 长格式表计算裁决前一致性。
+
+    B15-2：提供 manifest_path 时按 manifest 强制 join 动物（缺失/矛盾阻断，
+    不再退化 case_id 聚类）；未提供且 allow_case_clusters=False 时维持旧有
+    行为以保持兼容，但报告会标注 cluster_source=case_fallback_unverified。"""
     with open(path, "r", encoding="utf-8-sig", newline="") as fh:
         rows = list(csv.DictReader(fh))
     if not rows:
@@ -585,6 +651,12 @@ def score_long_form_csv(path: str,
     if not paired:
         return {"status": "no_paired_cases", "path": path, **pivoted}
 
+    join_note: Optional[dict] = None
+    if manifest_path:
+        manifest_map = load_animal_manifest(manifest_path)
+        join_note = apply_manifest_join(paired, manifest_map,
+                                        allow_case_clusters=allow_case_clusters)
+
     a = [p["primary_etiology_label__a"] for p in paired]
     b = [p["primary_etiology_label__b"] for p in paired]
 
@@ -593,6 +665,10 @@ def score_long_form_csv(path: str,
         "path": path,
         "format": "long_form_expert_annotation",
         "n_cases": len(paired),
+        "n_animal_clusters": len({p[cluster_key] for p in paired}),
+        "cluster_source": (join_note or {}).get("cluster_source",
+                                               "manifest" if manifest_path else "case_fallback_unverified"),
+        "manifest_join": join_note,
         "skipped_single_annotator": pivoted["skipped_single_annotator"],
         "skipped_more_than_two": pivoted["skipped_more_than_two"],
         "label_distribution": {"annotator_a": dict(Counter(a)),
@@ -853,7 +929,111 @@ def _self_test() -> None:
     # 缺 animal_id_hash 时退化为按病例自成一簇，而不是让所有病例挤进同一簇
     assert {p["animal_id_hash"] for p in piv["paired"]} == {"C1", "C2"}, piv
 
-    print("agreement_stats self-test passed")
+    # ── B15-2（BUG-32）：manifest 强制动物 join ──
+    # 母本 + 衍生图同一动物必须合成 1 簇；不同动物 2 簇；
+    # missing join / 同例双动物 / 专家与 manifest 矛盾必须阻断；
+    # bootstrap 对"每只动物 1 例"的 manifest 结果与旧行为一致。
+    import tempfile
+    tmpdir2 = tempfile.mkdtemp()
+
+    def write_manifest(name, rows):
+        p = os.path.join(tmpdir2, name)
+        with open(p, "w", encoding="utf-8-sig", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=["case_id", "animal_id_hash", "derivative_group_id"])
+            w.writeheader()
+            for r in rows:
+                w.writerow(r)
+        return p
+
+    expert_rows_join = [
+        {"case_id": "P1", "annotator_id_hash": "a", "primary_etiology_label": "X", "urgency": "routine"},
+        {"case_id": "P1", "annotator_id_hash": "b", "primary_etiology_label": "X", "urgency": "routine"},
+        # P2/P3 是同一动物 A1 的母本与衍生图 → 必须合成 1 簇
+        {"case_id": "P2", "annotator_id_hash": "a", "primary_etiology_label": "X", "urgency": "routine"},
+        {"case_id": "P2", "annotator_id_hash": "b", "primary_etiology_label": "Y", "urgency": "routine"},
+        {"case_id": "P3", "annotator_id_hash": "a", "primary_etiology_label": "X", "urgency": "routine"},
+        {"case_id": "P3", "annotator_id_hash": "b", "primary_etiology_label": "Y", "urgency": "routine"},
+    ]
+    manifest_ok = write_manifest("m_ok.csv", [
+        {"case_id": "P1", "animal_id_hash": "A1", "derivative_group_id": ""},
+        {"case_id": "P2", "animal_id_hash": "A2", "derivative_group_id": "D1"},
+        {"case_id": "P3", "animal_id_hash": "A2", "derivative_group_id": "D1"},
+    ])
+    piv2 = pivot_long_form(expert_rows_join)
+    assert piv2["n_paired"] == 3, piv2
+    notes = apply_manifest_join(piv2["paired"], load_animal_manifest(manifest_ok))
+    assert notes["joined"] == 3 and notes["cluster_source"] == "manifest", notes
+    animals = {p["animal_id_hash"] for p in piv2["paired"]}
+    assert animals == {"A1", "A2"}, animals
+    assert len(animals) == 2, "母本+衍生图必须同簇"
+
+    # missing join：strict 阻断；allow_case_clusters 显式退化并必须带 development_only 标记
+    manifest_missing = write_manifest("m_missing.csv", [
+        {"case_id": "P1", "animal_id_hash": "A1", "derivative_group_id": ""},
+    ])
+    try:
+        apply_manifest_join(pivot_long_form(expert_rows_join)["paired"],
+                            load_animal_manifest(manifest_missing))
+        raise AssertionError("missing join 必须阻断")
+    except ValueError as e:
+        assert "missing join" in str(e), e
+    piv3 = pivot_long_form(expert_rows_join)
+    notes3 = apply_manifest_join(piv3["paired"], load_animal_manifest(manifest_missing),
+                                 allow_case_clusters=True)
+    assert notes3["cluster_source"] == "case_level_development_only", notes3
+    assert sorted(notes3["fallback_case_clusters"]) == ["P2", "P3"], notes3
+
+    # 同例双动物（manifest 内部矛盾）阻断
+    manifest_dup = write_manifest("m_dup.csv", [
+        {"case_id": "P1", "animal_id_hash": "A1", "derivative_group_id": ""},
+        {"case_id": "P1", "animal_id_hash": "A9", "derivative_group_id": ""},
+        {"case_id": "P2", "animal_id_hash": "A2", "derivative_group_id": "D1"},
+        {"case_id": "P3", "animal_id_hash": "A2", "derivative_group_id": "D1"},
+    ])
+    try:
+        load_animal_manifest(manifest_dup)
+        raise AssertionError("manifest 内同例双动物必须阻断")
+    except ValueError as e:
+        assert "两个动物" in str(e), e
+
+    # 专家与 manifest 动物矛盾阻断
+    conflicting = [
+        {"case_id": "P1", "annotator_id_hash": "a", "animal_id_hash": "ZZ",
+         "primary_etiology_label": "X", "urgency": "routine"},
+        {"case_id": "P1", "annotator_id_hash": "b", "animal_id_hash": "ZZ",
+         "primary_etiology_label": "X", "urgency": "routine"},
+    ]
+    try:
+        apply_manifest_join(pivot_long_form(conflicting)["paired"],
+                            load_animal_manifest(manifest_ok))
+        raise AssertionError("专家与 manifest 动物矛盾必须阻断")
+    except ValueError as e:
+        assert "矛盾" in str(e), e
+
+    # 每只动物 1 例的 manifest：bootstrap 结果与旧逐侧行为一致（回归护栏）
+    rows_1to1 = [{"case_id": "K%d" % i, "annotator_id_hash": "a",
+                  "primary_etiology_label": "X" if i % 2 else "Y", "urgency": "routine"}
+                 for i in range(10)] + \
+                [{"case_id": "K%d" % i, "annotator_id_hash": "b",
+                  "primary_etiology_label": "X" if i % 2 else "Y", "urgency": "routine"}
+                 for i in range(10)]
+    m_1to1 = write_manifest("m_1to1.csv",
+                            [{"case_id": "K%d" % i, "animal_id_hash": "AN%d" % i,
+                              "derivative_group_id": ""} for i in range(10)])
+    piv4 = pivot_long_form(rows_1to1)
+    apply_manifest_join(piv4["paired"], load_animal_manifest(m_1to1))
+
+    def kappa_of(sub):
+        return float(cohens_kappa([i["primary_etiology_label__a"] for i in sub],
+                                  [i["primary_etiology_label__b"] for i in sub])["kappa"])
+    boot_manifest = cluster_bootstrap_ci(piv4["paired"], kappa_of, iterations=500, seed=7)
+    items_1to1 = [{"animal_id_hash": "AN%d" % i, "a": "X" if i % 2 else "Y",
+                   "b": "X" if i % 2 else "Y"} for i in range(10)]
+    boot_legacy = cluster_bootstrap_ci(items_1to1, lambda s: 1.0, iterations=500, seed=7)
+    assert boot_manifest["n_clusters"] == boot_legacy["n_clusters"] == 10, (
+        boot_manifest, boot_legacy)
+
+    print("agreement_stats self-test passed (incl. B15 animal join)")
 
 
 def main() -> None:
@@ -864,6 +1044,10 @@ def main() -> None:
     parser.add_argument("--long-form", action="store_true",
                         help="输入是 expert_annotation_form 长格式（每位标注者一行）")
     parser.add_argument("--cluster-key", default="animal_id_hash")
+    parser.add_argument("--manifest",
+                        help="B15-2：case_manifest CSV，动物聚类的权威 join；给出后缺失/矛盾阻断")
+    parser.add_argument("--allow-case-clusters", action="store_true",
+                        help="显式允许退化为病例级聚类；只能标 development_only，正式评分禁止")
     parser.add_argument("--json-out", help="把报告写到此路径")
     args = parser.parse_args()
 
@@ -872,7 +1056,9 @@ def main() -> None:
         return
 
     if args.long_form:
-        report = score_long_form_csv(args.csv, cluster_key=args.cluster_key)
+        report = score_long_form_csv(args.csv, cluster_key=args.cluster_key,
+                                     manifest_path=args.manifest,
+                                     allow_case_clusters=args.allow_case_clusters)
     else:
         report = score_annotation_csv(args.csv, cluster_key=args.cluster_key)
     text = json.dumps(report, ensure_ascii=False, indent=2)

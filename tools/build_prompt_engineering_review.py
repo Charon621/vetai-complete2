@@ -22,6 +22,7 @@ from docx.shared import Pt
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
+from output_paths import output_root  # noqa: E402
 
 from build_prompt_methods_doc import (  # noqa: E402
     AMBER,
@@ -53,7 +54,7 @@ from build_prompt_methods_doc import (  # noqa: E402
     set_table_width,
 )
 
-OUTPUT = ROOT / "output" / "VetAI提示词工程方法评述.docx"
+OUTPUT = output_root("prompt-docs", "VetAI提示词工程方法评述.docx")
 
 PROMPT_VERSION = "vetai-derm-v2.0.0"
 
@@ -373,7 +374,7 @@ def add_architecture(doc):
         "并行编排：预检不再串行前置",
         "视觉预检与完整诊断同一时刻发出，总耗时约等于完整诊断本身。预检承担三件事："
         "烂图先到先拒（3 到 5 秒内就能提示重拍，不让用户白等）、"
-        "强命中时的知识库快路径（默认冻结）、以及完整诊断返回后的知识库归因修正。"
+        "强命中时的知识库快路径（默认关闭）、以及完整诊断返回后的知识库归因修正。"
         "代价是预检结果不进入诊断提示词——这既是性能取舍，也顺带消除了一条注入面。",
         fill=LIGHT_BLUE,
         accent=BLUE,
@@ -751,7 +752,7 @@ def add_iteration(doc):
 # ── 第五部分：评估闭环 ──────────────────────────────────────
 
 def add_evaluation(doc):
-    add_h1(doc, "评估闭环：已建成部分与唯一阻塞项", "五")
+    add_h1(doc, "评估闭环：工程评测与可选参考标注", "五")
 
     add_para(doc,
              "本轮同时补齐了评估工具链。此前 benchmark_config.json 声明了 Cohen's kappa、"
@@ -772,7 +773,7 @@ def add_evaluation(doc):
              "已完成，自检通过"],
             ["validate_annotations.py",
              "校验标注表是否遵守协议：受控标签、层级证据路径、双专家独立性、"
-             "重复提交、泄漏控制、开发素材不得进冻结集",
+             "重复提交、泄漏控制、开发素材不冒充临床参考",
              "已完成，自检通过"],
             ["run_dev_set.js",
              "对八张开发图做结构与鲁棒性审计，输出带提示词哈希的审计日志",
@@ -783,9 +784,9 @@ def add_evaluation(doc):
             ["专家标注表与裁决表",
              "长格式盲标表、第三方裁决表",
              "空表就绪，等待填写"],
-            ["G1/G2 专家标注冻结核心集",
-             "两名兽医皮肤科专家独立盲标 + 第三名专家裁决",
-             "未开始（对外结论的唯一阻塞项）"],
+            ["独立维护的场景题库",
+             "覆盖六类问题，逐题比较各检索策略",
+             "以当前题库和运行记录为准"],
         ],
         widths=[1.35, 3.45, 1.54],
         font_size=8.5,
@@ -795,16 +796,16 @@ def add_evaluation(doc):
 
     add_table(
         doc,
-        ["", "G1/G2（gold_standard）"],
+        ["", "G1/G2（reference_data）"],
         [
             ["标签来源", "本项目收集，双专家盲标 + 第三方裁决"],
             ["确认性检查", "G1 必需，G2 需完整复合证据"],
             ["类别粒度", "31 个病因代码"],
             ["图像分布", "主人手机照片，2 至 4 张含部位"],
-            ["规模", "40 例，未开始"],
+            ["规模", "按实际资料记录数量"],
             ["主指标", "Top-3 病因召回、高风险敏感度"],
-            ["可否发布准确率", "是（解盲一次后）"],
-            ["当前状态", "阻塞于专家招募"],
+            ["可否发布准确率", "仅在对应临床证据支持时"],
+            ["当前状态", "可按需使用标注工具"],
         ],
         widths=[1.05, 5.29],
         font_size=8.5,
@@ -888,7 +889,7 @@ def add_conclusion(doc):
         "仍然唯一的对外结论阻塞项",
         "收集真实病例并组织两名兽医皮肤科专家按 annotation_guide.md 完成盲标与裁决。"
         "工具链已就绪、标注表空着等填、统计口径已通过手算验证。"
-        "拿到 40 例带 G1/G2 层级的参考标签之后，置信度校准与高风险方向覆盖"
+        "取得适合任务的病例级参考标签之后，置信度校准与高风险方向覆盖"
         "才能转为可测量、可优化的问题。在那之前，任何「诊断准确率提升」的说法都没有依据——"
         "当前能证明的是行为安全，不是诊断正确。",
         fill=LIGHT_GREEN,

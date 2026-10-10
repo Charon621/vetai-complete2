@@ -1,0 +1,451 @@
+{
+  "tool": "kb_audit",
+  "kbVersion": "2026-10-03-v11",
+  "entryCount": 69,
+  "reviewStatus": {
+    "reviewed": 69,
+    "pending": 0,
+    "draft": 0,
+    "total": 69
+  },
+  "review": {
+    "status": "reviewed",
+    "date": "2026-10-02",
+    "by": "项目组（需求方确认）",
+    "scope": "全部条目整体复核；非兽医逐卡签署"
+  },
+  "fieldCompleteness": {
+    "typicalFeatures": [],
+    "ddx": [],
+    "urgency": [],
+    "category": [],
+    "recommendedTests": [],
+    "redFlags": [],
+    "keywords.breeds": [],
+    "keywords.symptoms": [],
+    "keywords.locations": []
+  },
+  "aliasCollisions": {
+    "blocking": [],
+    "benignCrossSpecies": [
+      {
+        "alias": "晒伤",
+        "owners": [
+          "日光性皮炎",
+          "猫日光性皮炎"
+        ]
+      },
+      {
+        "alias": "solar dermatitis",
+        "owners": [
+          "日光性皮炎",
+          "猫日光性皮炎"
+        ]
+      }
+    ]
+  },
+  "nameOverlap": [
+    [
+      "浅表脓皮病",
+      "猫浅表脓皮病"
+    ],
+    [
+      "蠕形螨病（局灶型）",
+      "全身型蠕形螨病"
+    ],
+    [
+      "蠕形螨病（局灶型）",
+      "猫蠕形螨病"
+    ],
+    [
+      "疥螨病",
+      "猫疥螨病"
+    ],
+    [
+      "日光性皮炎",
+      "猫日光性皮炎"
+    ]
+  ],
+  "distribution": {
+    "species": {
+      "dogOnly": 24,
+      "catOnly": 17,
+      "both": 28,
+      "none": 0
+    },
+    "urgency": {
+      "moderate": 33,
+      "low": 23,
+      "urgent": 13
+    },
+    "category": {
+      "bacterial": 10,
+      "allergy": 6,
+      "parasite": 12,
+      "yeast": 2,
+      "fungal": 2,
+      "paw": 2,
+      "behavioral": 2,
+      "metabolic": 2,
+      "solar": 2,
+      "autoimmune": 5,
+      "feline": 5,
+      "mass": 7,
+      "endocrine": 4,
+      "ear": 3,
+      "trauma": 2,
+      "rare_warning": 2,
+      "viral": 1
+    }
+  },
+  "symptomBalance": {
+    "mean": 8.12,
+    "max": {
+      "name": "急性湿性皮炎（热点）",
+      "n": 19
+    },
+    "min": {
+      "name": "犬乳头状瘤病",
+      "n": 5
+    },
+    "ratio": 3.8,
+    "effectiveRatio": 2.06,
+    "signWeightRange": [
+      0.65,
+      1.2
+    ],
+    "top5": [
+      {
+        "name": "急性湿性皮炎（热点）",
+        "n": 19
+      },
+      {
+        "name": "浅表脓皮病",
+        "n": 16
+      },
+      {
+        "name": "细菌性外耳炎",
+        "n": 15
+      },
+      {
+        "name": "马拉色菌皮炎",
+        "n": 14
+      },
+      {
+        "name": "皮肤褶皱皮炎",
+        "n": 14
+      }
+    ],
+    "bottom5": [
+      {
+        "name": "盘状红斑狼疮",
+        "n": 6
+      },
+      {
+        "name": "红斑型天疱疮",
+        "n": 6
+      },
+      {
+        "name": "雪纳瑞粉刺综合征",
+        "n": 6
+      },
+      {
+        "name": "睑炎",
+        "n": 6
+      },
+      {
+        "name": "犬乳头状瘤病",
+        "n": 5
+      }
+    ]
+  },
+  "comboCoverage": {
+    "total": 69,
+    "withCombo": 27,
+    "coverage": 39.1,
+    "highRiskWithoutCombo": []
+  },
+  "hasBreedSusceptibilityAccessor": true,
+  "probes": [
+    {
+      "id": "colloquial-bump-not-tumor",
+      "severity": "P0",
+      "desc": "口语「小疙瘩」不应被读作肿块/结节而命中肿瘤条目",
+      "complaint": "下巴上有小疙瘩",
+      "top3": [
+        {
+          "name": "浅表脓皮病",
+          "score": 9.5,
+          "promptWorthy": true,
+          "urgency": "moderate"
+        },
+        {
+          "name": "落叶型天疱疮",
+          "score": 5.8,
+          "promptWorthy": false,
+          "urgency": "moderate"
+        },
+        {
+          "name": "红斑型天疱疮",
+          "score": 5.6,
+          "promptWorthy": false,
+          "urgency": "moderate"
+        }
+      ],
+      "pass": true,
+      "violations": []
+    },
+    {
+      "id": "owner-symptom-not-pet-lesion",
+      "severity": "P0",
+      "desc": "主人自身症状不应被当作宠物皮损（且应作为人畜共患线索）",
+      "complaint": "痒得很厉害一直抓，耳朵边缘和肘部结痂，我手上也起小疙瘩痒",
+      "top3": [
+        {
+          "name": "疥螨病",
+          "score": 19.3,
+          "promptWorthy": true,
+          "urgency": "moderate"
+        },
+        {
+          "name": "跳蚤过敏性皮炎",
+          "score": 12.6,
+          "promptWorthy": true,
+          "urgency": "low"
+        },
+        {
+          "name": "虱感染",
+          "score": 11.2,
+          "promptWorthy": true,
+          "urgency": "moderate"
+        }
+      ],
+      "pass": true,
+      "violations": []
+    },
+    {
+      "id": "papules-not-mass",
+      "severity": "P0",
+      "desc": "「小红疙瘩」应指向丘疹/脓疱方向，不应同时注入肿块",
+      "complaint": "起了好多小红疙瘩，密密麻麻的",
+      "top3": [
+        {
+          "name": "浅表脓皮病",
+          "score": 14.6,
+          "promptWorthy": true,
+          "urgency": "moderate"
+        },
+        {
+          "name": "落叶型天疱疮",
+          "score": 5.8,
+          "promptWorthy": false,
+          "urgency": "moderate"
+        },
+        {
+          "name": "红斑型天疱疮",
+          "score": 5.6,
+          "promptWorthy": false,
+          "urgency": "moderate"
+        }
+      ],
+      "pass": true,
+      "violations": []
+    },
+    {
+      "id": "true-mass-still-hits",
+      "severity": "P1",
+      "desc": "真正的硬块主诉仍应命中肿瘤条目（修复不能矫枉过正）",
+      "complaint": "身上有个硬疙瘩越来越大，表面破溃了",
+      "top3": [
+        {
+          "name": "皮肤肿瘤（肥大细胞瘤等）",
+          "score": 18.6,
+          "promptWorthy": true,
+          "urgency": "urgent"
+        },
+        {
+          "name": "皮脂腺囊肿",
+          "score": 17.2,
+          "promptWorthy": true,
+          "urgency": "low"
+        },
+        {
+          "name": "良性肿块（组织细胞瘤/脂肪瘤）",
+          "score": 17,
+          "promptWorthy": true,
+          "urgency": "low"
+        }
+      ],
+      "pass": true,
+      "violations": []
+    },
+    {
+      "id": "feline-scabies-parity",
+      "severity": "P1",
+      "desc": "猫疥螨应与犬疥螨有同等召回（combo 规则不应只绑犬条目）",
+      "complaint": "痒得不行一直挠，耳朵边缘结痂",
+      "top3": [
+        {
+          "name": "猫疥螨病",
+          "score": 13.8,
+          "promptWorthy": true,
+          "urgency": "moderate"
+        },
+        {
+          "name": "耳螨感染",
+          "score": 8.1,
+          "promptWorthy": false,
+          "urgency": "moderate"
+        },
+        {
+          "name": "跳蚤过敏性皮炎",
+          "score": 7.6,
+          "promptWorthy": true,
+          "urgency": "low"
+        }
+      ],
+      "pass": true,
+      "violations": []
+    },
+    {
+      "id": "generic-complaint-abstains",
+      "severity": "P1",
+      "desc": "泛词主诉不应有条目进入 prompt（证据不足不注入）",
+      "complaint": "有点痒，红红的",
+      "top3": [
+        {
+          "name": "浅表脓皮病",
+          "score": 6.3,
+          "promptWorthy": false,
+          "urgency": "moderate"
+        },
+        {
+          "name": "特应性皮炎（环境过敏）",
+          "score": 5.3,
+          "promptWorthy": false,
+          "urgency": "low"
+        }
+      ],
+      "pass": true,
+      "violations": []
+    },
+    {
+      "id": "species-filter-holds",
+      "severity": "P1",
+      "desc": "犬专属条目不应出现在猫的检索结果中",
+      "complaint": "突然烂了一块，湿湿的渗水，一直舔",
+      "top3": [
+        {
+          "name": "脓肿/蜂窝织炎",
+          "score": 9.5,
+          "promptWorthy": true,
+          "urgency": "urgent"
+        },
+        {
+          "name": "猫浅表脓皮病",
+          "score": 7.8,
+          "promptWorthy": false,
+          "urgency": "moderate"
+        },
+        {
+          "name": "接触性皮炎",
+          "score": 7.7,
+          "promptWorthy": true,
+          "urgency": "moderate"
+        }
+      ],
+      "pass": true,
+      "violations": []
+    },
+    {
+      "id": "high-risk-fires-on-evidence",
+      "severity": "P1",
+      "desc": "证据齐备时高危条目应被召回（此前 autoimmune/endocrine 无 combo，该敏感的不敏感）",
+      "complaint": "躯干两侧对称掉毛，皮肤变薄，喝水多尿多，肚子变大",
+      "top3": [
+        {
+          "name": "库兴综合征相关皮肤改变",
+          "score": 21.8,
+          "promptWorthy": true,
+          "urgency": "moderate"
+        },
+        {
+          "name": "甲状腺功能减退相关皮肤改变",
+          "score": 9.3,
+          "promptWorthy": false,
+          "urgency": "moderate"
+        },
+        {
+          "name": "落叶型天疱疮",
+          "score": 9,
+          "promptWorthy": false,
+          "urgency": "moderate"
+        }
+      ],
+      "pass": true,
+      "violations": []
+    },
+    {
+      "id": "high-risk-abstains-on-generic",
+      "severity": "P0",
+      "desc": "泛词主诉不得把免疫病/内分泌病/罕见病推进 prompt",
+      "complaint": "身上有点掉毛，有结痂",
+      "top3": [
+        {
+          "name": "浅表脓皮病",
+          "score": 9,
+          "promptWorthy": false,
+          "urgency": "moderate"
+        },
+        {
+          "name": "犬癣",
+          "score": 5.4,
+          "promptWorthy": false,
+          "urgency": "moderate"
+        },
+        {
+          "name": "落叶型天疱疮",
+          "score": 5.4,
+          "promptWorthy": false,
+          "urgency": "moderate"
+        }
+      ],
+      "pass": true,
+      "violations": []
+    },
+    {
+      "id": "pyoderma-not-duplicated",
+      "severity": "P1",
+      "desc": "K7 合并后，典型脓皮病主诉不应再有两条同实体条目占用 top3",
+      "complaint": "肚子上很多小红疙瘩和脓疱，有结痂，掉毛",
+      "top3": [
+        {
+          "name": "浅表脓皮病",
+          "score": 21.1,
+          "promptWorthy": true,
+          "urgency": "moderate"
+        },
+        {
+          "name": "落叶型天疱疮",
+          "score": 8.2,
+          "promptWorthy": false,
+          "urgency": "moderate"
+        },
+        {
+          "name": "全身型蠕形螨病",
+          "score": 7.1,
+          "promptWorthy": false,
+          "urgency": "urgent"
+        }
+      ],
+      "pass": true,
+      "violations": []
+    }
+  ],
+  "summary": {
+    "probesTotal": 10,
+    "probesPassed": 10,
+    "p0Failures": 0,
+    "blocking": false
+  }
+}

@@ -1,0 +1,369 @@
+{
+  "kind": "claim_source_registry",
+  "registry_version": "1.0.0",
+  "created_on": "2026-10-04",
+  "purpose": "BUG-TRADE-11/B17-1：字段级『声称-来源』注册。每条 claim 把某张知识卡的某个字段值（claim_hash）与具体来源挂钩；字段一改，hash 失配即审阅失效，必须重新登记。只存字段哈希与来源元数据，不存全文、密钥或病例。",
+  "usage_rules": [
+    "claim_hash = 对 utils/kb.js 中该卡该字段当前值的 UTF-8 字节做 SHA-256；由 claim_registry.js 自动复核，失配即 stale。",
+    "source.applies_to_species 必须覆盖卡片 species_scope：猫源不得签署犬字段（反之亦然）。",
+    "来源 URL 只能是空串或 https:// 开头的已核验链接；教材/书籍允许无 URL，不得伪造网址。",
+    "标题与主题相关不等于每句都被支持：locator 必须写到可定位的章节/小节层级。",
+    "status: draft（登记中）/ pending_clinical_review（来源核对完成，待临床复核）/ reviewed_clinical（兽医签署）。当前项目组整体复核不产生 reviewed_clinical。",
+    "review_scope 沿用项目既定口径：『项目组整体复核，非兽医逐卡签署』，不得伪造逐卡兽医签署。"
+  ],
+  "sources": [
+    {
+      "source_id": "acvd-clinical-consensus",
+      "title": "ACVD Clinical Consensus Guidelines",
+      "url": "https://acvd.org/about-us/clinical-consensus-guidelines/",
+      "edition": "",
+      "accessed_at": "2026-10-03",
+      "allowed_use": "内容复核对照；不复制治疗段落为用户自处理指导",
+      "applies_to_species": [
+        "犬",
+        "猫"
+      ],
+      "topic": "免疫介导性皮肤病（含药疹/多形性红斑执行边界）"
+    },
+    {
+      "source_id": "muller-kirk-sad",
+      "title": "Muller and Kirk's Small Animal Dermatology",
+      "url": "",
+      "edition": "7th ed.",
+      "accessed_at": "2026-10-03",
+      "allowed_use": "内容复核对照；教材章节定位",
+      "applies_to_species": [
+        "犬",
+        "猫"
+      ],
+      "topic": "小动物皮肤病总论（含 Cutaneous Drug Reactions）"
+    },
+    {
+      "source_id": "merck-mange",
+      "title": "Merck Veterinary Manual - Mange in Dogs and Cats",
+      "url": "https://www.merckvetmanual.com/integumentary-system/mange/mange-in-dogs-and-cats",
+      "edition": "",
+      "accessed_at": "2026-10-04",
+      "allowed_use": "内容复核对照；不复制治疗剂量",
+      "applies_to_species": [
+        "犬",
+        "猫"
+      ],
+      "topic": "蠕形螨/疥螨诊断与刮片路径"
+    },
+    {
+      "source_id": "merck-dermatophytosis",
+      "title": "Merck Veterinary Manual - Dermatophytosis in Dogs and Cats",
+      "url": "https://www.merckvetmanual.com/integumentary-system/dermatophytosis/dermatophytosis-in-dogs-and-cats",
+      "edition": "",
+      "accessed_at": "2026-10-04",
+      "allowed_use": "内容复核对照",
+      "applies_to_species": [
+        "犬",
+        "猫"
+      ],
+      "topic": "癣菌病临床表现（瘙痒可变）与真菌检查"
+    },
+    {
+      "source_id": "aaha-2023-allergy",
+      "title": "2023 AAHA Management of Allergic Skin Diseases in Dogs and Cats Guidelines",
+      "url": "https://www.aaha.org/trends-magazine/december-2023/2023-aaha-management-of-allergic-skin-diseases-in-dogs-and-cats-guidelines/",
+      "edition": "",
+      "accessed_at": "2026-10-04",
+      "allowed_use": "内容复核对照",
+      "applies_to_species": [
+        "犬",
+        "猫"
+      ],
+      "topic": "病史/体检不足以区分特应性与食物过敏；排查路径"
+    },
+    {
+      "source_id": "merck-anal-sac",
+      "title": "肛门囊病检查路径",
+      "url": "https://www.merckvetmanual.com/digestive-system/diseases-of-the-rectum-and-anus/anal-sac-disease-in-dogs-and-cats",
+      "locator": "Diagnosis of Anal Sac Disease",
+      "applies_to_species": [
+        "犬",
+        "猫"
+      ],
+      "accessed_at": "2026-10-04",
+      "allowed_use": "改写检查与鉴别路径，不复制治疗段落；待兽医逐卡签署"
+    },
+    {
+      "source_id": "merck-eye-exam",
+      "title": "睑炎检查路径",
+      "url": "https://www.merckvetmanual.com/eye-diseases-and-disorders/ophthalmology/physical-examination-of-the-eye-in-animals",
+      "locator": "Physical Examination of the Eye; baseline tests and indicated cytology",
+      "applies_to_species": [
+        "犬",
+        "猫"
+      ],
+      "accessed_at": "2026-10-04",
+      "allowed_use": "改写检查与鉴别路径，不复制治疗段落；待兽医逐卡签署"
+    },
+    {
+      "source_id": "brosseau-2022-pododerm",
+      "title": "猫浆细胞性足炎检查路径",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9009751/",
+      "locator": "Diagnosis; differential diagnoses, cytology, histopathology, FIV/FeLV screening",
+      "applies_to_species": [
+        "猫"
+      ],
+      "accessed_at": "2026-10-04",
+      "allowed_use": "改写检查与鉴别路径，不复制治疗段落；待兽医逐卡签署"
+    },
+    {
+      "source_id": "merck-myiasis-general",
+      "title": "蝇蛆病（伤口蛆症）检查路径",
+      "url": "https://www.merckvetmanual.com/integumentary-system/flies/dipterans-that-produce-myiasis-in-animals",
+      "locator": "Pathology and Diagnosis; wound larvae and identification",
+      "applies_to_species": [
+        "犬",
+        "猫"
+      ],
+      "accessed_at": "2026-10-04",
+      "allowed_use": "改写检查与鉴别路径，不复制治疗段落；待兽医逐卡签署"
+    },
+    {
+      "source_id": "merck-behavior-medical-exclusion",
+      "title": "Diagnosis of Behavior Problems in Animals",
+      "url": "https://www.merckvetmanual.com/behavior/behavioral-medicine-introduction/diagnosis-of-behavior-problems-in-animals",
+      "locator": "Exclude underlying medical conditions; complete physical examination and diagnostic tests; feline alopecia overlap also PMID16740071",
+      "applies_to_species": [
+        "猫"
+      ],
+      "accessed_at": "2026-10-04",
+      "allowed_use": "行为归因之前的医学排查，待专业逐卡复核"
+    },
+    {
+      "source_id": "merck-feline-demodicosis",
+      "title": "Mange / Feline Demodicosis",
+      "url": "https://www.merckvetmanual.com/integumentary-system/mange/mange-in-dogs-and-cats",
+      "locator": "Feline demodicosis; superficial and deep mites / sampling; concurrent fungal differential is pending clinical review",
+      "applies_to_species": [
+        "猫"
+      ],
+      "accessed_at": "2026-10-04",
+      "allowed_use": "猫螨种与取样边界，其他鉴别明确待逐卡审核"
+    }
+  ],
+  "claims": [
+    {
+      "card_id": "erythema_multiforme_犬_猫",
+      "field_path": "homeCareSafe",
+      "claim_hash": "AUTO_VERIFY",
+      "source_id": "acvd-clinical-consensus",
+      "locator": "Clinical consensus statements on adverse drug reactions：停药/调药由执业兽医决定",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review",
+      "note": "B13c（BUG-27）改写的执行主体文案：『立即联系开药兽医，药物是否停用或调整由兽医决定』"
+    },
+    {
+      "card_id": "erythema_multiforme_犬_猫",
+      "field_path": "recommendedTests",
+      "claim_hash": "AUTO_VERIFY",
+      "source_id": "muller-kirk-sad",
+      "locator": "Cutaneous Drug Reactions §Diagnosis：停药观察须由兽医执行",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review",
+      "note": "『停药观察（须由兽医执行）』与 homeCareSafe 主体一致"
+    },
+    {
+      "card_id": "demodectic_mange_犬",
+      "field_path": "ddx",
+      "claim_hash": "AUTO_VERIFY",
+      "source_id": "merck-mange",
+      "locator": "Mange in Dogs and Cats §Demodicosis：诊断需深刮片；临床表现与癣菌可重叠",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review",
+      "note": "B13a-1"
+    },
+    {
+      "card_id": "demodectic_mange_犬",
+      "field_path": "recommendedTests",
+      "claim_hash": "AUTO_VERIFY",
+      "source_id": "merck-dermatophytosis",
+      "locator": "Dermatophytosis §Diagnosis：真菌检查与刮片并行",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review",
+      "note": "B13a-1"
+    },
+    {
+      "card_id": "food_allergy_犬_猫",
+      "field_path": "ddx",
+      "claim_hash": "AUTO_VERIFY",
+      "source_id": "aaha-2023-allergy",
+      "locator": "Management of Allergic Skin Diseases §Diagnosis：排除饮食+再激发是确认食物过敏的唯一路径",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review",
+      "note": "B13a-2"
+    },
+    {
+      "card_id": "food_allergy_犬_猫",
+      "field_path": "recommendedTests",
+      "claim_hash": "AUTO_VERIFY",
+      "source_id": "aaha-2023-allergy",
+      "locator": "§Diagnostic approach：先排寄生虫/感染再饮食试验",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review",
+      "note": "B13a-2"
+    },
+    {
+      "card_id": "atopic_dermatitis_犬_猫",
+      "field_path": "ddx",
+      "claim_hash": "AUTO_VERIFY",
+      "source_id": "aaha-2023-allergy",
+      "locator": "§Diagnosis：病史/体检不能区分atopy与食物过敏",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review",
+      "note": "B13a-3"
+    },
+    {
+      "card_id": "atopic_dermatitis_犬_猫",
+      "field_path": "recommendedTests",
+      "claim_hash": "AUTO_VERIFY",
+      "source_id": "aaha-2023-allergy",
+      "locator": "§Diagnostic approach",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review",
+      "note": "B13a-3"
+    },
+    {
+      "card_id": "anal_sac_disease_犬_猫",
+      "field_path": "recommendedTests",
+      "claim_hash": "a4325e316c5e186801a94adafe5282afd55d992283f50cf36306b3588faf0f6d",
+      "source_id": "merck-anal-sac",
+      "locator": "Diagnosis of Anal Sac Disease",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "blepharitis_犬_猫",
+      "field_path": "recommendedTests",
+      "claim_hash": "3654d0da3f333a6696f6a67ba0a44072f3613c9b86dfd8f4adf496b45dd48d0d",
+      "source_id": "merck-eye-exam",
+      "locator": "Physical Examination of the Eye; baseline tests and indicated cytology",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "plasma_cell_pododermatitis_猫",
+      "field_path": "recommendedTests",
+      "claim_hash": "3d64b6ac95189481efe5cb745f716bfd7cb087bf721d94ec55aabb48eb840478",
+      "source_id": "brosseau-2022-pododerm",
+      "locator": "Diagnosis; differential diagnoses, cytology, histopathology, FIV/FeLV screening",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "myiasis_犬_猫",
+      "field_path": "recommendedTests",
+      "claim_hash": "2822718b4e644518a32806b78b91d6d97ffa07eb3f1a1015df14795f3695bb3f",
+      "source_id": "merck-myiasis-general",
+      "locator": "Pathology and Diagnosis; wound larvae and identification",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "psychogenic_alopecia_猫",
+      "field_path": "typicalFeatures",
+      "claim_hash": "5a70520ee0cfd46e0288228599024fe70155c1d0e38480b11ed50a580bbf444e",
+      "source_id": "merck-behavior-medical-exclusion",
+      "locator": "Exclude underlying medical conditions; complete physical examination and diagnostic tests; feline alopecia overlap also PMID16740071",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "psychogenic_alopecia_猫",
+      "field_path": "ddx",
+      "claim_hash": "0abaefd09310a0d8c09e9579d12aec335a52ba3fd84a33bdab5f5cf0295237b4",
+      "source_id": "merck-behavior-medical-exclusion",
+      "locator": "Exclude underlying medical conditions; complete physical examination and diagnostic tests; feline alopecia overlap also PMID16740071",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "psychogenic_alopecia_猫",
+      "field_path": "recommendedTests",
+      "claim_hash": "c7da6040210e923ff97237d2564b4ba0c2c245978a469f13c24eb1d3650522b2",
+      "source_id": "merck-behavior-medical-exclusion",
+      "locator": "Exclude underlying medical conditions; complete physical examination and diagnostic tests; feline alopecia overlap also PMID16740071",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "feline_demodicosis_猫",
+      "field_path": "typicalFeatures",
+      "claim_hash": "ddb9f20610a16412cfd2a104dffe722196149ccbd841436ee3101de7e5252b6d",
+      "source_id": "merck-feline-demodicosis",
+      "locator": "Feline demodicosis; superficial and deep mites / sampling; concurrent fungal differential is pending clinical review",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "feline_demodicosis_猫",
+      "field_path": "ddx",
+      "claim_hash": "b0fed62050061035cf2faf9ec6c61104cce830343c7ad9c9fc9875b1738bdd33",
+      "source_id": "merck-feline-demodicosis",
+      "locator": "Feline demodicosis; superficial and deep mites / sampling; concurrent fungal differential is pending clinical review",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "feline_demodicosis_猫",
+      "field_path": "recommendedTests",
+      "claim_hash": "efccd813bb0513e021f59bba9eb32dcf5e84f659f115fa6c4cac24b5d9ad82a4",
+      "source_id": "merck-feline-demodicosis",
+      "locator": "Feline demodicosis; superficial and deep mites / sampling; concurrent fungal differential is pending clinical review",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "feline_demodicosis_猫",
+      "field_path": "relatedDiseases",
+      "claim_hash": "6845c1004ce49d4982915558387e654d6ddca9359e46e36fbcec40046ea3f375",
+      "source_id": "merck-feline-demodicosis",
+      "locator": "Feline demodicosis; superficial and deep mites / sampling; concurrent fungal differential is pending clinical review",
+      "checked_at": "2026-10-04",
+      "reviewer_role": "project_team",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    }
+  ]
+}

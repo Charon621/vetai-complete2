@@ -6,6 +6,7 @@
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Sequence
 
@@ -16,9 +17,12 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from output_paths import output_root  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "output" / "VetAI小程序提示词与工程方法说明.docx"
+OUTPUT = output_root("prompt-docs", "VetAI小程序提示词与工程方法说明.docx")
 
 # 配色（与项目其它报告保持一致）
 NAVY = "17365D"

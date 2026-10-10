@@ -153,7 +153,7 @@ expectTop('contact dermatitis pattern', {
 expectTop('dog demodicosis pattern', {
   species: '犬',
   bodyPart: '面部',
-  complaint: '眼周前肢对称脱毛 皮屑 不痒 慢性 蠕形螨'
+  complaint: '眼周只有一小块脱毛 皮屑 不痒 慢性 蠕形螨 其他体区未见病灶'
 }, '蠕形螨病（局灶型）')
 
 expectTop('dog sarcoptic mange pattern', {
@@ -520,3 +520,202 @@ assert.ok(pyoderma.breeds.indexOf('贵宾') >= 0,
   'merged entry must absorb breeds from the folded-in card')
 
 console.log('kb tests passed')
+
+// ============================================================
+// K15：组合规则与负信号同样过否定检测（K9 的补全）
+// 回归此前缺陷：组合规则（applyCombinationRules / applyHighRiskCombos）
+// 与负信号扣分用裸子串匹配，绕过了 K9 的否定前缀检测——
+//   ①「无瘙痒」⊂子串命中「瘙痒」，给跳蚤过敏组合 +6 并顶成 Top-1；
+//   ②「无红斑」命中猫心理性脱毛负信号词「红斑」，把支持性证据扣成分。
+// ============================================================
+
+// ① 否定的症状不得成为组合证据
+const negItchResults = kb.search({
+  species: '犬',
+  bodyPart: '尾根',
+  complaint: '无瘙痒，尾根有黑色颗粒，掉毛'
+})
+const negItchFlea = negItchResults.filter(function (r) { return r.canonicalName === '跳蚤过敏性皮炎' })[0]
+if (negItchFlea) {
+  const hasItchCombo = negItchFlea.matched.some(function (m) {
+    return String(m).indexOf('组合:') === 0 && String(m).indexOf('瘙痒') >= 0
+  })
+  assert.strictEqual(hasItchCombo, false,
+    '「无瘙痒」must not satisfy the flea combo rule that requires 瘙痒')
+}
+
+// 对照：肯定语气的瘙痒仍应正常触发组合
+const posItchResults = kb.search({
+  species: '犬',
+  bodyPart: '尾根',
+  complaint: '瘙痒，尾根有黑色颗粒，掉毛'
+})
+const posItchFlea = posItchResults.filter(function (r) { return r.canonicalName === '跳蚤过敏性皮炎' })[0]
+assert.ok(posItchFlea, 'positive itch + flea dirt should still surface flea allergy')
+assert.ok(posItchFlea.comboEvidence.some(function (e) { return e.ruleId === 'morphology-2' }),
+  'affirmative 瘙痒 must still fire the flea combo rule')
+
+// ② 否定的表现不得触发负信号扣分（方向不能反）
+const noRedness = kb.search({
+  species: '猫',
+  complaint: '无红斑，对称脱毛，皮肤光滑'
+})
+const psyNoRed = noRedness.filter(function (r) { return r.canonicalName === '猫心理性脱毛' })[0]
+if (psyNoRed) {
+  const negated = psyNoRed.matched.some(function (m) { return String(m).indexOf('负信号:') === 0 })
+  assert.strictEqual(negated, false,
+    '「无红斑」is supporting evidence for 猫心理性脱毛, must not trigger its 红斑 negative signal')
+}
+
+// 负信号本身的否定式条目（「无瘙痒」）词首命中不受否定检测影响
+const noItchFlea = kb.search({
+  species: '犬',
+  bodyPart: '尾根',
+  complaint: '无瘙痒，尾根有黑色颗粒，掉毛'
+}).filter(function (r) { return r.canonicalName === '跳蚤过敏性皮炎' })[0]
+if (noItchFlea) {
+  assert.ok(noItchFlea.matched.some(function (m) { return String(m).indexOf('负信号:') === 0 }),
+    '「无瘙痒」must still count as the flea card\'s own negative signal entry')
+}
+
+// ============================================================
+// B13c（BUG-27）：药疹卡的护理执行主体必须归兽医
+// 快报告装配（api homeCareSafe 直通）与 full 失败的 deferred 兜底两个出口
+// 都会原样输出本字段；旧文案「先停用可疑药物」会让系统直接指导主人自行停药，
+// 与 system 禁令（api：不得提供停药方案）同卡冲突。行为级出口验证见
+// tests/fastpath-integration.test.js ④。
+// ============================================================
+{
+  const drugCard = kb.DISEASE_KB.filter(function (c) { return c.name === '药疹/多形性红斑' })[0]
+  assert.ok(drugCard, '药疹卡必须存在')
+  const allCare = drugCard.homeCareSafe.join('；')
+  assert.ok(allCare.indexOf('立即联系开药兽医') >= 0 && allCare.indexOf('由兽医决定') >= 0,
+    '药疹护理必须写明兽医是停药/调药的决定主体')
+  assert.strictEqual(allCare.indexOf('先停用可疑药物'), -1,
+    '药疹护理不得残留主人自行停药指令')
+  // 相关字段不能出现相反指令：recommendedTests 的「停药观察」必须带兽医执行限定
+  assert.ok(drugCard.recommendedTests.some(function (t) { return t.indexOf('停药') >= 0 && t.indexOf('兽医') >= 0 }),
+    '停药观察类检查必须标注由兽医执行')
+  // 不因修复而丢掉安全负例与非处方护理
+  assert.ok(allCare.indexOf('不要自行加用') >= 0, '禁止自行加药的保护句必须保留')
+  assert.ok(allCare.indexOf('拍照记录') >= 0 && allCare.indexOf('立即就诊') >= 0,
+    '记录变化与重症就诊指引必须保留')
+}
+
+// ============================================================
+// B11（BUG-23）：鉴别派生保真 —— ddx 原文逐句保留、span 回指、不硬造病名
+// 旧派生只留「与X区分：」片段：18/69 卡丢句（睑炎眼痛提醒、猫鳞癌活检提醒等）。
+// ============================================================
+{
+  const SEP = /[；;。\s]/
+  // ① 全卡 span 回指：非空 ddx 的每个句段都被恰好一个条目覆盖，句间只允许分隔符
+  kb.DISEASE_KB.forEach(function (card) {
+    const src = card.ddxSource || ''
+    assert.ok(src.length > 0, card.name + ' 缺 ddxSource（B11 必须保留鉴别原文）')
+    assert.ok(card.keyDifferentials && card.keyDifferentials.length, card.name + ' 应有鉴别条目')
+    const spans = card.keyDifferentials
+      .map(function (it) { return it.span })
+      .sort(function (a, b) { return a.start - b.start })
+    let cursor = 0
+    spans.forEach(function (sp) {
+      assert.ok(sp.start >= cursor, card.name + ' span 重叠或乱序')
+      for (let i = cursor; i < sp.start; i++) {
+        assert.ok(SEP.test(src[i]), card.name + ' 句段间有未覆盖内容：' + src.slice(cursor, sp.start))
+      }
+      cursor = sp.end
+    })
+    for (let i = cursor; i < src.length; i++) {
+      assert.ok(SEP.test(src[i]), card.name + ' 尾部有未覆盖内容：' + src.slice(cursor))
+    }
+    card.keyDifferentials.forEach(function (it) {
+      const raw = src.slice(it.span.start, it.span.end)
+      assert.ok(raw.length > 0, card.name + ' span 指向空段')
+      if (it.source === 'supplement') {
+        assert.strictEqual(it.distinguish, raw, card.name + ' supplement 必须逐字回指原文')
+      } else {
+        assert.strictEqual(raw.indexOf('与' + it.name), 0, card.name + ' matched 条目应回指原文中的该句')
+      }
+    })
+  })
+
+  // ② 已知丢句卡修复
+  const bleph = kb.DISEASE_KB.filter(function (c) { return c.name === '睑炎' })[0]
+  assert.ok(bleph.keyDifferentials.some(function (it) {
+    return it.source === 'supplement' && it.distinguish.indexOf('眼部疼痛或角膜风险') >= 0
+  }), '睑炎的眼部疼痛提醒必须保留')
+  const scc = kb.DISEASE_KB.filter(function (c) { return c.name === '猫鳞状细胞癌' })[0]
+  assert.ok(scc.keyDifferentials.some(function (it) {
+    return it.source === 'supplement' && it.distinguish.indexOf('尽快活检排除鳞癌') >= 0
+  }), '猫鳞癌活检提醒必须保留')
+  assert.ok(scc.keyDifferentials.some(function (it) {
+    return it.distinguish.indexOf('好发年轻猫唇部') >= 0
+  }), 'EGC 对比后半句必须保留')
+
+  // ③ 物种括注变体「与X区分（猫）：」
+  const v = kb.buildDifferentials({ ddx: '与泪痕皮炎区分（猫）：说明文字' })
+  assert.strictEqual(v.length, 1, JSON.stringify(v))
+  assert.strictEqual(v[0].name, '泪痕皮炎')
+  assert.strictEqual(v[0].scope, '猫')
+
+  // ④ 空 ddx 返回空数组，不造候选
+  assert.deepStrictEqual(kb.buildDifferentials({}), [])
+  assert.deepStrictEqual(kb.buildDifferentials({ ddx: '' }), [])
+
+  // ⑤ 检索结果与 prompt 使用原文
+  const q = { species: '犬', breed: '', bodyPart: '眼周', complaint: '眼皮红肿结痂', visualFeatures: ['眼睑红肿', '眼周结痂'] }
+  const hit = kb.search(q).filter(kb.isPromptWorthyResult)[0]
+  assert.ok(hit, '睑炎用例应被检出')
+  assert.strictEqual(hit.ddx, bleph.ddxSource, '检索结果 ddx 必须是原文')
+  assert.ok(hit.ddx.indexOf('眼部疼痛或角膜风险') >= 0, '检索结果 ddx 不得丢句')
+  const prompt = kb.buildRagPrompt(q)
+  assert.ok(prompt.indexOf('眼部疼痛或角膜风险') >= 0, 'prompt 鉴别区必须含 supplement 句')
+  assert.ok(prompt.indexOf('鉴别要点超长已截断') === -1, '正常卡片不应触发截断标记')
+}
+
+// ============================================================
+// B13a（BUG-25）：三张鉴别卡误导句修复 —— 蠕形螨/食物过敏/特应性
+// 旧文案把痒强度、季节、胃肠症状当硬区分依据；新口径是检查路径 + 并存排查。
+// 两张过敏卡对同一事实必须使用同一口径，不得互相硬排他。
+// ============================================================
+{
+  const dm = kb.DISEASE_KB.filter(function (c) { return c.name === '蠕形螨病（局灶型）' })[0]
+  const fa = kb.DISEASE_KB.filter(function (c) { return c.name === '食物过敏性皮炎' })[0]
+  const ad = kb.DISEASE_KB.filter(function (c) { return c.name === '特应性皮炎（环境过敏）' })[0]
+
+  // ① 旧误导句不再出现在卡与派生（进 prompt 的原文里也不得残留）
+  const banned = ['真菌通常瘙痒剧烈', '全年无季节性', '特应性皮炎通常环境相关、季节性']
+  ;[dm, fa, ad].forEach(function (card) {
+    banned.forEach(function (phrase) {
+      assert.strictEqual(card.ddx.indexOf(phrase), -1, card.name + ' 仍含旧误导句：' + phrase)
+    })
+  })
+
+  // ② 新口径：痒强度不能单独区分 + 检查路径
+  assert.ok(dm.ddx.indexOf('瘙痒强度不能单独区分') >= 0, '蠕形螨卡需写痒强度边界')
+  assert.ok(dm.ddx.indexOf('蠕形螨刮片和真菌检查') >= 0, '蠕形螨卡需给检查路径')
+  assert.ok(dm.ddx.indexOf('细胞学检查') >= 0, '并存感染的细胞学检查保留')
+  // 反例：不因痒排癣菌、不因对称确诊蠕形螨 —— 由上述边界句保证；再验显式检查
+  assert.ok(dm.recommendedTests.some(function (t) { return t.indexOf('蠕形螨刮片') >= 0 }))
+  assert.ok(dm.recommendedTests.some(function (t) { return t.indexOf('真菌检查') >= 0 }))
+  assert.ok(dm.recommendedTests.some(function (t) { return t.indexOf('细胞学') >= 0 }))
+
+  // ③ 过敏双卡口径一致：均写『不能可靠区分』且互指对方为待鉴别方向
+  ;[fa, ad].forEach(function (card) {
+    assert.ok(card.ddx.indexOf('不能可靠区分') >= 0, card.name + ' 需写不能可靠区分')
+    assert.ok(card.ddx.indexOf('饮食排除及再激发') >= 0, card.name + ' 需写兽医监督的排除-激发')
+    assert.ok(card.ddx.indexOf('并存') >= 0, card.name + ' 需保留并存关系')
+    assert.ok(!card.recommendedTests.some(function (t) { return /剂量|毫克|自行/.test(t) }),
+      card.name + ' 检查建议不得含DIY/剂量')
+  })
+  assert.ok(fa.ddx.indexOf('特应性皮炎') >= 0 && ad.ddx.indexOf('食物过敏性皮炎') >= 0,
+    '两张过敏卡互为待鉴别方向')
+
+  // ④ 派生与 prompt 链路：新句进入 buildRagPrompt / api 参考清单
+  const dmDerived = kb.buildDifferentials({ ddx: dm.ddx })
+  assert.ok(dmDerived.every(function (it) { return it.source === 'matched' || it.source === 'supplement' }))
+  assert.ok(dmDerived.some(function (it) { return it.distinguish.indexOf('瘙痒强度不能单独区分') >= 0 }))
+  const prompt = kb.buildRagPrompt({ species: '犬', breed: '', bodyPart: '躯干', complaint: '脸上圆形脱毛', visualFeatures: ['圆形脱毛'] })
+  if (prompt.indexOf('蠕形螨') >= 0) {
+    assert.ok(prompt.indexOf('瘙痒强度不能单独区分') >= 0, 'prompt 鉴别区应携带新口径')
+  }
+}

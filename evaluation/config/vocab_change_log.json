@@ -1,0 +1,4292 @@
+{
+  "kind": "vocab_change_log",
+  "log_version": "1.0.0",
+  "created_on": "2026-10-04",
+  "purpose": "B17-2：受控词表（视觉/病史）新概念登记。每个新进入词表的概念必须写明引入规则、触发病例与开发接触历史、来源；未做同义排查不得静默等价。全局 KB 版本号更新不自动等于逐概念复核。",
+  "usage_rules": [
+    "concept 必须是进入 kb.js 词表（VISUAL_VOCAB/VISUAL_VOCAB_GROUPS/HISTORY_VOCAB）的实际词；每条登记只签一个 concept。",
+    "introduced_by_rule 必须写明引入的规则/缺陷号/批次（如 BUG-24/B12），无规则来源的概念不得入表。",
+    "contact_history：该概念已被哪些开发病例接触过；接触过的概念不得再宣称未接触。",
+    "synonyms_checked=true 表示已做同义排查；缺省按 false 处理，校验器对 false 的条目警告。",
+    "sourceRefs 引用 claim_source_registry.json 的 source_id 或权威来源元数据；不存全文。"
+  ],
+  "entries": [
+    {
+      "concept": "脱毛",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "圆形脱毛",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "局灶脱毛",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "对称脱毛",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "断毛",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "毛发稀疏",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "毛发粗乱",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "毛发粘连",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "短毛",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "虫蛀样脱毛",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "红斑",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "红肿",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "发红",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "充血",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "色素沉着",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "黑色",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "白色",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "红褐",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "蓝灰",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "紫",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "变色",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "黑褐色",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "黄褐色",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "色素脱失",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "皮肤发黑",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "甲沟红肿",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "毛发发红变色",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "黑皮",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "鼻镜褪色",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "鼻部脱色",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "眼睑红肿",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "鳞屑",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "皮屑",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "大量皮屑",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "结痂",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "表皮环",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "厚痂",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "分层脱屑",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "脓疱结痂",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "薄黄痂",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "环形鳞屑脱毛斑",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "耳廓结痂",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "鼻部结痂",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "面部结痂",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "眼周结痂",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "丘疹",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "脓疱",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "粟粒",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "红疹",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "小米粒",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "水疱",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "黑头",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "粉刺",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "黑点",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "黑色颗粒",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "小水泡",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "黑头粉刺",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "小丘疹",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "多发小疙瘩",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "毛囊中心红点",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "小红疙瘩",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "薄壁脓疱",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "下巴黑点",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "颏部脓疱",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "下巴起疙瘩",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "背部黑头",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "渗出",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "潮湿",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "湿润",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "分泌物",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "脓性",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "流脓",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "化脓",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "蜡样",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "油腻",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "耳垢",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "脓液",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "渗液",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "蜡质油腻",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "黄绿色分泌物",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "化脓性分泌物",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "浸渍",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "油腻皮屑",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "淡黄色浆液",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "皮肤渗水",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "流脓血",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "爪部渗脓",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "破溃流脓",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "脓腔",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "潮湿污染",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "趾甲渗脓",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "褶皱内积污",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "浑浊",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "破溃",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "溃疡",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "糜烂",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "破损",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "撕裂",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "裂纹",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "干裂",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "伤口",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "出血",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "擦伤",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "破皮",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "深层溃疡",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "坏死",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "穿刺伤",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "发红破皮",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "耳道溃疡",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "肛门旁破溃",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "鼻部溃疡",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "增厚",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "增生",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "角化",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "粗糙",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "皮肤变薄",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "皮肤苔藓化",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "疣状增生",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "表面粗糙",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "指甲变厚",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "指甲发白",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "指甲发黄",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "指甲变形",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "肿块",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "结节",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "隆起",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "肿胀",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "菜花样",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "突然肿包",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "耳朵鼓包",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "耳廓肿胀",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "耳朵像气球",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "肛周肿胀",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "幼犬脸肿",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "眼周肿胀",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "耳道红肿",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "脚趾间反复红肿",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "淋巴结增大",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "瘘管",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "肉垫",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "脚垫",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "泪痕",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "指甲松动",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "睫毛根部皮屑",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "虫体",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "虱卵",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "伤口有虫",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "蛆",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "环形",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "对称",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "多发",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "局灶",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "硬皮",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "硬结",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "硬化",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "钙化",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "囊性",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "淋巴结肿大",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "淋巴结增大",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "甲床感染",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "有臭味分泌物",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "慢性",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "反复",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "急性",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "突然",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "季节性",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "全年",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "经常",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "瘙痒",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "剧烈瘙痒",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "不痒",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "轻痒",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "无瘙痒",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "轻度瘙痒",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "疼痛",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "热痛",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "无痛",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "不痛",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "跛行",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "不愈",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "顽固",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "快速扩大",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "慢性迁延",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "一夜烂一块",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "舔舐",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "舔爪",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "舔毛",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "过度舔",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "搔抓",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "抓挠",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "挠",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "甩头",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "抓耳",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "舔咬",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "疯狂抓挠",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "舔咬患肢",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "舔咬爪子",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "啃玩具后加重",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "蹭屁股",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "舔肛门",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "坐地拖行",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "眯眼",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "揉眼",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "异味",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "臭味",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "酸腐味",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "酸臭味",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "腐臭味",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "褶皱臭",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "鱼腥臭",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "恶臭",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "传染",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "传染人",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "人也有",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "人也痒",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "多宠",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "幼宠",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "户外",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "草丛",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "夏天",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "接触",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "地面",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "清洁剂",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "植物",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "摩擦",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "压力点",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "注射",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "疫苗",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "咬伤",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "外伤",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "抓伤",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "跳蚤",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "虫",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "叮咬",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "蚊",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "蜂",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "晒",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "日晒加重",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "多饮多尿",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "体重下降",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "乏力",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "肥胖",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "精神食欲异常",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "嗜睡",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "腹泻",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "呕吐",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "胃肠",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "便秘",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "便血",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "排便困难",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "排便疼痛",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "腹部膨大",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "贫血",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "继发感染",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "耳炎",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "流泪",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "发热",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "精神差",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "行动不便",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "碰就疼",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "耳道疼痛",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "触碰疼痛",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "局部热痛",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "皮肤发热",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "趾甲疼痛",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "单爪疼痛",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "波动",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "波动感",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "皮下硬块",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "红肿发热",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "幼犬",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "老年",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "公猫",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "压力",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "焦虑",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "低龄幼犬",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "未满6月龄",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "年轻犬",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "雪纳瑞",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "结痂反复",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "反复耳炎",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "反复破溃",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "反复结痂",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "无明显化脓",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "不怎么挠",
+      "channel": "history",
+      "allowedChannels": [
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development vocabulary and synthetic engineering regressions; development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "黏膜溃疡",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development cards; reviewed source contract, development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "靶形红斑",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development cards; reviewed source contract, development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "多形红斑",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development cards; reviewed source contract, development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "足垫增厚",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development cards; reviewed source contract, development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "鼻镜干裂",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development cards; reviewed source contract, development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "眼鼻分泌物",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development cards; reviewed source contract, development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "圆形",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development cards; reviewed source contract, development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "光滑",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development cards; reviewed source contract, development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    },
+    {
+      "concept": "耳道分泌物增多",
+      "channel": "visual",
+      "allowedChannels": [
+        "photo",
+        "owner_text",
+        "clinical_exam"
+      ],
+      "introduced_by_rule": "B12/BUG-24",
+      "contact_history": "existing development cards; reviewed source contract, development asset",
+      "sourceRefs": [
+        "source-channel-contract:B12"
+      ],
+      "synonyms_checked": true
+    }
+  ]
+}

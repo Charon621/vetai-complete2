@@ -1,4 +1,4 @@
-<view class="tab-bar" wx:if="{{!hidden && ready}}" aria-role="tablist">
+<view class="tab-bar {{switching ? 'is-switching' : ''}}" wx:if="{{!hidden && ready}}" aria-role="tablist">
   <view class="tab-shell">
     <view class="tab-lens lens-{{selected}} {{switching ? 'is-moving slide-' + slideFrom + '-' + selected : ''}}" aria-hidden="true" bindanimationend="onSlideEnd"></view>
     <view class="tab-item {{selected === index ? 'on' : ''}}" wx:for="{{list}}" wx:key="pagePath" data-index="{{index}}" bindtap="switchTab"

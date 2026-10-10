@@ -1,0 +1,156 @@
+{
+  "kind": "card_revision_log",
+  "log_version": "1.0.0",
+  "created_on": "2026-10-04",
+  "purpose": "B17-2：知识卡逐卡内容修订台账。运行时 KB 只带简短版本 hash（kb.KB_VERSION / B02 快照的逐卡语义哈希），逐字段变更历史与复核范围记录在这里，不重复 B02 快照职责。",
+  "usage_rules": [
+    "每次对知识卡内容字段的改动必须追加一条 revision；changed_fields 逐字段列出。",
+    "全局 KB_VERSION 升级不自动算逐字段复核：review_scope 必须如实写『项目组整体复核，非兽医逐卡签署』，兽医逐卡签署需另行记录。",
+    "changed_fields 的 claim 如已登记 claim_source_registry，须在 claim_refs 填对应登记（card_id+field_path）。",
+    "台账只追加不改写；更正错误用新条目标注 supersedes。"
+  ],
+  "revisions": [
+    {
+      "card_id": "erythema_multiforme_犬_猫",
+      "revision": "1",
+      "batch": "B13c",
+      "changed_at": "2026-10-04",
+      "changed_fields": [
+        "homeCareSafe"
+      ],
+      "change_summary": "BUG-27：护理执行主体由主人改为兽医——『先停用可疑药物并立即联系兽医』改为『立即联系开药兽医，药物是否停用或调整由兽医决定』",
+      "claim_refs": [
+        "erythema_multiforme_犬_猫#homeCareSafe",
+        "erythema_multiforme_犬_猫#recommendedTests"
+      ],
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review",
+      "supersedes": null
+    },
+    {
+      "card_id": "demodectic_mange_犬",
+      "revision": "1",
+      "batch": "B13a",
+      "changed_at": "2026-10-04",
+      "changed_fields": [
+        "ddx",
+        "recommendedTests"
+      ],
+      "change_summary": "BUG-25：删除『真菌通常瘙痒剧烈/对称性更明显』硬区分，改为刮片+真菌检查排查路径；显式recommendedTests替代类目默认",
+      "claim_refs": [
+        "demodectic_mange_犬#ddx",
+        "demodectic_mange_犬#recommendedTests"
+      ],
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review",
+      "supersedes": null
+    },
+    {
+      "card_id": "food_allergy_犬_猫",
+      "revision": "1",
+      "batch": "B13a",
+      "changed_at": "2026-10-04",
+      "changed_fields": [
+        "ddx",
+        "recommendedTests"
+      ],
+      "change_summary": "BUG-25：删除『全年无季节性/常伴消化道症状』硬区分，改为兽医监督排除-激发；先排查寄生虫与并存感染",
+      "claim_refs": [
+        "food_allergy_犬_猫#ddx",
+        "food_allergy_犬_猫#recommendedTests"
+      ],
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review",
+      "supersedes": null
+    },
+    {
+      "card_id": "atopic_dermatitis_犬_猫",
+      "revision": "1",
+      "batch": "B13a",
+      "changed_at": "2026-10-04",
+      "changed_fields": [
+        "ddx",
+        "recommendedTests"
+      ],
+      "change_summary": "BUG-25：与食物卡统一口径（不能凭季节/病史/体检区分），保留并存感染/跳蚤过敏排查关系",
+      "claim_refs": [
+        "atopic_dermatitis_犬_猫#ddx",
+        "atopic_dermatitis_犬_猫#recommendedTests"
+      ],
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review",
+      "supersedes": null
+    },
+    {
+      "card_id": "anal_sac_disease_犬_猫",
+      "batch": "B13b",
+      "changed_at": "2026-10-04",
+      "changed_fields": [
+        "recommendedTests"
+      ],
+      "change_summary": "补足检查路径与证据边界；不包含治疗指导",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "blepharitis_犬_猫",
+      "batch": "B13b",
+      "changed_at": "2026-10-04",
+      "changed_fields": [
+        "recommendedTests"
+      ],
+      "change_summary": "补足检查路径与证据边界；不包含治疗指导",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "plasma_cell_pododermatitis_猫",
+      "batch": "B13b",
+      "changed_at": "2026-10-04",
+      "changed_fields": [
+        "recommendedTests"
+      ],
+      "change_summary": "补足检查路径与证据边界；不包含治疗指导",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "myiasis_犬_猫",
+      "batch": "B13b",
+      "changed_at": "2026-10-04",
+      "changed_fields": [
+        "recommendedTests"
+      ],
+      "change_summary": "补足检查路径与证据边界；不包含治疗指导",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "psychogenic_alopecia_猫",
+      "batch": "B13d",
+      "changed_at": "2026-10-04",
+      "changed_fields": [
+        "typicalFeatures",
+        "ddx",
+        "recommendedTests"
+      ],
+      "change_summary": "补足检查路径与证据边界；不包含治疗指导",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "feline_demodicosis_猫",
+      "batch": "B13d",
+      "changed_at": "2026-10-04",
+      "changed_fields": [
+        "typicalFeatures",
+        "ddx",
+        "recommendedTests",
+        "relatedDiseases"
+      ],
+      "change_summary": "补足检查路径与证据边界；不包含治疗指导",
+      "review_scope": "项目组整体复核，非兽医逐卡签署",
+      "status": "pending_clinical_review"
+    }
+  ]
+}

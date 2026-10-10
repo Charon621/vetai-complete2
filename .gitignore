@@ -1,14 +1,6 @@
-﻿.venv-yolo/
 # 只忽略根目录的 YOLO 训练输出。原先写作 runs/ 会匹配任意层级，
 # 把 evaluation/runs/ 的审计留档一并吞掉，导致 kb_audit 的基线永远无法入库。
 /runs/
-datasets/
-weights/
-*.pt
-backend/.venv-yolo/
-backend/runs/
-backend/datasets/
-yolov8n.pt
 node_modules/
 package.json
 package-lock.json
@@ -22,16 +14,15 @@ cloudfunctions/**/node_modules/
 project.private.config.json
 .env
 .env.*
-项目总论/
-项目总论/输出文件/
 /tmp/
 /output/
 /docx_render_check/
 /docx_visual_assets/
-evaluation/dataset_reference_set/images/
 .hermes/
 __pycache__/
 *.pyc
+# pytest 曾在仓库根目录跑过一次留下的缓存，显式忽略，不再依赖其内部自带的 .gitignore
+.pytest_cache/
 .preview/
 IDEA.md
 

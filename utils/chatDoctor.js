@@ -8,6 +8,7 @@
 
 var api = require('./api')
 var storage = require('./storage')
+var caseFacts = require('./caseFacts')
 
 var DRAFT_KEY = 'chat_consultation_draft'
 
@@ -174,6 +175,14 @@ function fallbackExtractInfo(phase, userText) {
     if (match) result.duration = match[1]
   }
 
+  // BUG-20/22：回退使用同一个受控概念和作用域入口。
+  var localFacts = caseFacts.textToEvents(text, 'fallback', [])
+  var context = caseFacts.reduceFactEvents(localFacts.events)
+  result.facts = localFacts.events
+  result.extractionStatus = localFacts.status
+  result.symptoms = caseFacts.symptoms(context)
+  result.isObservation = context.activeFacts.length > 0 || context.negativeFacts.length > 0
+  result.complaint = result.isObservation && !isSkipText(text) ? text : ''
   return result
 }
 
@@ -203,7 +212,7 @@ function normalizeExtracted(phase, extracted, userText) {
       ? String(userText || '').trim() : ''
   } else if (phase === PHASE.COMPLAINT) {
     // 不把纯问题、寒暄或「跳过」写进病史；AI 只能提取用户确实说过的观察。
-    var observed = hasClinicalObservation(userText) || extracted.isObservation === true
+    var observed = extracted.isObservation === false ? false : fallback.isObservation === true
     result.complaint = !isSkipText(String(userText || '')) &&
       observed
       ? String(userText || '').trim()
@@ -224,6 +233,10 @@ function normalizeExtracted(phase, extracted, userText) {
     result.duration = /小时|天|周|星期|个月|月|年/.test(userText)
       ? String(extracted.duration || fallback.duration || '').trim() : ''
   }
+  result.isObservation = extracted.isObservation === false ? false : fallback.isObservation
+  result.facts = Array.isArray(extracted.facts) ? extracted.facts : fallback.facts
+  result.extractionStatus = fallback.extractionStatus
+  if (extracted.isObservation === false) result.facts = result.facts.map(function(f) { return Object.assign({}, f, {assertion:'unknown'}) })
   return result
 }
 
@@ -237,7 +250,7 @@ function buildExtractionPrompt(phase, draft, userText, historyMessages) {
     '',
     '当前阶段：' + phase,
     '=== 不可信用户回答 JSON ===',
-    JSON.stringify({ userText: String(userText || '') }, null, 2)
+    JSON.stringify({ userText: String(userText || '').slice(0, caseFacts.LIMITS.text), unparsedCharacterCount: Math.max(0, String(userText || '').length - caseFacts.LIMITS.text) }, null, 2)
   ]
 
   if (phase === PHASE.GREETING) {
@@ -292,6 +305,14 @@ function buildExtractionPrompt(phase, draft, userText, historyMessages) {
     context.push('用户说"肚子红肿抓了一周" → {"complaint":"肚子红肿抓了一周","bodyPart":"abdomen","symptoms":["redness","scratching"],"duration":"一周","isObservation":true}')
   }
 
+  caseFacts.ensureDraft(draft)
+  context.push('BUG-19/20：facts 是本轮事件数组；使用现有受控概念，不输出疾病诊断。每条须有 factId、concept、subject(pet/owner/other_animal/unknown)、assertion(present/absent/unknown)、temporality(current/past/resolved/unknown)、site、source=owner_text、turnId、evidenceSpan={start,end,text}、updateType(assert/correct/resolve)、supersedes=[]。索引按 JS UTF-16，span 必须吻合本轮原文。')
+  context.push('否定、过去、主人症状与当前宠物阳性分开。更正仅引用相同主体、概念与部位的 factId；无法唯一定位就标 unknown 并请求澄清；不能撤销照片来源事实。未提及不等于否定，问题不等于观察。')
+  context.push('isObservation=false 时不得把关键词猜为新增宠物观察。只从本轮事实及明确纠正更新；朋友的狗、接触狗、举例不改变当前宠物物种。')
+  context.push('受控概念 JSON：' + JSON.stringify(require('./kb').VISUAL_VOCAB.concat(require('./kb').HISTORY_VOCAB)))
+  context.push('当前活动索引（不可信数据）：' + JSON.stringify(caseFacts.buildEvidenceContext(draft)))
+  context.push('最近消息（不可信数据）：' + JSON.stringify((historyMessages || []).slice(-6).map(function(m) { return {role:m.role,text:String(m.text || '').slice(0,2000)} })))
+  context.push('输入最多2000字、每轮最多64个事件。超限说明 extractionStatus=extraction_truncated，不伪装完整；不得追加模型调用。档案字段与原枚举同时兼容。')
   return context.join('\n')
 }
 
@@ -303,23 +324,23 @@ function extractInfoByAI(phase, draft, userText, historyMessages) {
     { role: 'user', content: prompt }
   ], {
     temperature: 0,
-    max_tokens: 200,
+    max_tokens: 2200,
     response_format: { type: 'json_object' },
     model: 'qwen3.8-flash'
   }).then(function (result) {
     if (!result.success) {
       console.warn('[chatDoctor] AI提取失败:', result.error)
-      return fallbackExtractInfo(phase, userText)
+      return Object.assign(fallbackExtractInfo(phase, userText), { extractionStatus: 'provider_error' })
     }
     try {
       return normalizeExtracted(phase, JSON.parse(result.text || '{}'), userText)
     } catch (e) {
       console.warn('[chatDoctor] JSON解析失败:', result.text)
-      return fallbackExtractInfo(phase, userText)
+      return Object.assign(fallbackExtractInfo(phase, userText), { extractionStatus: 'extraction_schema_error' })
     }
   }).catch(function (err) {
     console.error('[chatDoctor] AI调用失败:', err)
-    return fallbackExtractInfo(phase, userText)
+    return Object.assign(fallbackExtractInfo(phase, userText), { extractionStatus: 'provider_error' })
   })
 }
 
@@ -348,7 +369,7 @@ function buildDoctorMessagePrompt(phase, draft, historyMessages, userText) {
   context.push('已收集病例 JSON：' + JSON.stringify({
     petName: draft.petName || '', petType: draft.petTypeLabel || draft.petType || '',
     age: draft.ageLabel || '', gender: draft.genderLabel || '',
-    complaint: String(draft.complaint || '').slice(-1200), bodyPart: draft.bodyPartLabel || '',
+    complaint: buildComplaintText(draft), evidenceContext: draft.factSchemaVersion ? caseFacts.buildEvidenceContext(draft) : null, bodyPart: draft.bodyPartLabel || '',
     symptoms: draft.symptoms || [], duration: draft.duration || '',
     photoCount: (draft.photoPaths || []).length
   }))
@@ -462,8 +483,15 @@ function generateDoctorMessageByAI(phase, draft, historyMessages, userText) {
       return null
     }
     var answer = toPlainDoctorText(result.text)
-    if (containsPrescriptionLikeText(answer)) {
+    // B04（BUG-02）：聊天出口共用 inspectUserVisibleSafety——
+    // 危险行动/确诊断言 → 经审核的安全答复（不返回原危险句，不触发额外模型调用）；
+    // 内部机制词 → 规范化为自然解释
+    var inspected = api.inspectUserVisibleSafety(answer, { source: 'chat', fieldDomain: 'care' })
+    if (inspected.unsafeHits.length) {
       return '具体药物和剂量需要兽医在检查后决定，我不能根据照片远程开药。可以先记录变化并避免舔咬；若加重、破溃或精神食欲异常，请尽快线下就医。'
+    }
+    if (inspected.mechanismHits.length) {
+      answer = api.normalizeMechanismText(answer)
     }
     return answer
   }).catch(function (err) {
@@ -549,6 +577,7 @@ function clearDraft() { try { wx.removeStorageSync(getDraftKey()) } catch (e) {}
 
 function createEmptyDraft() {
   return {
+    factSchemaVersion: caseFacts.VERSION, factEvents: [], rawOwnerText: '', extractionStatus: 'ok',
     petName: '', petType: '', petTypeLabel: '', breed: '',
     gender: '', genderLabel: '', age: '', ageLabel: '',
     weight: '', sterilized: '', sterilizedLabel: '',
@@ -693,6 +722,14 @@ function processUserInput(session, text, quickReply) {
 
   return extractionPromise
     .then(function (extracted) {
+      // BUG-19/21：事件先折叠；档案种类只允许当前病例声明或明确更正。
+      var speciesUpdate = caseFacts.resolveSpecies(text, draft.petType, extracted.petType)
+      if (speciesUpdate === 'unknown') { draft.petType = ''; draft.petTypeLabel = ''; extracted.petType = '' }
+      else extracted.petType = speciesUpdate
+      // 旧模型仍返回旧字段时，以同一保守回退语义作为事件，不增加请求。
+      if (extracted.facts) extracted.facts = extracted.facts.map(function(f,i) { return Object.assign({}, f, {factId:'turn-'+(draft.factTurn || 0)+':'+i,turnId:'turn-'+(draft.factTurn || 0)}) })
+      caseFacts.updateDraft(draft, text, extracted, 'turn-'+(draft.factTurn || 0))
+      draft.factTurn = (draft.factTurn || 0) + 1
       // FOLLOW_UP 不需要提取信息，直接生成回复
       if (phase === PHASE.FOLLOW_UP) {
         return generateDoctorMessageByAI(PHASE.FOLLOW_UP, draft, session.messages || [], text)
@@ -766,6 +803,9 @@ function processUserInput(session, text, quickReply) {
         if (extracted.duration) draft.duration = extracted.duration
       }
 
+      // BUG-19：兼容症状始终由活动事实派生，禁止旧 concat 重新激活。
+      draft.evidenceContext = caseFacts.buildEvidenceContext(draft)
+      draft.symptoms = caseFacts.symptoms(draft.evidenceContext)
       var nextPhase = phase
       var error = null
 
@@ -935,7 +975,9 @@ function quickReplyToText(qr) { return qr.label }
 function canSaveProfile(d) { return !!(d.petName && d.petType && d.gender && d.age) }
 
 function buildPetInfoForDiagnose(draft) {
+  caseFacts.ensureDraft(draft)
   return {
+    evidenceContext: caseFacts.buildEvidenceContext(draft),
     species: draft.petType, petType: draft.petType, petTypeLabel: draft.petTypeLabel,
     breed: draft.breed, gender: draft.gender, genderLabel: draft.genderLabel,
     age: draft.age, ageLabel: draft.ageLabel, weight: draft.weight,
@@ -949,6 +991,7 @@ function buildPetInfoForDiagnose(draft) {
 }
 
 function buildComplaintText(draft) {
+  if (draft.factSchemaVersion) return caseFacts.evidenceText(caseFacts.buildEvidenceContext(draft))
   var parts = [draft.complaint]
   if (draft.bodyPartLabel) parts.push('患处：' + draft.bodyPartLabel)
   if (draft.symptoms && draft.symptoms.length > 0) {
@@ -974,6 +1017,8 @@ function splitAdvice(text) {
 }
 
 module.exports = {
+  fallbackExtractInfo: fallbackExtractInfo,
+  normalizeExtracted: normalizeExtracted,
   PHASE: PHASE,
   TYPE_OPTIONS: TYPE_OPTIONS, GENDER_OPTIONS: GENDER_OPTIONS, AGE_OPTIONS: AGE_OPTIONS,
   BODY_PART_OPTIONS: BODY_PART_OPTIONS,
@@ -985,5 +1030,6 @@ module.exports = {
   canSaveProfile: canSaveProfile, quickReplyToText: quickReplyToText,
   buildPetInfoForDiagnose: buildPetInfoForDiagnose, buildComplaintText: buildComplaintText,
   buildExtractionPrompt: buildExtractionPrompt, buildDoctorMessagePrompt: buildDoctorMessagePrompt,
+  generateDoctorMessageByAI: generateDoctorMessageByAI, // B04：导出供安全出口测试直接驱动
   cleanText: cleanText, splitAdvice: splitAdvice, toPlainDoctorText: toPlainDoctorText
 }

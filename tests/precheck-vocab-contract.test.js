@@ -1,0 +1,12 @@
+const assert=require('assert');global.wx={getStorageSync:function(){return []},setStorageSync:function(){}};
+const kb=require('../utils/kb'),api=require('../utils/api');
+['波动','波动感','红肿发热','皮下硬块',"硬皮","硬结","硬化","钙化","囊性","淋巴结肿大","淋巴结增大","甲床感染","有臭味分泌物"].forEach(function(w){assert(!kb.filterPhotoFeatures([w]).length,w);assert.strictEqual(kb.classifySign(w),'history')});
+assert.deepStrictEqual(kb.filterPhotoFeatures(['红肿','结节','红肿','未登记词']),['红肿','结节']);
+assert.strictEqual(kb.classifySign('未登记词'),'history');
+kb.DISEASE_KB.forEach(function(card){card.visualSigns.forEach(function(w){assert(kb.filterPhotoFeatures([w]).length,card.name+':'+w)})});
+const prompt=api.buildFeaturePrompt({},[]);assert(prompt.includes(kb.VOCAB_VERSION));assert(prompt.includes(kb.VOCAB_HASH));
+assert.strictEqual(kb.SIGN_REGISTRY.length,kb.VISUAL_VOCAB.length+kb.HISTORY_VOCAB.length);
+const q=api.buildVisionRagQuery({species:'猫'},{visualFeatures:['波动感','红肿','未知形态']});assert.deepStrictEqual(q.visualFeatures,['红肿']);assert(!q.complaint.includes('波动感'));
+const hits=kb.search({species:'猫',visualFeatures:['波动感','皮下硬块']});hits.forEach(function(r){assert(!r.matched.some(function(m){return m.indexOf('视觉预检:')===0}))});
+assert(kb.search({species:'猫',complaint:'耳廓肿胀触摸有波动感'}).some(function(r){return r.matched.indexOf('病史:波动感')>=0}));
+console.log('B12 source-channel contract passed');

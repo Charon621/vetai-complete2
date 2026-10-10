@@ -8,7 +8,7 @@
     "本文件只定义标签空间，不为任何具体图片指定标签；给某个病例定标签必须走 annotation_guide §3 的最小证据路径与 §6 的双专家盲标。",
     "新增疾病前必须先在 annotation_guide §3 写出同等清晰的 G1/G2 最小证据路径并经三名专家批准，再在此处登记 code。",
     "code 一经发布不得复用或改义；弃用只能标 deprecated 并给出 replaced_by。",
-    "clinical_group 用于 benchmark_config.core_holdout.clinical_groups 的分层计数，必须与那里的四个组名保持一致。",
+    "clinical_group 用于按疾病组分层报告，不规定病例数量。",
     "product_kb_name 只是与 utils/kb.js 知识卡的对照关系，便于排查产品输出与参考标签的口径差异；它不是参考标准的证据。"
   ],
   "clinical_groups": [

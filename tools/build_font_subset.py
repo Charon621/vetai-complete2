@@ -13,7 +13,9 @@
 
 产物：
     utils/fontData.js              小程序运行时加载的 base64 字体（会被打包进去）
-    E:\\CodexOutputs\\...\\font-subset\\  中间产物（源码字体、字符集、子集 woff2）
+    <输出目录>/font-subset/  中间产物（源码字体、字符集、子集 woff2）；
+                               Windows 默认 E:\CodexOutputs\vetai-complete2，
+                               其他系统默认 ~/CodexOutputs/vetai-complete2，可用 VETAI_OUTPUT_DIR 覆盖
 
 换字体或调整字符覆盖范围时，改 DOMAIN_TEXT / 常用字数量后重跑本脚本。
 """
@@ -22,8 +24,11 @@ import os
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from output_paths import output_root  # noqa: E402
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT_DIR = r"E:\CodexOutputs\vetai-complete2\font-subset"
+OUT_DIR = str(output_root("font-subset"))
 SRC_FONT = os.path.join(OUT_DIR, "noto-serif-sc-cn.woff2")
 SRC_URL = ("https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.0.5/files/"
            "noto-serif-sc-chinese-simplified-400-normal.woff2")

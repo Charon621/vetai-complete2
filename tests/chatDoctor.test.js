@@ -106,6 +106,69 @@ async function run() {
   assert.strictEqual(calls.length, 0, 'emergency follow-up should bypass the model')
   assert.ok(result.doctorMsg.text.indexOf('立即') >= 0 && result.doctorMsg.text.indexOf('急诊') >= 0)
 
+  // BUG-01：从真实追问入口核验局部否定、条件、历史和主体；固定合法回复只用于识别是否短路。
+  var b01ChatMockText = '你的问题已收到，我会继续说明观察要点。'
+  var b01ChatCases = [
+    { id: 'R01', text: '呼吸困难且没有缓解', emergency: true },
+    { id: 'R08', text: '如果明天变严重就去医院，但现在呼吸困难', emergency: true },
+    { id: 'R14-我家猫', text: '我家猫现在呼吸困难', emergency: true },
+    { id: 'R14-我发现猫', text: '我发现猫张口呼吸', emergency: true },
+    { id: 'R05', text: '没有呼吸困难，精神食欲正常', emergency: false },
+    { id: 'R06', text: '患处没有流脓，也没有快速扩散', emergency: false },
+    { id: 'R07', text: '如果出现呼吸困难要怎么办', emergency: false },
+    { id: 'R09', text: '前天呼吸困难，现在已经恢复且不再困难', emergency: false },
+    { id: 'R13', text: '我呼吸困难，猫只有脱毛', emergency: false },
+    { id: 'N01-普通无红线', text: '猫背上只有一小块脱毛，精神食欲正常', emergency: false }
+  ]
+  var b01ChatCalls = []
+  var b01SavedChatAI = api.chatAI
+  var b01ChatFailures = []
+  api.chatAI = function (messages, options) {
+    b01ChatCalls.push({ messages: messages, options: options })
+    return Promise.resolve({ success: true, text: b01ChatMockText })
+  }
+  try {
+    for (var b01ChatIndex = 0; b01ChatIndex < b01ChatCases.length; b01ChatIndex++) {
+      var b01ChatCase = b01ChatCases[b01ChatIndex]
+      var b01ChatSession = chatDoctor.createSessionWithProfile({ petType: 'cat', petTypeLabel: '猫' })
+      b01ChatSession.phase = chatDoctor.PHASE.FOLLOW_UP
+      b01ChatSession.draft.complaint = b01ChatCase.text
+      b01ChatSession.messages = [
+        { id: 'BUG-01-' + b01ChatCase.id, role: 'user', text: b01ChatCase.text, timestamp: 1 }
+      ]
+      b01ChatCalls.length = 0
+      var b01ChatResult = await chatDoctor.processUserInput(b01ChatSession, b01ChatCase.text, null)
+      try {
+        // BUG-01：分诊只改变医生答复，不改写用户消息或原始主诉。
+        assert.strictEqual(b01ChatResult.session.messages[0].text, b01ChatCase.text,
+          'BUG-01 ' + b01ChatCase.id + '：用户消息原文必须保留')
+        assert.strictEqual(b01ChatResult.session.draft.complaint, b01ChatCase.text,
+          'BUG-01 ' + b01ChatCase.id + '：主诉原文必须保留')
+        if (b01ChatCase.emergency) {
+          assert.strictEqual(b01ChatCalls.length, 0,
+            'BUG-01 ' + b01ChatCase.id + '：当前宠物急症必须绕过模型')
+          assert.ok(b01ChatResult.doctorMsg.text.indexOf('立即') >= 0 &&
+            b01ChatResult.doctorMsg.text.indexOf('急诊') >= 0,
+          'BUG-01 ' + b01ChatCase.id + '：当前宠物急症必须给出立即急诊提示')
+        } else {
+          assert.strictEqual(b01ChatCalls.length, 1,
+            'BUG-01 ' + b01ChatCase.id + '：否定、主人、未来、已消退或普通描述应继续正常问答')
+          assert.strictEqual(b01ChatResult.doctorMsg.text, b01ChatMockText,
+            'BUG-01 ' + b01ChatCase.id + '：负例不能被急诊或尽快就医捷径覆盖')
+          assert.ok(b01ChatCalls[0].messages[1].content.indexOf(b01ChatCase.text) >= 0,
+            'BUG-01 ' + b01ChatCase.id + '：正常问答应收到当前用户原文')
+        }
+        console.log('BUG-01 chat ' + b01ChatCase.id + ' passed; model calls=' + b01ChatCalls.length)
+      } catch (b01ChatError) {
+        b01ChatFailures.push(b01ChatCase.id + ': ' + b01ChatError.message)
+      }
+    }
+  } finally {
+    // BUG-01：恢复原模拟，避免定向场景影响既有剂量及后续问诊测试。
+    api.chatAI = b01SavedChatAI
+  }
+  assert.strictEqual(b01ChatFailures.length, 0, b01ChatFailures.join('\n'))
+
   // 若模型仍输出剂量，代码层必须用安全答复替换。
   calls = []
   api.chatAI = function () {

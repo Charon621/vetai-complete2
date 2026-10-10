@@ -94,6 +94,81 @@ var mixedData = { urgency: 'low', confidence: 60, observations: '', vetWarning: 
 api.applyGuardrails(mixedData, { complaint: '精神食欲正常，但是现在呼吸困难' })
 assert.strictEqual(mixedData.urgency, 'emergency', 'negated clause must not hide a separate emergency clause')
 
+// BUG-01：按真实输入与可观察分诊结果预注册，不复制实现中的否定正则。
+// R01-R16 对齐审批单；R14 两种主人观察表达分别验证。只检查工程行为，
+// 不能把这些合成主诉的通过率称为临床急症敏感度。
+var redLineScopeCases = [
+  { id: 'R01 未缓解不否定呼吸困难', complaint: '呼吸困难且没有缓解', expected: 'emergency', flags: ['呼吸困难'] },
+  { id: 'R02 无瘙痒不否定流脓', complaint: '没有瘙痒而且患处正在流脓', expected: 'urgent', flags: ['流脓'] },
+  { id: 'R03 无毛是形态而非否定', complaint: '无毛区快速扩散', expected: 'urgent', flags: ['快速扩散'] },
+  { id: 'R04 正常食欲不否定呼吸费力', complaint: '精神食欲正常且现在呼吸费力', expected: 'emergency', flags: ['呼吸费力'] },
+  { id: 'R05 明确否定呼吸困难', complaint: '没有呼吸困难，精神食欲正常', expected: 'low', flags: [] },
+  { id: 'R06 多个明确否定症状', complaint: '患处没有流脓，也没有快速扩散', expected: 'low', flags: [] },
+  { id: 'R07 未来条件问题', complaint: '如果出现呼吸困难要怎么办', expected: 'low', flags: [] },
+  { id: 'R08 条件后当前急症', complaint: '如果明天变严重就去医院，但现在呼吸困难', expected: 'emergency', flags: ['呼吸困难'] },
+  { id: 'R09 历史症状已明确消退', complaint: '前天呼吸困难，现在已经恢复且不再困难', expected: 'low', flags: [] },
+  { id: 'R10 已是急症仍留原因', complaint: '当前呼吸困难', initial: 'emergency', expected: 'emergency', flags: ['呼吸困难'] },
+  { id: 'R11 不扫描护理未来警告', complaint: '普通皮疹', careSuggestion: '若出现呼吸困难请急诊', whenToSeeVet: '若出现呼吸困难请急诊', expected: 'low', flags: [] },
+  { id: 'R12 低置信度不等于高紧急度', complaint: '普通皮疹', confidence: 10, expected: 'low', flags: [] },
+  { id: 'R13 主人症状不升级宠物', complaint: '我呼吸困难，猫只有脱毛', expected: 'low', flags: [] },
+  { id: 'R14a 我家猫仍是宠物', complaint: '我家猫现在呼吸困难', expected: 'emergency', flags: ['呼吸困难'] },
+  { id: 'R14b 我发现猫仍是宠物', complaint: '我发现猫张口呼吸', expected: 'emergency', flags: ['张口呼吸'] },
+  { id: 'R15 否定一症状不否定独立症状', complaint: '没有呼吸困难，但现在张口呼吸', expected: 'emergency', flags: ['张口呼吸'] },
+  { id: 'R16 空输入无红线', complaint: '', observations: '', expected: 'low', flags: [] },
+  { id: 'X01 多红线取最高等级并保留原因', complaint: '患处正在流脓而且呼吸困难', expected: 'emergency', flags: ['流脓', '呼吸困难'] },
+  { id: 'X02 同词先否定后当前肯定', complaint: '刚才没有呼吸困难，现在呼吸困难', expected: 'emergency', flags: ['呼吸困难'] },
+  { id: 'X03 同词先历史肯定后明确消退', complaint: '刚才呼吸困难，现在没有呼吸困难了', expected: 'low', flags: [] },
+  { id: 'X04 当前症状后的求助不是假设', complaint: '呼吸困难怎么办', expected: 'emergency', flags: ['呼吸困难'] },
+  { id: 'X05 观察中的无关否定不吞肯定事实', complaint: '普通皮疹', observations: '患处没有流脓但正在快速扩散', expected: 'urgent', flags: ['快速扩散'] },
+  { id: 'X06 护理的肯定文字也不作为观察', complaint: '普通皮疹', careSuggestion: '呼吸困难需要就医', whenToSeeVet: '面部肿胀需要急诊', expected: 'low', flags: [] },
+  // BUG-01：实施复核中发现的8个明确反例；改善不等于消退，作用域不得跨部位/时间/主体。
+  { id: 'X07 无连接词的未缓解', complaint: '呼吸困难没有缓解', expected: 'emergency', flags: ['呼吸困难'] },
+  { id: 'X08 有所缓解仍是当前症状', complaint: '呼吸困难已经有所缓解', expected: 'emergency', flags: ['呼吸困难'] },
+  { id: 'X09 条件内转折仍是假设', complaint: '如果没有流脓但出现呼吸困难就去医院', expected: 'low', flags: [] },
+  { id: 'X10 不同部位的否定不撤销阳性', complaint: '左耳流脓，右耳没有流脓', expected: 'urgent', flags: ['流脓'] },
+  { id: 'X11 历史消退不撤销当前症状', complaint: '现在呼吸困难，前天呼吸困难已经消失了', expected: 'emergency', flags: ['呼吸困难'] },
+  { id: 'X12 正常副词不制造精神食欲红线', complaint: '精神食欲都很正常', expected: 'low', flags: [] },
+  { id: 'X13 条件内正在不等于当前断言', complaint: '如果出现流脓，或者正在张口呼吸的话，就去医院', expected: 'low', flags: [] },
+  { id: 'X14 主人抱猫不改变症状主体', complaint: '我抱着猫时呼吸困难，猫只有脱毛', expected: 'low', flags: [] },
+  { id: 'X15 后续就医条件不撤销当前急症', complaint: '猫现在呼吸困难如果去医院的话应该挂什么科', expected: 'emergency', flags: ['呼吸困难'] }
+]
+var redLineScopeFailures = []
+redLineScopeCases.forEach(function (testCase) {
+  var petInfo = { complaint: testCase.complaint }
+  var originalPetInfo = JSON.stringify(petInfo)
+  var scopeData = {
+    urgency: testCase.initial || 'low',
+    confidence: typeof testCase.confidence === 'number' ? testCase.confidence : 60,
+    observations: testCase.observations || '',
+    careSuggestion: testCase.careSuggestion || '',
+    whenToSeeVet: testCase.whenToSeeVet || '',
+    vetWarning: '如症状加重请就医'
+  }
+  var originalObservations = scopeData.observations
+  var originalCareSuggestion = scopeData.careSuggestion
+  try {
+    var scopeResult = api.applyGuardrails(scopeData, petInfo)
+    assert.strictEqual(scopeResult, scopeData, testCase.id + ': keep the existing returned report object')
+    assert.strictEqual(scopeData.urgency, testCase.expected, testCase.id + ': urgency')
+    var scopeFlags = scopeData.redLineFlags || []
+    if (testCase.flags.length === 0) {
+      assert.strictEqual(scopeFlags.length, 0, testCase.id + ': no current red-line flags')
+    } else {
+      testCase.flags.forEach(function (expectedMatch) {
+        assert.ok(scopeFlags.some(function (flag) {
+          return flag.matched === expectedMatch && !!flag.desc && !!flag.urgency
+        }), testCase.id + ': preserve the reason for ' + expectedMatch)
+      })
+    }
+    assert.strictEqual(JSON.stringify(petInfo), originalPetInfo, testCase.id + ': do not rewrite owner input')
+    assert.strictEqual(scopeData.observations, originalObservations, testCase.id + ': do not rewrite observations')
+    assert.strictEqual(scopeData.careSuggestion, originalCareSuggestion, testCase.id + ': do not rewrite care')
+  } catch (scopeError) {
+    redLineScopeFailures.push(testCase.id + ': ' + scopeError.message)
+  }
+})
+assert.deepStrictEqual(redLineScopeFailures, [], 'BUG-01: registered red-line scope cases must all satisfy the public contract')
+
 // ============================================================
 // isStrongVisionRagHit：快路径强命中检查
 // ============================================================
@@ -180,6 +255,43 @@ assert.strictEqual(
   false,
   'one precheck hit without combo/alias is not enough'
 )
+
+// ============================================================
+// diagnoseStrongVisionRagGates：逐关诊断，与 isStrongVisionRagHit 结论一致
+// 不短路：列出全部未通过关卡，gate 取第一个失败项（顺序同原判定）
+// ============================================================
+var gatePass = api.diagnoseStrongVisionRagGates([
+  { score: 10, matched: ['视觉预检:圆形脱毛', '组合:圆形脱毛+鳞屑/结痂+断毛'] },
+  { score: 4, matched: ['视觉:红斑'] }
+])
+assert.strictEqual(gatePass.ok, true, 'gate diagnosis passes the canonical strong hit')
+assert.strictEqual(gatePass.gate, '', 'passing case has no failing gate')
+assert.deepStrictEqual(gatePass.failed, [], 'passing case has empty failed list')
+
+assert.deepStrictEqual(api.diagnoseStrongVisionRagGates([]).failed, ['no_result'], 'empty results → no_result')
+assert.strictEqual(api.diagnoseStrongVisionRagGates([{ score: 20, siteConflict: true, matched: [] }]).gate,
+  'site_conflict', 'site conflict short-circuits')
+assert.strictEqual(api.diagnoseStrongVisionRagGates([{ score: 20, retrieval: { fastPathEligible: false }, matched: [] }]).gate,
+  'retrieval_ineligible', 'retrieval veto short-circuits')
+
+// 预检只给泛词 + 主诉组合命中：分数够，但照片证据与强证据两关同时失败，且全部列出
+var gateGeneric = api.diagnoseStrongVisionRagGates([
+  { score: 19, matched: ['部位:面部', '视觉预检:结痂', '病史:剧烈瘙痒', '组合:主人也出现症状', '组合:剧痒+传人/好发部位'] },
+  { score: 9, matched: ['部位:面部', '视觉预检:结痂', '组合:主人也出现症状'] }
+])
+assert.strictEqual(gateGeneric.ok, false, 'generic-only precheck fails')
+assert.strictEqual(gateGeneric.gate, 'precheck_hits', 'first failing gate is the photo-evidence floor')
+assert.ok(gateGeneric.failed.indexOf('discriminative') >= 0, 'all failing gates are listed, not just the first')
+assert.strictEqual(gateGeneric.precheckHits, 0, 'metrics are reported alongside the verdict')
+
+// 分差不足与分数不足同时出现时，按原判定顺序 score 在前、gap 在后
+var gateClose = api.diagnoseStrongVisionRagGates([
+  { score: 7, matched: ['视觉预检:圆形脱毛', '组合:圆形脱毛+鳞屑/结痂+断毛'] },
+  { score: 6, matched: ['视觉:红斑'] }
+])
+assert.strictEqual(gateClose.gate, 'score', 'score is checked before gap')
+assert.ok(gateClose.failed.indexOf('gap') >= 0, 'gap failure is still recorded')
+assert.strictEqual(gateClose.scoreGap, 1, 'score gap is reported')
 
 // ============================================================
 // countDiscriminativeVisualHits / isFastRagHighRiskResult / shouldResolveFastRag

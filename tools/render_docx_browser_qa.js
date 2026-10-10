@@ -1,16 +1,21 @@
 const fs = require('fs')
 const http = require('http')
+const os = require('os')
 const path = require('path')
 const { chromium } = require('playwright')
 
 const root = path.resolve(__dirname, '..')
+// 持久输出目录（仓库外），规则与 tools/output_paths.py、tools/knowledge-ops.js 一致：
+// VETAI_OUTPUT_DIR 优先；Windows 默认 E 盘，其他系统默认 ~/CodexOutputs/vetai-complete2
+const outputRoot = process.env.VETAI_OUTPUT_DIR ||
+  (process.platform === 'win32' ? 'E:\\CodexOutputs\\vetai-complete2' : path.join(os.homedir(), 'CodexOutputs', 'vetai-complete2'))
 const docxPath = process.argv[2]
   ? path.resolve(process.argv[2])
-  : path.join(root, 'output', 'VetAI提示词优化与参考标准实施报告_规范修订版_2026-07-24.docx')
+  : path.join(outputRoot, 'prompt-docs', 'VetAI提示词优化与参考标准实施报告_规范修订版_2026-07-24.docx')
 const previewJsPath = path.join(root, 'tmp', 'docx-preview.min.js')
 const jsZipPath = path.join(root, 'tmp', 'jszip.min.js')
-const outDir = path.join(root, 'tmp', 'prompt_report_browser_qa_final3')
-const printOutDir = path.join(root, 'tmp', 'prompt_report_print_qa_final3')
+const outDir = path.join(outputRoot, 'prompt-docs', 'prompt_report_browser_qa_final3')
+const printOutDir = path.join(outputRoot, 'prompt-docs', 'prompt_report_print_qa_final3')
 const chromeCandidates = [
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'

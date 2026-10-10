@@ -1,7 +1,7 @@
 {
-  "schema_version": "1.0.0",
-  "benchmark_id": "vetai-dermatology-reference-v1",
-  "status": "protocol_only_not_yet_collected",
+  "schema_version": "2.0.0",
+  "benchmark_id": "vetai-reference-evaluation-v2",
+  "status": "optional_reference_tools",
   "created_on": "2026-07-23",
   "language": "zh-CN",
   "purpose": [
@@ -16,50 +16,9 @@
     "clinical_diagnostic_accuracy_without_external_validation",
     "probability_calibration_without_calibration_study"
   ],
-  "core_holdout": {
-    "animal_count": 40,
-    "case_count": 40,
-    "cases_per_animal": 1,
-    "images_per_case": {
-      "minimum": 2,
-      "maximum": 4
-    },
-    "species": {
-      "dog": 24,
-      "cat": 16
-    },
-    "clinical_groups": {
-      "infectious_or_parasitic": 16,
-      "allergic_or_immune": 9,
-      "tumor_deep_or_other_high_risk": 7,
-      "normal_or_benign_mimic": 8
-    },
-    "eligible_gold_tiers": [
-      "G1",
-      "G2"
-    ],
-    "recommended_minimum_g1_fraction": 0.6,
-    "split": "frozen_test",
-    "development_examples_included": false
-  },
-  "quality_stress_set": {
-    "derived_case_count": 8,
-    "allowed_transformations": [
-      "moderate_blur",
-      "underexposure",
-      "incomplete_crop",
-      "jpeg_compression"
-    ],
-    "paired_with_original": true,
-    "count_as_independent_cases": false,
-    "group_by": [
-      "animal_id_hash",
-      "derivative_group_id"
-    ]
-  },
   "reference_standard": {
-    "guide": "gold_standard/annotation_guide.md",
-    "manifest": "gold_standard/case_manifest.template.csv",
+    "guide": "reference_data/annotation_guide.md",
+    "manifest": "reference_data/case_manifest.template.csv",
     "etiologic_scoring_tiers": [
       "G1",
       "G2"
@@ -67,32 +26,8 @@
     "morphology_only_tier": "G3",
     "public_image_tier": "DEV_ONLY",
     "dataset_label_tier": "V1",
-    "public_images_allowed_in_core_holdout": false,
     "model_generated_labels_allowed": false,
-    "annotators": {
-      "independent_veterinary_dermatology_experts": 2,
-      "adjudicator": 1,
-      "blind_to_model_output": true,
-      "blind_to_prompt_version": true,
-      "blind_to_other_annotator": true,
-      "retain_pre_adjudication_labels": true
-    }
-  },
-  "leakage_control": {
-    "split_unit": "animal_id_hash",
-    "same_animal_all_visits_same_split": true,
-    "all_derivatives_same_split": true,
-    "frozen_holdout_used_for_prompt_optimization": false,
-    "frozen_holdout_used_for_few_shot_examples": false,
-    "similarity_and_provenance_screen_required": true,
-    "single_final_unblinding": true
-  },
-  "prompt_optimization": {
-    "dataset": "independent_development_set_only",
-    "method": "versioned_textual_feedback_iterations",
-    "one_traceable_change_per_candidate": true,
-    "selection_rule": "primary_metrics_improve_without_safety_regression",
-    "holdout_access_prohibited": true
+    "annotation_policy": "Record actual reviewer qualifications, evidence and disagreements. No fixed recruitment or sample-size prerequisite for engineering evaluation."
   },
   "evaluation_run": {
     "prompt_version_required": true,
@@ -112,7 +47,7 @@
   "primary_metrics": [
     {
       "id": "top3_etiology_recall",
-      "denominator": "G1_and_G2_core_cases",
+      "denominator": "eligible_G1_and_G2_cases",
       "direction": "higher_is_better",
       "report_by_gold_tier": true
     },
@@ -133,12 +68,12 @@
     },
     {
       "id": "macro_recall",
-      "denominator": "G1_and_G2_core_cases",
+      "denominator": "eligible_G1_and_G2_cases",
       "direction": "higher_is_better"
     },
     {
       "id": "balanced_accuracy",
-      "denominator": "G1_and_G2_core_cases",
+      "denominator": "eligible_G1_and_G2_cases",
       "direction": "higher_is_better"
     }
   ],
@@ -192,9 +127,12 @@
       "prompt_injection_defense_development"
     ],
     "forbidden_uses": [
-      "core_holdout",
       "diagnostic_accuracy_claim",
       "calibration_claim"
     ]
+  },
+  "grouping": {
+    "unit": "animal_id_hash",
+    "derivatives_count_as_independent": false
   }
 }

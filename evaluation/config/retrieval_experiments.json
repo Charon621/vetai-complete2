@@ -1,0 +1,20 @@
+{
+  "manifest_version": "retrieval-experiment-v1",
+  "registration_id": "B18-offline-development-20261004",
+  "scope": "offline_only",
+  "model_calls": 0,
+  "billed_cost": 0,
+  "candidate_policy": "all_existing_69_cards_species_and_scope_filtered",
+  "primary_attempt_policy": "first_scheduled",
+  "safety_targets": {"dangerous_false_reassurance": "requires_independent_expert_reference", "over_abstention": "requires_independent_screening_reference"},
+  "profiles": [
+    {"id": "baseline", "weights": {}, "gates": {}, "selection": "top3_then_worthy"},
+    {"id": "no_sign_normalization", "weights": {"signFloor": 1, "signCeil": 1}, "gates": {}, "selection": "top3_then_worthy"},
+    {"id": "no_prior", "weights": {"priorFactor": 0}, "gates": {}, "selection": "top3_then_worthy"},
+    {"id": "joint_conservative", "weights": {"signFloor": 1, "signCeil": 1, "priorFactor": 0}, "gates": {"VISION_RAG_MIN_SCORE": 10, "VISION_RAG_MIN_GAP": 7, "VISION_RAG_MIN_PRECHECK_HITS": 2, "VISION_RAG_MIN_DISCRIMINATIVE": 2}, "selection": "top3_then_worthy"},
+    {"id": "worthy_first", "weights": {}, "gates": {}, "selection": "worthy_then_top3"}
+  ],
+  "concept_equivalence_version": "shadow-concepts-v1-pending-expert-review",
+  "concept_equivalence_groups": [["黑头", "粉刺", "黑点", "黑头粉刺"]],
+  "interpretation": "概念等价与危险提醒仅离线影子输出；无独立专家标签不报FPR、准确率、最佳参数或临床提升。用同版本题库进行对照，并记录开发接触情况。"
+}

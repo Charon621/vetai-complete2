@@ -18,12 +18,26 @@
  *                只输出泛词会让整条检索作废。
  *
  * 边界：expected 是"这句主诉在临床上最该被想到的方向"，用于衡量检索召回，
- *       **不是诊断参考标准**，与 evaluation/gold_standard 的冻结集无关，可随时运行。
+ *       **不是诊断参考标准**，可随时运行；标注工具见 evaluation/reference_data。
+ *
+ * B02（BUG-28）新增，检索排序/权重/门槛一律不动：
+ *   - 评分纯函数抽到 evaluation/tools/retrieval_metrics.js；本文件只装配。
+ *   - 逐例新增 top1_expected_set / mrr_expected_set / first_expected_rank，
+ *     保留 legacy 口径字段（hitExpected/expectedHit/expectedHitRate）原义不变。
+ *   - 内置 24 例无独立主病/并存角色标注，primary/coexisting 指标一律 NA＋原因，
+ *     不把 expected 首项或任一成员擅自解释为主病。
+ *   - 内置语料显式标注：input_origin=manual_simulation（手写模拟口语，非真实主人
+ *     原话）、feature_origin=manual_simulation（vf 为人工模拟预检词，非真实预检）、
+ *     split=development、development_exposure=exposed。
+ *   - 新 CLI：--casefile <用例文件.json>（走 retrieval_metrics.validateCasefile 纪律校验）、
+ *     --snapshot-out <快照.json>（可追溯快照：输入/卡片/词表/配置/源码哈希 + 原始
+ *     Top3 与病族折叠 Top3 + score/matched 证据来源）。
  *
  * 用法：
  *   node evaluation/tools/recall_probe.js
  *   node evaluation/tools/recall_probe.js --verbose
  *   node evaluation/tools/recall_probe.js --out evaluation/runs/recall_20260726.json
+ *   node evaluation/tools/recall_probe.js --casefile <用例.json> --out <报告.json> --snapshot-out <快照.json>
  */
 
 'use strict'
@@ -39,6 +53,7 @@ global.wx = global.wx || {
 }
 
 const kb = require(path.join(ROOT, 'utils', 'kb'))
+const retrievalMetrics = require(path.join(__dirname, 'retrieval_metrics.js'))
 
 const FLOORS = { withVisual: 90, textOnly: 70 }
 
@@ -104,6 +119,29 @@ const CASES = [
     vf: ['眼睑红肿', '眼周结痂'], expect: ['睑炎'] }
 ]
 
+/**
+ * B02-3：内置 24 例的来源/版本纪律标注。
+ * 这些是开发语料，不是真实主人原话或真实预检输出，并记录为已接触的开发语料——
+ * 探针自首次提交（14bcd5e）起就在仓库里，v1→v11 迭代期间被反复接触。
+ */
+const CASE_ORIGIN = {
+  input_origin: 'manual_simulation',
+  feature_origin: 'manual_simulation',
+  source_case_id: null,
+  scenario_group_id: 'builtin_dev_corpus_24',
+  split: 'development',
+  development_exposure: 'exposed',
+  exposure_note: '自首次提交(14bcd5e)起即为开发语料，v1→v11 迭代期间反复接触；不得当作 未接触用例或真实临床样本。',
+  labeler: null,
+  labeler_note: '项目组历史手写；无独立专家标注。',
+}
+
+// casefile 用例 → 探针内部格式（保留 casefile 的来源/版本/角色元数据）
+function casefileToProbeCase(c) {
+  return { c: c.complaint, s: c.species, b: c.bodyPart || '', vf: c.visualFeatures || [],
+    expect: c.expected, case_id: c.case_id, origin: c, role: c.role || null }
+}
+
 // 检索结果的 name 是按物种渲染的显示名（如「皮肤癣菌病（犬猫）」在猫场景显示为「猫癣」），
 // 判定命中时必须换回条目正名，否则会把正确召回误判为漏召回。
 const CANONICAL_BY_ID = {}
@@ -113,14 +151,28 @@ function canonicalNames(results) {
   return results.map(function (r) { return CANONICAL_BY_ID[r.id] || r.name })
 }
 
-function evaluate(useVisual) {
+function buildQuery(t, useVisual) {
+  const query = { species: t.s, breed: '', bodyPart: t.b, complaint: t.c }
+  if (useVisual) query.visualFeatures = t.vf
+  return query
+}
+
+/**
+ * 单通道评测。legacy 字段（expectedHit/hitExpected/abstained 等）语义与 B02 前完全一致；
+ * 新增字段全部来自 retrieval_metrics 纯函数，只读消费检索结果，不改排序与门槛。
+ */
+function evaluate(useVisual, options) {
+  const cases = (options && options.cases) || CASES
+  const defaultOrigin = (options && options.defaultOrigin) || CASE_ORIGIN
+  const labelMap = (options && options.labelMap) || null
+
   let hitAny = 0
   let hitExpected = 0
   const rows = []
+  const runs = []
 
-  CASES.forEach(function (t) {
-    const query = { species: t.s, breed: '', bodyPart: t.b, complaint: t.c }
-    if (useVisual) query.visualFeatures = t.vf
+  cases.forEach(function (t) {
+    const query = buildQuery(t, useVisual)
     const worthy = (kb.search(query) || []).filter(kb.isPromptWorthyResult)
     const names = canonicalNames(worthy)
     const matched = names.filter(function (n) { return t.expect.indexOf(n) >= 0 })
@@ -128,22 +180,212 @@ function evaluate(useVisual) {
     if (names.length) hitAny++
     if (matched.length) hitExpected++
 
+    // B02-1：expected 集合口径（Top-1 / MRR / 首个名次）
+    const setMetrics = retrievalMetrics.computeSetMetrics(names, t.expect)
+    // B02-1：角色指标——内置语料无 role，全部 NA；casefile 用例可带独立标注
+    const roleMetrics = retrievalMetrics.computeRoleMetrics(names, t.role || null, labelMap)
+    // B02-2：病族折叠视图（只读，不改 raw 排名）
+    const familyView = retrievalMetrics.foldByFamily(
+      names.map(function (n, i) {
+        return { name: n, id: worthy[i] ? worthy[i].id : null, score: worthy[i] ? worthy[i].score : null }
+      }), labelMap)
+    const origin = t.origin || defaultOrigin
+
     rows.push({
       complaint: t.c,
       expected: t.expect,
       retrieved: names,
       hitExpected: matched.length > 0,
-      abstained: names.length === 0
+      abstained: names.length === 0,
+      // ── B02 新增字段 ──
+      case_key: t.case_id || t.c,
+      origin: origin,
+      legacy_expected_hit: matched.length > 0,
+      top1_expected_set: setMetrics.top1_expected_set,
+      mrr_expected_set: setMetrics.mrr_expected_set,
+      first_expected_rank: setMetrics.first_expected_rank,
+      expected_hits_in_top3: setMetrics.expected_hits_in_top3,
+      role_metrics: {
+        role_present: roleMetrics.role_present,
+        primary: roleMetrics.primary,
+        coexisting: roleMetrics.coexisting,
+        top1_primary: roleMetrics.top1_primary,
+        mrr_primary: roleMetrics.mrr_primary,
+        top3_primary_recall: roleMetrics.top3_primary_recall,
+        top3_coexisting_coverage: roleMetrics.top3_coexisting_coverage
+      },
+      unique_family_top3: familyView.unique.map(function (f) {
+        return { family_code: f.family_code, best_name: f.best_name, first_rank: f.first_rank }
+      }),
+      unmapped_labels: familyView.unmapped.map(function (u) { return u.name })
+    })
+
+    // B02-4：快照逐例运行明细（score/matched 证据来源全量留档）
+    runs.push({
+      case_key: t.case_id || t.c,
+      query: query,
+      results: worthy.map(function (r) {
+        return {
+          id: r.id,
+          name: r.name,
+          canonicalName: r.canonicalName,
+          score: r.score,
+          matched: r.matched,
+          redFlagMatches: r.redFlagMatches,
+          urgency: r.urgency
+        }
+      }),
+      set_metrics: setMetrics,
+      role_metrics: roleMetrics,
+      family_view: familyView,
+      origin: origin
     })
   })
 
+  // B02-1：新增聚合（legacy 聚合字段原样保留）
+  const agg = retrievalMetrics.aggregateSetMetrics(rows)
+
   return {
-    total: CASES.length,
+    total: cases.length,
     anyHit: hitAny,
     expectedHit: hitExpected,
-    anyHitRate: +(hitAny / CASES.length * 100).toFixed(1),
-    expectedHitRate: +(hitExpected / CASES.length * 100).toFixed(1),
-    rows: rows
+    anyHitRate: +(hitAny / cases.length * 100).toFixed(1),
+    expectedHitRate: +(hitExpected / cases.length * 100).toFixed(1),
+    // ── B02 新增聚合 ──
+    top1ExpectedSetRate: agg.top1_expected_set_rate,
+    mrrExpectedSetMean: agg.mrr_expected_set_mean,
+    legacyExpectedHitRate: agg.legacy_expected_hit_rate,
+    roleMetricsSummary: summarizeRoleMetrics(rows),
+    singleReferenceConfusion: computeSingleReferenceConfusion(rows),
+    rows: rows,
+    runs: runs
+  }
+}
+
+/**
+ * B02-1 角色指标汇总：全部用例都没有独立 role 标注时如实 NA＋原因；
+ * 有标注的用例（casefile）才聚合 primary/coexisting，并报告 label coverage。
+ */
+function summarizeRoleMetrics(rows) {
+  const withRole = rows.filter(function (r) { return r.role_metrics && r.role_metrics.role_present })
+  if (!withRole.length) {
+    return {
+      status: 'NA',
+      reason: 'no_independent_role_labels',
+      label_coverage: { with_primary_or_coexisting: 0, total: rows.length },
+      note: 'expected 仅为方向集合，无独立主病/并存角色标注；top1_primary/mrr_primary/top3_primary_recall/top3_coexisting_coverage 均 NA，不把 expected 首项或任一成员擅自解释为主病。'
+    }
+  }
+  const primaryRows = withRole.filter(function (r) { return r.role_metrics.primary.applicable })
+  const coexistingRows = withRole.filter(function (r) { return r.role_metrics.coexisting.applicable })
+  function mean(arr, field) {
+    if (!arr.length) return null
+    let s = 0
+    arr.forEach(function (r) { s += r.role_metrics[field] || 0 })
+    return Math.round(s / arr.length * 10000) / 10000
+  }
+  return {
+    status: 'computed_on_role_annotated_cases_only',
+    label_coverage: {
+      with_primary_or_coexisting: withRole.length,
+      with_primary: primaryRows.length,
+      with_coexisting: coexistingRows.length,
+      total: rows.length
+    },
+    top1_primary_mean: mean(primaryRows, 'top1_primary'),
+    mrr_primary_mean: mean(primaryRows, 'mrr_primary'),
+    top3_primary_recall_mean: mean(primaryRows, 'top3_primary_recall'),
+    top3_coexisting_coverage_mean: mean(coexistingRows, 'top3_coexisting_coverage'),
+    note: '仅对带独立角色标注的用例聚合；无标注用例保持 NA，不并入分母冒充成绩。'
+  }
+}
+
+/**
+ * B02-1：单 expected 用例的检索混淆（开发集诊断，不是临床混淆矩阵）。
+ * 多 expected 用例无主病口径，不参与，防止强选参考。
+ */
+function computeSingleReferenceConfusion(rows) {
+  let n = 0
+  let top1Correct = 0
+  let abstained = 0
+  const misdirected = {}
+  rows.forEach(function (r) {
+    if (r.expected.length !== 1) return
+    n++
+    if (!r.retrieved.length) { abstained++; return }
+    if (r.retrieved[0] === r.expected[0]) top1Correct++
+    else misdirected[r.retrieved[0]] = (misdirected[r.retrieved[0]] || 0) + 1
+  })
+  return {
+    single_reference_cases: n,
+    top1_correct: top1Correct,
+    abstained: abstained,
+    misdirected_top1: misdirected,
+    note: '仅单 expected 用例的检索混淆开发诊断；多 expected 用例未定主次，不得强选参考作临床主病矩阵。'
+  }
+}
+
+// ──────────────────────── B02-4 快照上下文 ────────────────────────
+
+function loadLabelMap() {
+  const p = path.join(ROOT, 'evaluation', 'config', 'retrieval_label_map.json')
+  if (!fs.existsSync(p)) return { map: null, meta: { present: false } }
+  const map = JSON.parse(fs.readFileSync(p, 'utf8'))
+  const check = retrievalMetrics.validateLabelMap(map)
+  if (!check.ok) {
+    console.error('retrieval_label_map.json 校验失败：')
+    check.errors.forEach(function (e) { console.error('  ✗ ' + e) })
+    process.exit(2)
+  }
+  return {
+    map: map,
+    meta: {
+      present: true,
+      path: 'evaluation/config/retrieval_label_map.json',
+      version: check.version,
+      entry_count: check.entryCount,
+      sha256: retrievalMetrics.sha256Of(fs.readFileSync(p))
+    }
+  }
+}
+
+function gitContext() {
+  // 本地只读 git 查询；失败（无 git/非仓库）时置 null，不阻塞探测。
+  const cp = require('child_process')
+  const out = { codeCommit: null, worktreeDirty: null }
+  try {
+    out.codeCommit = cp.execSync('git rev-parse HEAD', { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString().trim()
+  } catch (e) { /* 保持 null */ }
+  try {
+    const st = cp.execSync('git status --porcelain', { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+    out.worktreeDirty = st.trim().length > 0
+  } catch (e) { /* 保持 null */ }
+  return out
+}
+
+function buildCardHashes() {
+  const hashes = {}
+  kb.DISEASE_KB.forEach(function (card) {
+    hashes[card.id] = retrievalMetrics.canonicalCardHash(card)
+  })
+  return hashes
+}
+
+function buildSnapshotContext(labelMapMeta) {
+  const git = gitContext()
+  const kbSourcePath = path.join(ROOT, 'utils', 'kb.js')
+  return {
+    kbVersion: kb.KB_VERSION,
+    weightVersion: kb.WEIGHT_VERSION,
+    weightHash: kb.WEIGHT_HASH,
+    kbSourceSha256: retrievalMetrics.sha256Of(fs.readFileSync(kbSourcePath)),
+    codeCommit: git.codeCommit,
+    worktreeDirty: git.worktreeDirty,
+    labelMapVersion: labelMapMeta.present ? labelMapMeta.version : null,
+    labelMapSha256: labelMapMeta.present ? labelMapMeta.sha256 : null,
+    cardHashes: buildCardHashes()
   }
 }
 
@@ -152,11 +394,56 @@ function main() {
   const verbose = argv.indexOf('--verbose') >= 0
   const outIdx = argv.indexOf('--out')
   const out = outIdx >= 0 ? argv[outIdx + 1] : null
+  const casefileIdx = argv.indexOf('--casefile')
+  const casefilePath = casefileIdx >= 0 ? argv[casefileIdx + 1] : null
+  const snapIdx = argv.indexOf('--snapshot-out')
+  const snapshotOut = snapIdx >= 0 ? argv[snapIdx + 1] : null
 
-  const textOnly = evaluate(false)
-  const withVisual = evaluate(true)
+  // B02-3：casefile 加载与纪律校验；校验不过拒绝运行（退出码 2）
+  let probeCases = CASES
+  let defaultOrigin = CASE_ORIGIN
+  let corpus = {
+    source_kind: 'builtin_dev_corpus',
+    case_count: CASES.length,
+    casefile_meta: null,
+    origin_note: '内置 24 例：manual_simulation 口语 + 人工模拟预检词；development 语料，已暴露。'
+  }
+  let casefileMeta = null
+  if (casefilePath) {
+    if (!fs.existsSync(casefilePath)) {
+      console.error('casefile 不存在：' + casefilePath)
+      process.exit(2)
+    }
+    const casefile = JSON.parse(fs.readFileSync(casefilePath, 'utf8'))
+    const check = retrievalMetrics.validateCasefile(casefile)
+    if (!check.ok) {
+      console.error('casefile 校验失败（' + check.errors.length + ' 个硬阻断）：')
+      check.errors.forEach(function (e) { console.error('  ✗ ' + e) })
+      check.warnings.forEach(function (w) { console.error('  ⚠ ' + w) })
+      process.exit(2)
+    }
+    if (check.warnings.length) {
+      console.log('casefile 警告：')
+      check.warnings.forEach(function (w) { console.log('  ⚠ ' + w) })
+    }
+    probeCases = casefile.cases.map(casefileToProbeCase)
+    defaultOrigin = null
+    casefileMeta = {
+      path: casefilePath,
+      casefile_version: casefile.casefile_version || null,
+      sha256: retrievalMetrics.sha256Of(fs.readFileSync(casefilePath)),
+      case_count: probeCases.length
+    }
+    corpus = { source_kind: 'casefile', case_count: probeCases.length, casefile_meta: casefileMeta, origin_note: '用例来源/版本元数据逐例随行。' }
+  }
 
-  console.log('主诉召回探测 — KB_VERSION=' + kb.KB_VERSION + '，语料 ' + CASES.length + ' 条真实口语主诉')
+  const labelMapMeta = loadLabelMap()
+
+  const options = { cases: probeCases, defaultOrigin: defaultOrigin, labelMap: labelMapMeta.map }
+  const textOnly = evaluate(false, options)
+  const withVisual = evaluate(true, options)
+
+  console.log('主诉召回探测 — KB_VERSION=' + kb.KB_VERSION + '，语料 ' + probeCases.length + ' 条真实口语主诉')
   console.log('')
   console.log('通道                命中任意条目      命中期望方向')
   console.log('─'.repeat(56))
@@ -166,6 +453,15 @@ function main() {
   console.log('文字 + 视觉预检     ' +
     (withVisual.anyHit + '/' + withVisual.total + ' = ' + withVisual.anyHitRate + '%').padEnd(18) +
     withVisual.expectedHit + '/' + withVisual.total + ' = ' + withVisual.expectedHitRate + '%')
+  console.log('')
+  // B02-1：集合口径汇总（legacy 口径不变，只是多报两个数字）
+  console.log('B02 集合指标（开发集诊断，非临床准确率）：')
+  console.log('  仅主人文字      Top-1∈expected集合 ' + pct(textOnly.top1ExpectedSetRate) +
+    '，MRR ' + textOnly.mrrExpectedSetMean +
+    '，role指标 ' + textOnly.roleMetricsSummary.status)
+  console.log('  文字 + 视觉预检 Top-1∈expected集合 ' + pct(withVisual.top1ExpectedSetRate) +
+    '，MRR ' + withVisual.mrrExpectedSetMean +
+    '，role指标 ' + withVisual.roleMetricsSummary.status)
   console.log('')
 
   const misses = withVisual.rows.filter(function (r) { return !r.hitExpected })
@@ -184,6 +480,8 @@ function main() {
     withVisual.rows.forEach(function (r) {
       console.log('  ' + (r.hitExpected ? '✓' : '✗') + ' ' + r.complaint)
       console.log('      → ' + (r.retrieved.join(' | ') || '弃权'))
+      console.log('      Top-1集合=' + r.top1_expected_set + ' MRR=' + r.mrr_expected_set +
+        ' 病族折叠=' + r.unique_family_top3.map(function (f) { return f.family_code }).join(' / '))
     })
     console.log('')
   }
@@ -196,9 +494,39 @@ function main() {
       kbVersion: kb.KB_VERSION,
       floors: FLOORS,
       textOnly: textOnly,
-      withVisual: withVisual
+      withVisual: withVisual,
+      // ── B02 新增报告字段 ──
+      corpus: corpus,
+      label_map: labelMapMeta.present
+        ? { version: labelMapMeta.version, path: labelMapMeta.path, entry_count: labelMapMeta.entry_count }
+        : { present: false },
+      metrics_note: 'top1/mrr/role/病族折叠均为 B02 新增开发集诊断口径；expected 非临床参考标准，role 未标注即 NA；24 例为已暴露开发语料（manual_simulation），不代表真实预检或临床成绩。'
     }, null, 2), 'utf8')
     console.log('已写入: ' + out)
+  }
+
+  // B02-4：可追溯快照（输入/卡片/词表/配置/源码哈希 + 逐例原始结果与病族折叠）
+  if (snapshotOut) {
+    const snapshot = retrievalMetrics.buildSnapshot({
+      sourceKind: corpus.source_kind,
+      casefileMeta: casefileMeta,
+      cases: probeCases.map(function (t) {
+        return {
+          case_id: t.case_id || null,
+          complaint: t.c,
+          species: t.s,
+          bodyPart: t.b,
+          visualFeatures: t.vf || [],
+          expected: t.expect
+        }
+      }),
+      channels: { textOnly: textOnly.runs, withVisual: withVisual.runs },
+      context: buildSnapshotContext(labelMapMeta)
+    })
+    const snapDir = path.dirname(snapshotOut)
+    if (snapDir && !fs.existsSync(snapDir)) fs.mkdirSync(snapDir, { recursive: true })
+    fs.writeFileSync(snapshotOut, JSON.stringify(snapshot, null, 2), 'utf8')
+    console.log('已写入快照: ' + snapshotOut)
   }
 
   // 回归下限：当前实测 主通道 100% / 纯文字 79.2%，下限留出余量。
@@ -219,6 +547,10 @@ function main() {
   console.log('召回未低于回归下限（主通道 ≥' + FLOORS.withVisual + '%，纯文字 ≥' + FLOORS.textOnly + '%）。')
 }
 
+function pct(rate) {
+  return rate === null ? 'NA' : (+(rate * 100).toFixed(1) + '%')
+}
+
 if (require.main === module) main()
 
-module.exports = { CASES: CASES, evaluate: evaluate }
+module.exports = { CASES: CASES, CASE_ORIGIN: CASE_ORIGIN, evaluate: evaluate }

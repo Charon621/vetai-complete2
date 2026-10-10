@@ -15,5 +15,11 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm ci
+      # tests/cloud-function.test.js 在加载期 require.resolve 云函数目录下的
+      # wx-server-sdk；该 node_modules 被 .gitignore 排除，不在 checkout 产物里，
+      # 不装的话 CI 上测试文件直接 MODULE_NOT_FOUND，&& 链中断、整个 job 必红。
+      # cloudfunctions/diagnose/package-lock.json 已入库，可直接 ci。
+      - name: Install cloud function dependencies
+        run: npm ci --prefix cloudfunctions/diagnose
       - name: Run test suites
         run: npm test

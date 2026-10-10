@@ -169,3 +169,11 @@ assert.ok(vocabOral.indexOf('bodyPartGuess 必须写') >= 0,
   'oral case must keep the explicit misclassification guard')
 
 console.log('prompt contract tests passed')
+
+// BUG-10：实际 system 删除硬映射；用户原文不删除；候选仍遵循 B03。
+const raw = '不要写成毛囊炎或痤疮；这是主人原文';
+const changed = api.buildDebugPrompt({species:'猫',complaint:raw},[]);
+assert(!changed.systemPrompt.includes('不要写成毛囊炎或痤疮'));
+assert(changed.systemPrompt.includes('完整诊断最多2个'));
+assert(changed.userPrompt.includes(raw));
+assert(require('../utils/knowledge').buildCommonFirstPrompt('兔').includes('物种未确认或不在已验证范围'));

@@ -248,6 +248,253 @@ def load_runs_from_jsonl(paths: Sequence[str],
     return runs
 
 
+# --------------------------------------------------------------------------
+# B15-1（BUG-31）：预注册 scheduled attempt 记账
+# --------------------------------------------------------------------------
+#
+# 旧 load_runs_from_jsonl 逐行取「最后一条命中记录」，于是：失败尝试消失、
+# 重试覆盖首次、末次成功顶掉首轮 A——全部失败与首轮分歧从分母里蒸发。
+# 预注册模式下，每次计划尝试（scheduled attempt）先在 manifest 里登记
+# （run_id/case_id/branch/stage/scheduled_attempt_id/attempt_index），日志记录
+# 按同一五元组对号入座；一致性的主分析只看 **attempt_index=1 的首次尝试**，
+# 重试与失败全部保留在执行链里如实报告，绝不择优。
+
+SCHEDULED_MANIFEST_VERSION = "1.0.0"
+ATTEMPT_POLICIES = ("first_scheduled", "legacy")
+
+# 计划尝试的五种终态：completed 之外全部是技术性失败，必须保留在分母里
+ATTEMPT_TERMINAL = ("completed", "parse_error", "provider_error",
+                    "timeout", "schema_error", "missing_record")
+
+
+def load_scheduled_manifest(path: str) -> dict:
+    """读取并校验预注册 manifest。manifest 是唯一分母来源；日志不得自定分母。"""
+    with open(path, "r", encoding="utf-8") as fh:
+        manifest = json.load(fh)
+    if manifest.get("manifest_version") != SCHEDULED_MANIFEST_VERSION:
+        raise ValueError("scheduled manifest_version 必须是 %s，收到 %r"
+                         % (SCHEDULED_MANIFEST_VERSION, manifest.get("manifest_version")))
+    entries = manifest.get("scheduled_attempts")
+    if not isinstance(entries, list) or not entries:
+        raise ValueError("scheduled manifest 缺 scheduled_attempts")
+    seen: Counter = Counter()
+    for e in entries:
+        for key in ("run_id", "case_id", "branch", "stage",
+                    "scheduled_attempt_id", "attempt_index"):
+            if not e.get(key) and e.get(key) != 0:
+                raise ValueError("scheduled attempt 缺字段 %s：%r" % (key, e))
+        idx = int(e["attempt_index"])
+        if idx < 1:
+            raise ValueError("attempt_index 从 1 开始：%r" % e)
+        seen[e["scheduled_attempt_id"]] += 1
+    dupes = [k for k, n in seen.items() if n > 1]
+    if dupes:
+        raise ValueError("scheduled_attempt_id 重复：%s" % dupes)
+    return manifest
+
+
+def _extract_field(record: dict, field_path: Sequence[str]) -> Optional[str]:
+    node: object = record
+    for key in field_path:
+        if isinstance(node, dict) and key in node:
+            node = node[key]
+        else:
+            # 分支载荷兼容：记录把分支内容放在 payload 里时从 payload 续走
+            payload = record.get("payload") if node is record else None
+            if isinstance(payload, dict):
+                node = payload
+                for key2 in field_path:
+                    if isinstance(node, dict) and key2 in node:
+                        node = node[key2]
+                    else:
+                        return None
+                break
+            return None
+    if node is None or isinstance(node, (dict, list)):
+        return None
+    return str(node)
+
+
+def load_scheduled_runs(paths: Sequence[str],
+                        manifest: dict,
+                        field_path: Sequence[str]) -> dict:
+    """按预注册 manifest 对号入座地装载运行记录（B15-1）。
+
+    返回视图：
+      attempts        — 每个计划尝试一条结果（status/label/attempt_index/source）
+      conflicts       — 同一 scheduled_attempt_id 出现多条记录（阻断级）
+      unscheduled     — 日志里存在但 manifest 未登记的记录（如实列出，不评分）
+      chains          — 按 (branch, case_id, run_id) 的尝试链（按 attempt_index 排序）
+      runs_by_branch  — {branch: [run_id...]}
+    """
+    attempts: Dict[str, dict] = {}
+    chains: Dict[tuple, List[dict]] = defaultdict(list)
+    conflicts: List[dict] = []
+    unscheduled: List[dict] = []
+
+    for entry in manifest["scheduled_attempts"]:
+        key = str(entry["scheduled_attempt_id"])
+        attempts[key] = {
+            "scheduled_attempt_id": key,
+            "run_id": str(entry["run_id"]), "case_id": str(entry["case_id"]),
+            "branch": str(entry["branch"]), "stage": str(entry["stage"]),
+            "attempt_index": int(entry["attempt_index"]),
+            "status": "missing_record", "label": None, "source": None,
+        }
+
+    for path in paths:
+        with open(path, "r", encoding="utf-8") as fh:
+            for line_no, line in enumerate(fh, 1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError:
+                    unscheduled.append({"source": "%s:%d" % (path, line_no),
+                                        "reason": "bad_json"})
+                    continue
+                sid = record.get("scheduled_attempt_id")
+                if not sid or sid not in attempts:
+                    unscheduled.append({"source": "%s:%d" % (path, line_no),
+                                        "reason": "not_in_manifest",
+                                        "scheduled_attempt_id": sid})
+                    continue
+                slot = attempts[sid]
+                if slot["source"] is not None:
+                    conflicts.append({"scheduled_attempt_id": sid,
+                                      "first": slot["source"],
+                                      "second": "%s:%d" % (path, line_no)})
+                    continue
+                status = str(record.get("executionStatus") or "").strip()
+                label = _extract_field(record, field_path)
+                if status and status not in ATTEMPT_TERMINAL:
+                    slot["status"] = "parse_error"
+                    slot["detail"] = "unknown executionStatus %r" % status
+                elif status and status != "completed":
+                    slot["status"] = status
+                elif label is None:
+                    slot["status"] = "missing_field"
+                else:
+                    slot["status"] = "completed"
+                    slot["label"] = label
+                slot["source"] = "%s:%d" % (path, line_no)
+
+    for slot in sorted(attempts.values(),
+                       key=lambda s: (s["branch"], s["case_id"], s["run_id"],
+                                      s["attempt_index"])):
+        chains[(slot["branch"], slot["case_id"], slot["run_id"])].append(slot)
+
+    runs_by_branch: Dict[str, List[str]] = defaultdict(list)
+    for (_b, _c, run_id) in chains:
+        if run_id not in runs_by_branch[_b]:
+            runs_by_branch[_b].append(run_id)
+
+    return {
+        "attempts": attempts,
+        "conflicts": conflicts,
+        "unscheduled": unscheduled,
+        "chains": chains,
+        "runs_by_branch": dict(runs_by_branch),
+    }
+
+
+def first_scheduled_view(view: dict) -> Dict[tuple, dict]:
+    """按 first_scheduled 策略取每条执行链的首次预定尝试结果。
+
+    主分析只看 attempt_index=1；重试哪怕成功也不得顶替首次结果。
+    返回 {(branch, case_id, run_id): slot}。
+    """
+    primary: Dict[tuple, dict] = {}
+    for key, chain in view["chains"].items():
+        ordered = sorted(chain, key=lambda s: s["attempt_index"])
+        first = ordered[0]
+        if first["attempt_index"] != 1:
+            raise ValueError("执行链 %s 缺 attempt_index=1 的首次尝试：%s"
+                             % (key, [s["scheduled_attempt_id"] for s in ordered]))
+        primary[key] = first
+    return primary
+
+
+def scheduled_consistency_report(manifest: dict, view: dict) -> dict:
+    """首次预定尝试口径的一致性报告（B15-1 主分析）。
+
+    - scheduled_cases：预注册分母（与日志成败无关）；
+    - conditional：两轮及以上都有有效标签的病例里的完全一致率（旧口径的分母）；
+    - end_to_end：全部分母上「所有 run 首次尝试都成功且标签一致」的比例——
+      技术失败单列，不伪造疾病预测；
+    - always_failed：所有 run 的首次尝试都失败的病例，逐例保留原因；
+    - first_attempt_divergences：首次尝试的 A/B 分歧逐例保留（附后续重试链，
+      重试信息只陈述不参与计分）。
+    """
+    primary = first_scheduled_view(view)
+    report: dict = {
+        "attempt_policy": "first_scheduled",
+        "scheduled_case_count": len({e["case_id"] for e in manifest["scheduled_attempts"]}),
+        "conflicts": view["conflicts"],
+        "unscheduled_records": view["unscheduled"],
+        "branches": {},
+    }
+    for branch, run_ids in sorted(view["runs_by_branch"].items()):
+        case_ids = sorted({c for (b, c, r) in view["chains"] if b == branch})
+        rows: List[Dict[str, Optional[str]]] = []
+        for run in run_ids:
+            rows.append({c: primary[(branch, c, run)].get("label")
+                         for c in case_ids})
+        valid_cases = [c for c in case_ids
+                       if all(row.get(c) is not None for row in rows)]
+        identical_valid = [c for c in valid_cases
+                           if len({row[c] for row in rows}) == 1]
+        all_success_identical = [c for c in case_ids
+                                 if all(primary[(branch, c, run)]["status"] == "completed"
+                                        for run in run_ids)
+                                 and len({primary[(branch, c, run)]["label"] for run in run_ids}) == 1]
+        always_failed = [c for c in case_ids
+                         if all(primary[(branch, c, run)]["status"] != "completed"
+                                for run in run_ids)]
+        divergences = []
+        for c in case_ids:
+            labels = [primary[(branch, c, run)].get("label") for run in run_ids]
+            if all(lab is not None for lab in labels) and len(set(labels)) > 1:
+                divergences.append({
+                    "case_id": c,
+                    "first_attempt_labels": {run: primary[(branch, c, run)]["label"]
+                                             for run in run_ids},
+                    "first_attempt_ids": {run: primary[(branch, c, run)]["scheduled_attempt_id"]
+                                          for run in run_ids},
+                    "retry_chain": [
+                        {"run_id": s["run_id"], "attempt_index": s["attempt_index"],
+                         "scheduled_attempt_id": s["scheduled_attempt_id"],
+                         "status": s["status"], "label": s["label"]}
+                        for (b2, c2, r2), chain in view["chains"].items()
+                        if b2 == branch and c2 == c
+                        for s in sorted(chain, key=lambda x: x["attempt_index"])
+                        if s["attempt_index"] > 1
+                    ],
+                })
+        report["branches"][branch] = {
+            "run_ids": run_ids,
+            "scheduled_cases": len(case_ids),
+            "cases_with_valid_labels_in_all_runs": len(valid_cases),
+            "conditional_full_consistency": {
+                "numerator": len(identical_valid),
+                "denominator": len(valid_cases),
+            },
+            "end_to_end_success_and_identical": {
+                "numerator": len(all_success_identical),
+                "denominator": len(case_ids),
+            },
+            "always_failed_cases": [
+                {"case_id": c,
+                 "first_attempt_status": {run: primary[(branch, c, run)]["status"]
+                                          for run in run_ids}}
+                for c in always_failed
+            ],
+            "first_attempt_divergences": divergences,
+        }
+    return report
+
+
 def _self_test() -> None:
     # 完全稳定：3 轮完全一致
     stable = [{"c1": "present", "c2": "absent", "c3": "present"} for _ in range(3)]
@@ -319,18 +566,123 @@ def _self_test() -> None:
     except ValueError:
         pass
 
-    print("repeatability self-test passed")
+    # ── B15-1（BUG-31）：预注册首次尝试记账 ──
+    # 3 个预定病例：X 两轮全失败；Y run1 首次 A、重试 B，run2 首次 B；Z 两轮首次一致。
+    # 旧口径只看「最后命中」会报 2/2=100% 且 X 消失；首次口径必须报
+    # scheduled=3、条件一致 1/2、端到端成功且一致 1/3、always_failed=[X]、
+    # Y 的 A/B 首轮分歧逐例保留。
+    import tempfile
+
+    manifest = {"manifest_version": SCHEDULED_MANIFEST_VERSION,
+                "scheduled_attempts": []}
+    for case, n_attempts in (("X", 1), ("Y", 2), ("Z", 1)):
+        for run in ("run1", "run2"):
+            for idx in range(1, n_attempts + 1):
+                if case == "X" or idx <= 1 or run == "run1":
+                    manifest["scheduled_attempts"].append({
+                        "run_id": run, "case_id": case, "branch": "full",
+                        "stage": "final",
+                        "scheduled_attempt_id": "%s-%s-%d" % (case, run, idx),
+                        "attempt_index": idx})
+
+    def rec(run, case, idx, status=None, label=None):
+        payload = {"run_id": run, "case_id": case, "branch": "full", "stage": "final",
+                   "scheduled_attempt_id": "%s-%s-%d" % (case, run, idx),
+                   "attempt_index": idx}
+        if status:
+            payload["executionStatus"] = status
+        if label:
+            payload["branches"] = {"full": {"final": {"primaryDiagnosis": label}}}
+        return payload
+
+    records = {
+        "run1.jsonl": [
+            rec("run1", "X", 1, status="provider_error"),
+            rec("run1", "Y", 1, label="A"),
+            rec("run1", "Y", 2, label="B"),
+            rec("run1", "Z", 1, label="甲"),
+            # 日志里混入一条 manifest 未登记的记录：如实列出，不评分
+            {"run_id": "run1", "case_id": "GHOST", "branch": "full", "stage": "final",
+             "scheduled_attempt_id": "ghost-1", "attempt_index": 1,
+             "executionStatus": "completed",
+             "branches": {"full": {"final": {"primaryDiagnosis": "幽灵"}}}},
+        ],
+        "run2.jsonl": [
+            rec("run2", "X", 1, status="timeout"),
+            rec("run2", "Y", 1, label="B"),
+            rec("run2", "Z", 1, label="甲"),
+        ],
+    }
+    tmpdir = tempfile.mkdtemp()
+    paths = []
+    for name, recs in records.items():
+        p = os.path.join(tmpdir, name)
+        with open(p, "w", encoding="utf-8") as fh:
+            for r in recs:
+                fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+        paths.append(p)
+
+    view = load_scheduled_runs(paths, manifest, ("branches", "full", "final", "primaryDiagnosis"))
+    assert view["conflicts"] == [], view["conflicts"]
+    assert len(view["unscheduled"]) == 1 and view["unscheduled"][0]["reason"] == "not_in_manifest"
+    rep = scheduled_consistency_report(manifest, view)
+    full = rep["branches"]["full"]
+    assert rep["scheduled_case_count"] == 3, rep["scheduled_case_count"]
+    assert full["scheduled_cases"] == 3
+    assert full["cases_with_valid_labels_in_all_runs"] == 2, full
+    assert full["conditional_full_consistency"] == {"numerator": 1, "denominator": 2}, full
+    assert full["end_to_end_success_and_identical"] == {"numerator": 1, "denominator": 3}, full
+    assert [c["case_id"] for c in full["always_failed_cases"]] == ["X"], full["always_failed_cases"]
+    assert full["always_failed_cases"][0]["first_attempt_status"] == {
+        "run1": "provider_error", "run2": "timeout"}
+    assert len(full["first_attempt_divergences"]) == 1, full["first_attempt_divergences"]
+    div = full["first_attempt_divergences"][0]
+    assert div["case_id"] == "Y"
+    assert div["first_attempt_labels"] == {"run1": "A", "run2": "B"}, div
+    retries = [s for s in div["retry_chain"] if s["run_id"] == "run1"]
+    assert retries and retries[0]["label"] == "B" and retries[0]["attempt_index"] == 2, div
+    # 重试信息只陈述：哪怕重试与 run2 一致，主分析仍按首次 A/B 报不一致
+    assert full["conditional_full_consistency"]["numerator"] == 1
+
+    # 同一 scheduled_attempt_id 出现两条记录 → 冲突阻断
+    dup_path = os.path.join(tmpdir, "dup.jsonl")
+    with open(dup_path, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(rec("run1", "Z", 1, label="甲")) + "\n")
+        fh.write(json.dumps(rec("run1", "Z", 1, label="乙")) + "\n")
+    view2 = load_scheduled_runs([dup_path], manifest,
+                                ("branches", "full", "final", "primaryDiagnosis"))
+    assert len(view2["conflicts"]) == 1, view2["conflicts"]
+
+    # manifest 校验：版本不符 / 重复 id / 缺字段必须报错
+    with open(os.path.join(tmpdir, "m.json"), "w", encoding="utf-8") as fh:
+        json.dump(manifest, fh, ensure_ascii=False)
+    loaded = load_scheduled_manifest(os.path.join(tmpdir, "m.json"))
+    assert loaded["scheduled_attempts"], loaded
+    bad = {"manifest_version": "0.9", "scheduled_attempts": manifest["scheduled_attempts"]}
+    with open(os.path.join(tmpdir, "bad.json"), "w", encoding="utf-8") as fh:
+        json.dump(bad, fh, ensure_ascii=False)
+    try:
+        load_scheduled_manifest(os.path.join(tmpdir, "bad.json"))
+        raise AssertionError("版本不符必须报错")
+    except ValueError:
+        pass
+
+    print("repeatability self-test passed (incl. B15 scheduled accounting)")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="计算模型重测信度（完全一致率 + 两两 kappa 均值）")
+        description="计算模型重测信度（完全一致率 + 两两 kappa 均值；或 B15 首次尝试记账）")
     parser.add_argument("runs", nargs="*", help="每轮一个 JSONL 运行日志")
     parser.add_argument("--field", default="urgency",
                         help="要评估的字段，支持点号嵌套，如 parsed.urgency")
     parser.add_argument("--ordered", action="store_true",
                         help="按有序等级处理（urgency）并额外给出加权 kappa")
     parser.add_argument("--case-key", default="case_id")
+    parser.add_argument("--scheduled-manifest",
+                        help="B15-1：预注册 scheduled manifest JSON；给出后按首次预定尝试口径记账")
+    parser.add_argument("--attempt-policy", choices=list(ATTEMPT_POLICIES),
+                        default="first_scheduled")
     parser.add_argument("--json-out")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
@@ -339,10 +691,35 @@ def main() -> None:
         _self_test()
         return
 
+    field_path = tuple(args.field.split("."))
+
+    if args.scheduled_manifest:
+        # B15-1：预注册模式。分母来自 manifest；冲突阻断；失败与重试全部保留。
+        if args.attempt_policy != "first_scheduled":
+            parser.error("scheduled 模式当前只支持 --attempt-policy first_scheduled")
+        manifest = load_scheduled_manifest(args.scheduled_manifest)
+        view = load_scheduled_runs(args.runs, manifest, field_path)
+        if view["conflicts"]:
+            print("存在重复 scheduled_attempt_id 记录，阻断：", file=sys.stderr)
+            for c in view["conflicts"]:
+                print("  %s: %s vs %s" % (c["scheduled_attempt_id"], c["first"], c["second"]),
+                      file=sys.stderr)
+            sys.exit(1)
+        report = scheduled_consistency_report(manifest, view)
+        report["source_files"] = list(args.runs)
+        report["scheduled_manifest"] = args.scheduled_manifest
+        text = json.dumps(report, ensure_ascii=False, indent=2)
+        if args.json_out:
+            with open(args.json_out, "w", encoding="utf-8") as fh:
+                fh.write(text + "\n")
+            print("报告已写入 %s" % args.json_out)
+        else:
+            print(text)
+        return
+
     if len(args.runs) < 2:
         parser.error("重测信度至少需要两轮日志；单轮无法计算稳定性")
 
-    field_path = tuple(args.field.split("."))
     runs = load_runs_from_jsonl(args.runs, field_path, args.case_key)
     empty = [p for p, r in zip(args.runs, runs) if not r]
     if empty:

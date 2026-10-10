@@ -24,7 +24,10 @@ function makePage(index, sync) {
     }
   }
   Object.keys(component.methods).forEach(function (name) { page[name] = component.methods[name] })
-  if (sync !== false) page.syncSelected(index)
+  if (sync !== false) {
+    page.syncSelected(index)
+    component.lifetimes.attached.call(page)
+  }
   return page
 }
 var wx = {
@@ -34,9 +37,17 @@ var wx = {
     if (outcome === 'fail') { options.fail(); options.complete(); return }
     var origin = active
     var target = pages[origin].data.list.findIndex(function (item) { return item.pagePath === options.url })
+    // 导航回调可能早于渲染交接；不能依赖 complete 才把旧页复位。
+    options.complete()
+    assert.strictEqual(pages[origin].data.selected, target, 'complete 后旧页仍必须停在终点')
+    if (!coldTarget) {
+      assert.strictEqual(pages[target].data.selected, target, '缓存目标页必须在 onShow 前就定位完成')
+      assert.strictEqual(pages[target].data.switching, false)
+    }
     component.pageLifetimes.hide.call(pages[origin])
     hideState = Object.assign({}, pages[origin].data)
     if (coldTarget) {
+      component.lifetimes.detached.call(pages[target])
       pages[target] = makePage(target, false)
       assert.strictEqual(pages[target].data.ready, false)
       component.lifetimes.attached.call(pages[target])
@@ -47,7 +58,6 @@ var wx = {
     active = target
     pages[target].syncSelected(target)
     navigations++
-    if (options.complete) options.complete()
   }
 }
 vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','custom-tab-bar','index.js'),'utf8'),{
@@ -80,7 +90,7 @@ function finishSlide() { pages[active].onSlideEnd() }
   assert.strictEqual(hideState.switching,false)
   assert.strictEqual(pages[target].data.selected,target)
   assert.strictEqual(pages[target].data.switching,false,'目标页不能再播放第二次滑动')
-  assert.strictEqual(pages[origin].data.selected,origin,'导航完成后才复位已隐藏旧页')
+  assert.strictEqual(pages[origin].data.selected,target,'导航完成后旧页也保持终点，避免交接回闪')
   assert.strictEqual(timers.size,0)
   pages[origin].onSlideEnd()
   assert.strictEqual(requests,requestCount+1,'过期动画结束事件不重复导航')

@@ -1,4 +1,5 @@
 var storage = require('../../utils/storage')
+var imageUtil = require('../../utils/image')
 
 var emptyForm = {
   petName: '', petType: '', petTypeLabel: '', breed: '',
@@ -214,14 +215,34 @@ Page({
       sourceType: ['album', 'camera'],
       sizeType: ['compressed'],
       success: function (res) {
-        var tempPath = res.tempFiles[0].tempFilePath
+        var tempPath = res.tempFiles[0] && res.tempFiles[0].tempFilePath
+        if (!tempPath) return
         wx.compressImage({
           src: tempPath,
           quality: 60,
-          success: function (cres) { self.setData({ 'form.avatar': cres.tempFilePath }) },
-          fail: function () { self.setData({ 'form.avatar': tempPath }) }
+          success: function (cres) { self._saveAvatarFile(cres.tempFilePath) },
+          fail: function () { self._saveAvatarFile(tempPath) }
         })
+      },
+      fail: function (err) {
+        // 取消静默；权限拒绝等其他失败给出提示
+        var errText = (err && err.errMsg) || ''
+        if (errText.indexOf('cancel') >= 0) return
+        wx.showToast({ title: '无法打开相册或相机', icon: 'none' })
       }
+    })
+  },
+
+  // BUG-H5：头像此前直接把 chooseMedia/compressImage 的临时路径写进档案并随
+  // saveProfile 持久化，微信临时文件在会话结束后被回收，下次启动头像变裂图。
+  // 改为经 saveImagePermanent 落盘到 vetai_saved（与 user 页换头像的
+  // prepareImages({savePermanent:true}) 最终链路一致）；落盘失败时退回临时
+  // 路径，保证本次会话内仍可预览。cleanupStaleImages 按引用保护 avatar 字段，
+  // 换头像后被替换的旧文件会在 7 天后自动回收。
+  _saveAvatarFile: function (path) {
+    var self = this
+    imageUtil.saveImagePermanent(path).then(function (saved) {
+      self.setData({ 'form.avatar': (saved && saved.path) || path })
     })
   },
 

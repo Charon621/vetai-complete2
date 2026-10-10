@@ -1,3 +1,4 @@
+var recordEvidence = require('../../utils/recordEvidence')
 var chatDoctor = require('../../utils/chatDoctor')
 var storage = require('../../utils/storage')
 var api = require('../../utils/api')
@@ -81,6 +82,12 @@ Page({
   onShow: function () {
     // 检查是否需要开始新对话（从档案页"新建档案"跳来）
     if (wx.getStorageSync('chat_start_new')) {
+      // BUG-C14：诊断在飞行中时同样不能重建会话（与 onNewChat 同一竞态）；
+      // 保留标记不消费，等分析结束后的下次 onShow 再开始新对话
+      if (this._isProcessing || this.data.isAnalyzing) {
+        wx.showToast({ title: '正在分析中，请稍候', icon: 'none' })
+        return
+      }
       wx.removeStorageSync('chat_start_new')
       chatDoctor.clearDraft()
       this._session = null
@@ -692,7 +699,7 @@ Page({
     if (typeof draft.recordId === 'string' && draft.recordId && storage.getRecordById(draft.recordId)) {
       storage.deleteRecord(draft.recordId)
     }
-    var record = storage.addRecord({
+    var record = storage.addRecord(Object.assign(recordEvidence.fields(d), {
       profileId: draft.profileId || '',
       petName: draft.petName || '未命名宠物', petType: draft.petType, petTypeLabel: draft.petTypeLabel,
       species: draft.petType, breed: draft.breed,
@@ -727,7 +734,7 @@ Page({
       ragMatched: d._ragMatched || [],
       modelProvider: d.modelProvider || 'qwen', modelProviderLabel: d.modelProviderLabel || 'Qwen3.8-Flash',
       isTemporary: !draft.profileId, source: 'chat'
-    })
+    }))
     if (record && record.id) draft.recordId = record.id
     chatDoctor.saveDraft(this._session)
     if (callback) callback()
@@ -745,6 +752,14 @@ Page({
 
   onNewChat: function () {
     var self = this
+    // BUG-C14：诊断在飞行中时禁止重建会话——_runDiagnosis 的闭包通过
+    // self._session 动态取值，此时替换 _session 会把旧问诊的结果/错误写进
+    // 新会话的 draft 并向其追加消息。快捷回复路径在进入前已复位 _isProcessing，
+    // 不会被这里拦住；拦截的是顶部「新问诊」按钮这条无防护入口。
+    if (this._isProcessing || this.data.isAnalyzing) {
+      wx.showToast({ title: '正在分析中，请稍候', icon: 'none' })
+      return
+    }
     wx.showModal({
       title: '开始新问诊',
       content: '将清空当前对话，开始新的问诊。',

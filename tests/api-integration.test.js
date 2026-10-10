@@ -46,12 +46,20 @@ global.wx = {
         return
       }
       options.success(modelResponse({
+        imageFindings: [{ imageIndex: 1, role: 'overview', observation: '面部圆形脱毛', quality: 'clear', usable: true }],
         observations: '面部可见圆形脱毛和鳞屑',
+        evidenceFor: ['圆形脱毛伴鳞屑'],
+        evidenceAgainst: ['未见脓疱'],
+        missingInformation: ['未做真菌检查'],
+        abstainReason: '',
         primaryDiagnosis: '皮肤癣菌病（犬猫）',
         primaryDiagnosisProbability: 72,
-        diagnosisCandidates: [{ name: '皮肤癣菌病（犬猫）', probability: 72, reason: '形态吻合' }],
+        diagnosisCandidates: [{ name: '皮肤癣菌病（犬猫）', probability: 72, reason: '形态吻合', supporting: '环形脱毛', against: '未镜检' }],
         lesionNameCn: '环形脱毛斑',
         confidence: 72,
+        recommendedTests: ['真菌检查'],
+        urgencyEvidence: [],
+        urgency: 'moderate',
         explanation: '需要真菌检查确认',
         possibleMeaning: '存在感染可能',
         homeCare: '隔离并保持环境清洁',
@@ -59,7 +67,7 @@ global.wx = {
         whenToSeeVet: '扩散或家人出现皮损时就医',
         careSuggestion: '避免自行用药',
         vetWarning: '建议进行真菌培养',
-        urgency: 'moderate',
+        diagnosisProbabilityNote: '匹配分说明',
         ragSources: []
       }))
     }
