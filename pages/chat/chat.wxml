@@ -148,6 +148,7 @@
   </view>
 
   <!-- 圈选器 -->
+  <button wx:if="{{hasPendingResult}}" class="vet-btn vet-btn-primary" bindtap="onRetrySave">重试保存已有初筛</button>
   <lesion-selector
     visible="{{selectorVisible}}"
     image-path="{{selectorImagePath}}"

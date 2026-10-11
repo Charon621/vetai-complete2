@@ -624,6 +624,6 @@ module.exports = {
     ]
   },
   "release": {
-    "id": "kb-2026.10.09.1"
+    "id": "kb-2026.10.11-rag.6"
   }
 }

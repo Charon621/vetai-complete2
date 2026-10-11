@@ -1,4 +1,6 @@
 const assert = require('assert')
+// These fixtures exercise the retained legacy flow; guided is covered by ragWorkflow/ragPages.
+require('../utils/config').RAG_WORKFLOW_MODE = 'legacy'
 
 const localStore = {}
 const calls = []

@@ -11,6 +11,8 @@
 // ============================================================
 
 const assert = require('assert')
+// These fixtures exercise the retained legacy flow; guided is covered by ragWorkflow/ragPages.
+require('../utils/config').RAG_WORKFLOW_MODE = 'legacy'
 
 const localStore = {}
 const calls = []
@@ -196,6 +198,31 @@ async function run() {
     const result = await api.diagnose(twoImages, petInfo)
     assert.strictEqual(result.data.responseStatus, 'schema_error')
     assert.ok(result.data.schemaErrors.some(function (e) { return String(e).indexOf('实际发送 2') >= 0 }))
+  })
+
+  await check('多于提示词目标的有效列表保留，不整份拒绝；最多 12 条', async function () {
+    const extra = ['位置待确认', '病程待补充', '瘙痒待补充', '接触史待补充']
+    const checks = Array.from({ length: 7 }, (_, i) => '线下检查项目' + (i + 1))
+    fullResponse = validReport({ evidenceFor: extra, missingInformation: extra, recommendedTests: checks })
+    const result = await api.diagnose([image], petInfo)
+    assert.strictEqual(result.data.responseStatus, 'ok')
+    assert.deepStrictEqual(result.data.evidenceFor, extra)
+    assert.deepStrictEqual(result.data.missingInformation, extra)
+    assert.deepStrictEqual(result.data.recommendedTests, checks)
+    for (const field of ['evidenceFor', 'evidenceAgainst', 'missingInformation', 'recommendedTests', 'urgencyEvidence']) {
+      const rows = Array.from({ length: 12 }, (_, i) => '条目' + i)
+      assert.strictEqual(api.validateDiagnosisResponse(validReport({ [field]: rows }), { imageCount: 1 }).ok, true)
+      assert.strictEqual(api.validateDiagnosisResponse(validReport({ [field]: rows.concat('超限') }), { imageCount: 1 }).ok, false)
+      assert.strictEqual(api.validateDiagnosisResponse(validReport({ [field]: ['有效条目', null] }), { imageCount: 1 }).ok, false)
+    }
+  })
+
+  await check('多出的第 5 条仍执行安全检查，不能通过截断隐藏危险内容', async function () {
+    fullResponse = validReport({ recommendedTests: ['检查一', '检查二', '检查三', '检查四', '口服消炎药每天两次'] })
+    const result = await api.diagnose([image], petInfo)
+    assert.strictEqual(result.data.responseStatus, 'schema_error')
+    assert.strictEqual(result.data.failureStage, 'output_safety')
+    assert.strictEqual(result.data.safetyBlocked, true)
   })
 
   // ── 6. 全部 unusable：临床弃答联动（不是 schema_error） ──

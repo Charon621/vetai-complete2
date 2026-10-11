@@ -268,6 +268,15 @@ async function run() {
   res = await cloudFn.main(validEvent({ promptVersion: require('../utils/api').PROMPT_VERSION }))
   assert.strictEqual(res.success, true, 'actual client prompt version accepted')
 
+  currentOpenId = 'rag-observation-version-user'
+  res = await cloudFn.main(validEvent({phase:'vision-precheck',promptVersion:'vetai-rag-observation-v1',payload:{model:'qwen3.8-flash',messages:[{role:'user',content:'synthetic'}],max_tokens:9000}}))
+  assert.strictEqual(res.success,true,'new observation version accepted')
+  assert.strictEqual(lastPayload.max_tokens,1400,'new structured observation has bounded independent budget')
+  currentOpenId = 'legacy-observation-version-user'
+  res = await cloudFn.main(validEvent({phase:'vision-precheck',payload:{model:'qwen3.8-flash',messages:[{role:'user',content:'synthetic'}],max_tokens:9000}}))
+  assert.strictEqual(res.success,true)
+  assert.strictEqual(lastPayload.max_tokens,700,'legacy precheck cap preserved')
+
   // ============================================================
   // 幂等：同 openId+requestId 第二次命中缓存，模型只调一次
   // ============================================================

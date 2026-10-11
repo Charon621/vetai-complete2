@@ -221,6 +221,7 @@
     </view>
   </view>
 
+  <button wx:if="{{hasPendingResult}}" class="vet-btn vet-btn-primary" bindtap="onRetrySave">重试保存已有初筛</button>
   <canvas type="2d" id="resizeCanvas" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;"></canvas>
   <canvas type="2d" id="qualityCanvas" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;"></canvas>
   <canvas type="2d" id="fallbackCanvas" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;"></canvas>

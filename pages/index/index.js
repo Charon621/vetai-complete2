@@ -651,6 +651,11 @@ Page({
     }
     var self = this
     var petInfo = self.buildPetInfo()
+    var ownerScope = storage.getUserScope()
+    var operation = (self._analysisToken || 0) + 1
+    self._analysisToken = operation
+    function cancelled(){return self._analysisToken!==operation || storage.getUserScope()!==ownerScope}
+    var manifest = imageUtil.createImageManifest(self.data.imagePaths, self.data.imageRoles, self.data.lesionBoxes)
     analytics.track('submit', {
       imageCount: self.data.imagePaths.length,
       lesionCount: self.data.lesionBoxes.filter(Boolean).length,
@@ -661,22 +666,25 @@ Page({
 
     Promise.all([
       imageUtil.saveImagesPermanent(self.data.imagePaths),
-      imageUtil.cropAllLesionRegions(self.data.imagePaths, self.data.lesionBoxes, self)
+      imageUtil.cropAllLesionRegions(self.data.imagePaths, self.data.lesionBoxes, self, manifest)
     ])
       .then(function (bundle) {
+        if(cancelled())return
         var saved = bundle[0]
         var roiImages = bundle[1]
         analytics.track('roiCrop', { total: self.data.lesionBoxes.filter(Boolean).length, cropped: roiImages.length })
         var imageBundle = imageUtil.buildModelImageBundle(
           self._imageBase64List || [],
           self.data.imageRoles,
-          roiImages || []
+          roiImages || [], manifest
         )
         var requestImages = imageBundle.images
         var sizeWarnings = imageUtil.checkImageSizes(requestImages)
         var paths = saved.map(function (s) { return s.path })
+        var imageProtection=imageUtil.protectImagePaths(paths)
         var saveFailed = saved.some(function (s) { return s && s.saveFailed })
         if (saveFailed || paths.some(function (path) { return !path })) {
+          imageUtil.releaseImagePaths(imageProtection)
           imageUtil.cleanupSavedFiles(saved)
           self.setData({ isAnalyzing: false }); self._stopAnalyzingTimer()
           wx.showModal({
@@ -687,6 +695,7 @@ Page({
           return Promise.reject(new Error('__handled__'))
         }
         if (sizeWarnings.length > 0) {
+          imageUtil.releaseImagePaths(imageProtection)
           imageUtil.cleanupSavedFiles(saved)
           self.setData({ isAnalyzing: false }); self._stopAnalyzingTimer()
           wx.showModal({
@@ -698,6 +707,7 @@ Page({
         }
         var requestPetInfo = Object.assign({}, petInfo, {
           imageRoles: imageBundle.roles,
+          imageManifest: imageBundle.manifest,
           totalImageCount: self.data.imagePaths.length
         })
         // 超出模型上限的图片不再静默丢弃，明确告知用户（BUG-B1）
@@ -708,10 +718,16 @@ Page({
             duration: 2500
           })
         }
-        return api.diagnose(requestImages, requestPetInfo)
+        return api.diagnose(requestImages, requestPetInfo, {ownerScope:ownerScope,isCancelled:cancelled})
           .then(function (res) {
+            if(cancelled()){imageUtil.releaseImagePaths(imageProtection);return}
             if (res.success) {
+              function finalize(){return imageUtil.persistAssessmentImages(res.data,imageBundle).then(function(sentInfos){
+              self._pendingFinalize=null;self.setData({hasPendingResult:false})
+              imageUtil.releaseImagePaths(imageProtection)
+              imageProtection=imageUtil.protectImagePaths(paths.concat(sentInfos.map(function(s){return s.path})))
               setTimeout(function () {
+                if(cancelled()){imageUtil.releaseImagePaths(imageProtection);return}
                 // BUG-B5：imagePaths 已替换为落盘后的永久路径，同步刷新预览网格，
                 // 避免残留指向旧临时文件的 previewItems（点开是裂图）。
                 // _imageBase64List 不清空：其顺序与 imagePaths 一一对应，
@@ -721,7 +737,7 @@ Page({
                 })
                 self._stopAnalyzingTimer()
                 var d = res.data
-                var record = storage.addRecord(Object.assign(recordEvidence.fields(d), {
+                var pendingRecord = Object.assign(recordEvidence.fields(d), {
                   petName: petInfo.petName, petType: petInfo.petType,
                   petTypeLabel: petInfo.petTypeLabel, breed: petInfo.breed,
                   gender: petInfo.gender, genderLabel: petInfo.genderLabel,
@@ -758,11 +774,18 @@ Page({
                   ragMatchName: d._ragMatchName || '', ragMatchScore: d._ragMatchScore || 0,
                   ragMatched: d._ragMatched || [],
                   yoloConfidence: 0, bbox: [], detections: [],
-                  notes: d.notes, rawResponse: res.raw
-                }))
+                  notes: d.notes
+                })
+                var commit=storage.commitRecord(pendingRecord,{ownerScope:ownerScope})
+                if(!commit.success){self._pendingRecord={data:pendingRecord,ownerScope:ownerScope,imageProtection:imageProtection};self.setData({hasPendingResult:true});wx.showModal({title:'保存失败',content:'初筛结果已保留在本页，记录未保存。请释放存储空间后重试。',showCancel:false});return}
+                var record=commit.record
+                imageUtil.releaseImagePaths(imageProtection)
                 wx.navigateTo({ url: '/pages/result/result?id=' + record.id })
               }, 300)
+              }).catch(function(err){if(cancelled())return;self._pendingFinalize=finalize;self.setData({isAnalyzing:false,hasPendingResult:true});self._stopAnalyzingTimer();wx.showModal({title:'照片保存失败',content:'初筛结果已保留在本页，请重试保存。',showCancel:false})})}
+              return finalize()
             } else {
+              imageUtil.releaseImagePaths(imageProtection)
               imageUtil.cleanupSavedFiles(saved)
               self.setData({ isAnalyzing: false }); self._stopAnalyzingTimer()
               wx.showModal({ title: '分析失败', content: res.error || '请重试', showCancel: false })
@@ -770,9 +793,19 @@ Page({
           })
       })
       .catch(function (err) {
+        if(cancelled())return
         if (err && err.message === '__handled__') return
         self.setData({ isAnalyzing: false }); self._stopAnalyzingTimer()
         wx.showModal({ title: '请求失败', content: api.friendlyError(err && err.message) || '网络异常', showCancel: false })
       })
-  }
+  },
+  onRetrySave: function() {
+    if(this._pendingFinalize){this._pendingFinalize();return}
+    if(!this._pendingRecord)return
+    var pending=this._pendingRecord,result=storage.commitRecord(pending.data,{ownerScope:pending.ownerScope})
+    if(!result.success){wx.showToast({title:'保存未完成，请检查存储空间',icon:'none'});return}
+    imageUtil.releaseImagePaths(pending.imageProtection);this._pendingRecord=null;this.setData({hasPendingResult:false})
+    wx.navigateTo({url:'/pages/result/result?id='+result.record.id})
+  },
+  onUnload: function(){this._analysisToken=(this._analysisToken||0)+1;this._stopAnalyzingTimer()}
 })

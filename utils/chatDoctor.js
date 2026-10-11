@@ -405,7 +405,7 @@ function buildDoctorMessagePrompt(phase, draft, historyMessages, userText) {
     }
     if (draft.diagnosisResult && draft.diagnosisResult.success && draft.diagnosisResult.data) {
       var diag = draft.diagnosisResult.data
-      context.push('诊断结果：' + (diag.disease || diag.primaryDiagnosis || '未知'))
+      context.push(diag.assessment ? '已保存初筛参考（候选不是确诊）：'+require('./reportViewModel').build(diag).exportText : '诊断结果：' + (diag.disease || diag.primaryDiagnosis || '未知'))
       if (diag.possibleMeaning) context.push('说明：' + diag.possibleMeaning)
       if (diag.homeCare) context.push('护理建议：' + diag.homeCare)
       if (diag.whenToSeeVet) context.push('就医建议：' + diag.whenToSeeVet)
@@ -504,8 +504,12 @@ function generateDoctorMessageByAI(phase, draft, historyMessages, userText) {
 
 // ── 草稿存取 ──────────────────────────────────
 
-function saveDraft(d) {
+function saveDraft(d, ownerScope) {
+  if(ownerScope && ownerScope!==storage.getUserScope())return false
   try {
+    if(d && d.draft && d.draft.diagnosisResult && d.draft.diagnosisResult.data && d.draft.diagnosisResult.data.assessment) {
+      d=Object.assign({},d,{draft:Object.assign({},d.draft,{diagnosisResult:{success:true,data:require('./recordEvidence').fields(d.draft.diagnosisResult.data)}})})
+    }
     // 避免把大体积 base64 写进 localStorage（10MB 配额）：
     //  - draft.photoBase64s：上传时已落盘为本地路径，base64 仅用于当次诊断，不持久化
     //  - messages[].images：使用本地路径；极端兜底残留的 base64 也一并清除
@@ -533,7 +537,7 @@ function saveDraft(d) {
     }
     if (!hasBase64) {
       wx.setStorageSync(getDraftKey(), d)
-      return
+      return true
     }
     var safe = {}
     for (var k in d) { if (Object.prototype.hasOwnProperty.call(d, k)) safe[k] = d[k] }
@@ -568,9 +572,10 @@ function saveDraft(d) {
       })
     }
     wx.setStorageSync(getDraftKey(), safe)
-  } catch (e) {}
+    return true
+  } catch (e) { return false }
 }
-function loadDraft() { try { return wx.getStorageSync(getDraftKey()) || null } catch (e) { return null } }
+function loadDraft() { try { var d=wx.getStorageSync(getDraftKey()) || null; if(d&&d.draft&&d.draft.diagnosisResult&&d.draft.diagnosisResult.data&&d.draft.diagnosisResult.data.assessment){var r=storage.findRecordByRun(d.draft.diagnosisResult.data.assessment.runId);if(r)d.draft.recordId=r.id}return d } catch (e) { return null } }
 function clearDraft() { try { wx.removeStorageSync(getDraftKey()) } catch (e) {} }
 
 // ── 会话创建 ──────────────────────────────────
@@ -665,6 +670,7 @@ function formatResultMessage(draft) {
     return '抱歉，分析出了点问题。可以重新拍几张照片试试，或者多描述一些细节。'
   }
   var d = r.data || {}
+  if(d.assessment){var view=require('./reportViewModel').build(d);return toPlainDoctorText([view.title,view.summary,view.riskText,'可以打开报告核对观察依据、缺失信息和检查方向。','候选仅供初筛参考，不能替代兽医诊断。'].join('\n\n'))}
   var lines = []
   var diagnosis = d.disease || d.primaryDiagnosis || d.lesionNameCn || '未能明确判断'
   lines.push('根据照片和描述，初步考虑可能是「' + diagnosis + '」。')

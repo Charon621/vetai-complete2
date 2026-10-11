@@ -98,6 +98,7 @@ Page({
   },
 
   onUnload: function () {
+    this._analysisClosed=true
     if (this._pickerTimer) clearTimeout(this._pickerTimer)
   },
 
@@ -534,6 +535,12 @@ Page({
 
   _runDiagnosis: function () {
     var self = this
+    if(self.data.isAnalyzing)return
+    var session = self._session
+    var ownerScope = storage.getUserScope()
+    self._diagnosisOwnerScope=ownerScope
+    function cancelled(){return self._analysisClosed || self._session!==session || storage.getUserScope()!==ownerScope}
+    self._diagnosisCancelled=cancelled
     var draft = self._session.draft
     self.setData({ isAnalyzing: true })
 
@@ -545,17 +552,22 @@ Page({
     var needReload = pathCount > 0 && images.length !== pathCount
 
     function doDiagnose(imgList) {
+      if(cancelled())return
       if (!imgList || imgList.length === 0) {
         self._handleDiagnosisError('没有收到照片，请重新上传')
         return
       }
       // 与首页链路对齐：圈选了患处就裁 ROI 放大图一起送模型（BUG-C4）
-      imageUtil.cropAllLesionRegions(draft.photoPaths || [], draft.lesionBoxes || [], self)
+      var manifest = imageUtil.createImageManifest(draft.photoPaths || imgList, petInfo.imageRoles || [], draft.lesionBoxes || [])
+      imageUtil.cropAllLesionRegions(draft.photoPaths || [], draft.lesionBoxes || [], self, manifest)
         .catch(function () { return [] })
         .then(function (roiImages) {
-          var bundle = imageUtil.buildModelImageBundle(imgList, petInfo.imageRoles || [], roiImages || [])
+          if(cancelled())return
+          var bundle = imageUtil.buildModelImageBundle(imgList, petInfo.imageRoles || [], roiImages || [], manifest)
+          self._diagnosisBundle=bundle
           var requestPetInfo = Object.assign({}, petInfo, {
             imageRoles: bundle.roles,
+            imageManifest: bundle.manifest,
             totalImageCount: imgList.length
           })
           if (bundle.droppedCount > 0) {
@@ -566,9 +578,10 @@ Page({
             })
           }
           analytics.track('submit', { imageCount: imgList.length, source: 'chat' })
-          return api.diagnose(bundle.images, requestPetInfo, {})
+          return api.diagnose(bundle.images, requestPetInfo, {ownerScope:ownerScope,isCancelled:cancelled})
         })
         .then(function (result) {
+          if(cancelled())return
           if (!result || !result.success) {
             // BUG-UI45：统一走 api.friendlyError，避免 raw errMsg（cloud.callFunction:fail 等）
             // 以及「知识库」这类内部机制词直接出现在用户可见气泡里
@@ -577,6 +590,7 @@ Page({
           }
           self._session.draft.diagnosisResult = result
           self._saveProfileAndRecord(result, function () {
+            if(cancelled())return
             self._session.phase = chatDoctor.PHASE.RESULT
             chatDoctor.saveDraft(self._session)
 
@@ -593,6 +607,7 @@ Page({
             self._scrollToBottom()
 
             setTimeout(function () {
+              if(cancelled())return
               var followMsgData = chatDoctor.getDoctorMessage(chatDoctor.PHASE.FOLLOW_UP, self._session.draft)
               var followMsg = { id: 'followup_' + Date.now(), role: 'doctor', text: followMsgData.text, quickReplies: followMsgData.quickReplies, inputType: followMsgData.inputType, placeholder: followMsgData.placeholder, timestamp: Date.now() }
               self._session.phase = chatDoctor.PHASE.FOLLOW_UP
@@ -610,6 +625,7 @@ Page({
           })
         })
         .catch(function (err) {
+          if(cancelled())return
           console.error('[chat] diagnose failed:', err)
           // BUG-UI45：同样走友好化，原先只有含 timeout 的串被替换，其余 raw errMsg 直接透出
           self._handleDiagnosisError(api.friendlyError(err))
@@ -619,7 +635,7 @@ Page({
     if (needReload) {
       // 恢复会话/补图场景：photoBase64s 与 photoPaths 数量不一致，
       // 从本地文件全量读回，避免只送新照片而丢失旧照片（BUG-C10）
-      imageUtil.localPathsToBase64(draft.photoPaths)
+      imageUtil.localPathsToBase64(draft.photoPaths, {preservePositions:true})
         .then(function (b64s) { doDiagnose(b64s) })
         .catch(function () { self._handleDiagnosisError('没有收到照片，请重新上传') })
       return
@@ -659,6 +675,7 @@ Page({
 
   _saveProfileAndRecord: function (diagnosisResult, callback) {
     var self = this
+    if(self._diagnosisCancelled && self._diagnosisCancelled())return
     var draft = self._session.draft
 
     // 保存档案（新建的才存）
@@ -687,19 +704,27 @@ Page({
       return
     }
     imageUtil.saveImagesPermanent(rawImages).then(function (savedInfos) {
-      var localPaths = savedInfos.map(function (s) { return s.path || '' }).filter(Boolean)
-      self._commitRecord(draft, d, localPaths.length ? localPaths : rawImages, callback)
+      if(self._diagnosisCancelled && self._diagnosisCancelled())return
+      var localPaths = savedInfos.map(function (s) { return s.path || '' })
+      if(localPaths.some(function(p){return !p}))throw Error('照片未完整保存')
+      return imageUtil.persistAssessmentImages(d,self._diagnosisBundle||{}).then(function(sentInfos){
+        if(self._diagnosisCancelled && self._diagnosisCancelled())return
+        self._imageProtection=imageUtil.protectImagePaths(localPaths.concat(sentInfos.map(function(s){return s.path})))
+        self._commitRecord(draft, d, localPaths, callback)
+      })
     }).catch(function () {
-      self._commitRecord(draft, d, rawImages, callback)
+      if(self._diagnosisCancelled && self._diagnosisCancelled())return
+      self.setData({isAnalyzing:false,hasPendingResult:true});self._isProcessing=false
+      wx.showModal({title:'照片保存失败',content:'本次初筛结果保留在本页，请重试保存。',showCancel:false})
     })
   },
 
   _commitRecord: function (draft, d, imagePaths, callback) {
+    if(this._diagnosisCancelled && this._diagnosisCancelled())return
     // 同一会话重新诊断（如追问阶段补图）时替换旧记录，避免一次问诊产生多条记录（BUG-C6）
-    if (typeof draft.recordId === 'string' && draft.recordId && storage.getRecordById(draft.recordId)) {
-      storage.deleteRecord(draft.recordId)
-    }
-    var record = storage.addRecord(Object.assign(recordEvidence.fields(d), {
+    var ownerScope=this._diagnosisOwnerScope || storage.getUserScope()
+    var replaceId=typeof draft.recordId==='string' && draft.recordId && storage.getRecordById(draft.recordId) ? draft.recordId : ''
+    var commit = storage.commitRecord(Object.assign(recordEvidence.fields(d), {
       profileId: draft.profileId || '',
       petName: draft.petName || '未命名宠物', petType: draft.petType, petTypeLabel: draft.petTypeLabel,
       species: draft.petType, breed: draft.breed,
@@ -734,10 +759,17 @@ Page({
       ragMatched: d._ragMatched || [],
       modelProvider: d.modelProvider || 'qwen', modelProviderLabel: d.modelProviderLabel || 'Qwen3.8-Flash',
       isTemporary: !draft.profileId, source: 'chat'
-    }))
-    if (record && record.id) draft.recordId = record.id
-    chatDoctor.saveDraft(this._session)
+    }), {ownerScope:ownerScope,replaceId:replaceId})
+    if(!commit.success){this.setData({isAnalyzing:false,hasPendingResult:true});this._isProcessing=false;wx.showModal({title:'保存失败',content:'原记录和本次初筛均已保留，请检查存储空间后重试。',showCancel:false});return}
+    draft.recordId = commit.record.id
+    if(this._imageProtection)imageUtil.releaseImagePaths(this._imageProtection)
+    if(!chatDoctor.saveDraft(this._session,ownerScope)){wx.showToast({title:'记录已保存，聊天草稿保存失败，可从档案重开',icon:'none'})}
     if (callback) callback()
+  },
+  onRetrySave: function(){
+    var self=this,result=self._session.draft.diagnosisResult
+    if(!result||!result.success)return
+    self._saveProfileAndRecord(result,function(){self.setData({hasPendingResult:false});wx.navigateTo({url:'/pages/chat/report/report?id='+self._session.draft.recordId})})
   },
 
   // ── 查看报告 ──────────────────────────────

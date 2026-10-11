@@ -8,7 +8,7 @@ cloud.init({
 const PROMPT_VERSION = 'vetai-derm-v2.0.1'
 // 兼容版本窗口（BUG-G2）：小程序审核期间新旧版本共存，
 // 硬拒单一版本会让老版本用户全部不可用；可用环境变量 PROMPT_VERSIONS 追加。
-const SUPPORTED_PROMPT_VERSIONS = ['vetai-derm-v2.0.1', 'vetai-derm-v2.0.0', 'vetai-derm-v1.9.0']
+const SUPPORTED_PROMPT_VERSIONS = ['vetai-rag-observation-v1', 'vetai-derm-v2.0.1', 'vetai-derm-v2.0.0', 'vetai-derm-v1.9.0']
   .concat(String(process.env.PROMPT_VERSIONS || '').split(',').map((v) => v.trim()).filter(Boolean))
 const MAX_EVENT_BYTES = 3.2 * 1024 * 1024
 const MAX_TEXT_CHARS = 30000
@@ -198,8 +198,9 @@ function sanitizeContent(content, maxImagesState) {
   })
 }
 
-function sanitizePayload(payload, phase) {
-  const rule = PHASE_RULES[phase]
+function sanitizePayload(payload, phase, promptVersion) {
+  const baseRule = PHASE_RULES[phase]
+  const rule = phase === 'vision-precheck' && promptVersion === 'vetai-rag-observation-v1' ? Object.assign({}, baseRule, {maxTokens:1400}) : baseRule
   if (!rule) throw new Error('不支持的请求阶段')
   if (!payload || !payload.model || !Array.isArray(payload.messages) ||
       payload.messages.length < 1 || payload.messages.length > 8) {
@@ -366,7 +367,7 @@ exports.main = async (event) => {
   }
 
   try {
-    const payload = sanitizePayload(event && event.payload, phase)
+    const payload = sanitizePayload(event && event.payload, phase, event && event.promptVersion)
     const response = await postJson(apiBase, apiKey, payload, timeoutMs, phase)
     if (!response.ok) {
       const detail = response.data && response.data.error

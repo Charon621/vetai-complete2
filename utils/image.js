@@ -5,6 +5,18 @@
 
 var config = require('./config')
 var analytics = require('./analytics')
+var ragContracts = require('./ragContracts')
+var pathImageIds = {}
+function imageIdForPath(path) {
+  if (!pathImageIds[path]) pathImageIds[path] = ragContracts.id('image')
+  return pathImageIds[path]
+}
+function createImageManifest(paths, roles, boxes) {
+  return (paths || []).map(function(path,index) {
+    var imageId = imageIdForPath(path || 'missing_' + index)
+    return {imageId:imageId,sourceImageId:imageId,role:(roles || [])[index] || 'unspecified',lesionId:(boxes || [])[index] ? 'lesion_' + imageId : 'unknown',isSent:false,sentImageIndex:null,localPath:path || ''}
+  })
+}
 
 var USER_DATA_PATH = (wx.env && wx.env.USER_DATA_PATH) || ''
 
@@ -471,32 +483,32 @@ function checkImageSizes(imageBase64List) {
   return warnings
 }
 
-function buildModelImageBundle(baseImages, baseRoles, roiImages) {
-  baseImages = Array.isArray(baseImages) ? baseImages.filter(Boolean) : []
-  baseRoles = Array.isArray(baseRoles) ? baseRoles : []
-  roiImages = Array.isArray(roiImages) ? roiImages.filter(Boolean) : []
-
+function buildModelImageBundle(baseImages, baseRoles, roiImages, manifest) {
+  baseImages = Array.isArray(baseImages) ? baseImages : []
+  manifest = manifest || createImageManifest(baseImages, baseRoles)
+  var all = baseImages.map(function(value,index) {
+    return Object.assign({},manifest[index],{base64:typeof value === 'string' ? value : value && value.base64,role:(baseRoles || [])[index] || manifest[index].role || 'unspecified'})
+  })
+  var rois = (roiImages || []).map(function(value,index) {
+    if (value && typeof value === 'object') return Object.assign({},value)
+    return {imageId:ragContracts.id('roi'),sourceImageId:'unknown',role:'roi',lesionId:'unknown',base64:value}
+  })
   var maxImages = config.MAX_MODEL_IMAGES || config.MAX_IMAGES || 5
-  var maxRoi = Math.min(config.MAX_ROI_IMAGES || 2, roiImages.length, maxImages)
-
-  if (roiImages.length === 0) {
-    return {
-      images: baseImages.slice(0, maxImages),
-      roles: baseImages.slice(0, maxImages).map(function (_, i) { return baseRoles[i] || '' }),
-      droppedCount: Math.max(0, baseImages.length - maxImages)
-    }
-  }
-
-  var baseSlots = Math.max(0, maxImages - maxRoi)
-  var selectedBase = baseImages.slice(0, baseSlots)
-  var selectedRoi = roiImages.slice(0, maxRoi)
-  var selectedBaseRoles = selectedBase.map(function (_, i) { return baseRoles[i] || '' })
-
+  var validRoi = rois.filter(function(i){return !!i.base64})
+  var selectedRoi = validRoi.slice(0,config.MAX_ROI_IMAGES || 1)
+  var selected = all.filter(function(i){return !!i.base64}).slice(0,Math.max(0,maxImages-selectedRoi.length)).concat(selectedRoi).slice(0,maxImages)
+  var items = all.concat(rois).map(function(item) {
+    var index = selected.indexOf(item)
+    var copy = Object.assign({},item,{isSent:index >= 0,sentImageIndex:index >= 0 ? index : null})
+    if (index < 0) copy.dropReason = item.base64 ? 'model_image_limit' : 'read_or_crop_failed'
+    delete copy.base64
+    return copy
+  })
   return {
-    images: selectedBase.concat(selectedRoi),
-    roles: selectedBaseRoles.concat(selectedRoi.map(function () { return 'roi' })),
-    droppedCount: Math.max(0, baseImages.length - selectedBase.length) +
-      Math.max(0, roiImages.length - selectedRoi.length)
+    images: selected.map(function(i){return i.base64}),
+    roles: selected.map(function(i){return i.role === 'unspecified' ? '' : i.role}),
+    manifest:items,
+    droppedCount:items.filter(function(i){return !i.isSent}).length
   }
 }
 
@@ -594,11 +606,17 @@ function cropLesionRegion(imagePath, lesionBox, pageContext) {
 /**
  * 批量裁剪所有患处区域
  */
-function cropAllLesionRegions(imagePaths, lesionBoxes, pageContext) {
+function cropAllLesionRegions(imagePaths, lesionBoxes, pageContext, manifest) {
   var promises = []
   for (var i = 0; i < imagePaths.length; i++) {
     if (lesionBoxes[i]) {
-      promises.push(cropLesionRegion(imagePaths[i], lesionBoxes[i], pageContext))
+      ;(function(index) {
+        promises.push(cropLesionRegion(imagePaths[index], lesionBoxes[index], pageContext).then(function(base64) {
+          if (!manifest) return base64
+          var parent = manifest[index]
+          return {imageId:parent.imageId + '_roi',sourceImageId:parent.sourceImageId,role:'roi',lesionId:parent.lesionId,lesionBox:lesionBoxes[index],base64:base64 || '',cropStatus:base64 ? 'ok' : 'crop_failed'}
+        }))
+      })(i)
     }
   }
   if (promises.length === 0) return Promise.resolve([])
@@ -708,6 +726,19 @@ function saveImagesPermanent(paths) {
   return Promise.all(paths.map(saveImagePermanent))
 }
 
+// 保存实际送入初筛的图片（含 ROI）；深化必须沿用这些字节与编号。
+function persistAssessmentImages(data, bundle) {
+  if(!data.assessment || !data.evidenceSnapshot)return Promise.resolve([])
+  var images=bundle.images || []
+  return saveImagesPermanent(images.map(function(b){return b.indexOf('data:')===0?b:'data:image/jpeg;base64,'+b})).then(function(saved){
+    if(saved.length!==images.length || saved.some(function(s){return !s.path || s.saveFailed})){
+      cleanupSavedFiles(saved);throw Error('分析照片保存失败，请重试保存')
+    }
+    data.evidenceSnapshot.manifest.forEach(function(m){if(m.isSent)m.localPath=saved[m.sentImageIndex].path})
+    return saved
+  })
+}
+
 // ============================================================
 // 批量选图公共链路（首页 / 聊天页共用）
 // ============================================================
@@ -750,6 +781,7 @@ function prepareImages(tempPaths, opts) {
   var savePermanent = opts.savePermanent !== false
   var checkQuality = opts.checkQuality !== false
   var paths = Array.isArray(tempPaths) ? tempPaths.filter(Boolean) : []
+  paths.forEach(function(path){imageIdForPath(path)})
 
   var truncated = 0
   if (typeof opts.maxCount === 'number' && opts.maxCount > 0) {
@@ -777,7 +809,10 @@ function prepareImages(tempPaths, opts) {
           return saveImagePermanent(b64)
         }) : Promise.resolve(null)
         return saving.then(function (saved) {
+          if (saved && saved.path) pathImageIds[saved.path] = imageIdForPath(p)
+          pathImageIds[b64] = imageIdForPath(p)
           acc.push({
+            imageId: imageIdForPath(p),
             base64: b64,
             // 落盘失败（或未落盘）时退化为 base64 展示，保证功能不中断
             displayPath: saved && saved.path ? saved.path : b64,
@@ -810,6 +845,8 @@ function cleanupSavedFiles(savedInfos) {
   var fs = wx.getFileSystemManager()
   savedInfos.forEach(function (info) {
     if (info && info.newlySaved && info.path) {
+      var current = collectReferencedImagePaths()
+      if (!current || current[info.path]) return
       // 用户目录文件必须用 fs.unlink；wx.removeSavedFile 只对 wx.saveFile 体系生效，之前是静默失败（BUG-H2）
       fs.unlink({ filePath: info.path, fail: function () {} })
     }
@@ -824,6 +861,9 @@ function cleanupSavedFiles(savedInfos) {
 // ============================================================
 
 var CLEANUP_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+var pendingImagePaths = {}
+function protectImagePaths(paths) {var token=ragContracts.id('image_commit');pendingImagePaths[token]=(paths||[]).slice();return token}
+function releaseImagePaths(token) {delete pendingImagePaths[token]}
 
 function collectPathsFromValue(value, out) {
   if (!value) return
@@ -836,7 +876,7 @@ function collectPathsFromValue(value, out) {
     return
   }
   if (typeof value === 'object') {
-    var keys = ['imagePath', 'imagePaths', 'avatar', 'photoPaths', 'image', 'images', 'messages', 'draft', 'records', 'profiles']
+    var keys = ['imagePath', 'imagePaths', 'avatar', 'photoPaths', 'image', 'images', 'messages', 'draft', 'records', 'profiles', 'revisions', 'evidenceSnapshot', 'manifest', 'localPath']
     for (var k = 0; k < keys.length; k++) {
       if (value[keys[k]] !== undefined) collectPathsFromValue(value[keys[k]], out)
     }
@@ -845,6 +885,7 @@ function collectPathsFromValue(value, out) {
 
 function collectReferencedImagePaths() {
   var referenced = {}
+  Object.keys(pendingImagePaths).forEach(function(k){pendingImagePaths[k].forEach(function(p){referenced[p]=true})})
   var keys = []
   try {
     keys = (wx.getStorageInfoSync().keys) || []
@@ -864,7 +905,7 @@ function collectReferencedImagePaths() {
         collectPathsFromValue(value, referenced)
         if (value && value.messages) collectPathsFromValue(value.messages, referenced)
       }
-    } catch (e) {}
+    } catch (e) { return null }
   }
   return referenced
 }
@@ -890,7 +931,8 @@ function cleanupStaleImages() {
               var stats = statRes.stats || statRes
               var mtimeMs = (stats.lastModifiedTime || 0) * 1000
               if (mtimeMs > 0 && now - mtimeMs > CLEANUP_MAX_AGE_MS) {
-                fs.unlink({ filePath: fullPath, fail: function () {} })
+                var current = collectReferencedImagePaths()
+                if(current && !current[fullPath])fs.unlink({ filePath: fullPath, fail: function () {} })
               }
             },
             fail: function () {}
@@ -906,7 +948,7 @@ function cleanupStaleImages() {
  * 将本地文件 / data URL 路径列表读回 base64（用于「恢复会话」场景：
  * 持久化时只存了本地路径，真正的 base64 未落盘，诊断前需要读回）
  */
-function localPathsToBase64(paths) {
+function localPathsToBase64(paths, options) {
   if (!Array.isArray(paths) || paths.length === 0) return Promise.resolve([])
   return Promise.all(paths.map(function (path) {
     return new Promise(function (resolve) {
@@ -919,10 +961,14 @@ function localPathsToBase64(paths) {
         fail: function () { resolve('') }
       })
     })
-  })).then(function (list) { return list.filter(Boolean) })
+  })).then(function(list) { return options && options.preservePositions ? list : list.filter(Boolean) })
 }
 
 module.exports = {
+  persistAssessmentImages: persistAssessmentImages,
+  protectImagePaths: protectImagePaths,
+  releaseImagePaths: releaseImagePaths,
+  createImageManifest: createImageManifest,
   processImage: processImage,
   checkImageQuality: checkImageQuality,
   checkImageSizes: checkImageSizes,

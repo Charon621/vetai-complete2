@@ -14,6 +14,19 @@ const path = require('path')
 const ROOT = path.join(__dirname, '..')
 
 const SUITES = [
+  'tests/ragContracts.test.js',
+  'tests/ragReplay.test.js',
+  'tests/ragImages.test.js',
+  'tests/ragConcepts.test.js',
+  'tests/ragObservation.test.js',
+  'tests/ragProfiles.test.js',
+  'tests/ragRetrieval.test.js',
+  'tests/ragAssessment.test.js',
+  'tests/ragWorkflow.test.js',
+  'tests/ragStorage.test.js',
+  'tests/ragView.test.js',
+  'tests/ragEvaluation.test.js',
+  'tests/ragPages.test.js',
   'tests/structure.test.js',
   'tests/tabBar.test.js',
   'tests/uiInteractions.test.js',

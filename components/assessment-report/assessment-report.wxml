@@ -1,0 +1,25 @@
+<view class="assessment-report" wx:if="{{view}}">
+  <view class="assessment-title">{{view.title}}</view>
+  <view class="assessment-risk">{{view.riskText}}</view>
+  <view class="assessment-scope" wx:if="{{view.fullLines.length}}"><view wx:for="{{view.fullLines}}" wx:key="label"><view class="field-label">{{item.label}}</view><view class="assessment-text">{{item.value}}</view></view></view>
+  <view class="assessment-next" wx:if="{{view.nextActionText}}">{{view.nextActionText}}</view>
+  <view class="assessment-scope" wx:for="{{view.scopes}}" wx:for-item="scope" wx:key="lesionId">
+    <view class="scope-label">{{scope.label}}</view>
+    <view class="scope-coverage">{{scope.coverage}}</view>
+    <view wx:for="{{scope.morphology}}" wx:key="*this" class="assessment-text">{{item}}</view>
+    <view class="assessment-candidate" wx:for="{{scope.candidates}}" wx:for-item="candidate" wx:key="name">
+      <view class="candidate-order">{{candidate.orderLabel}}，需检查确认</view>
+      <view class="candidate-name">{{candidate.name}}</view>
+      <view class="field-label">支持依据</view>
+      <view class="assessment-text" wx:for="{{candidate.supports}}" wx:key="*this">{{item}}</view>
+      <block wx:if="{{candidate.conflicts.length}}"><view class="field-label">不一致之处</view><view class="assessment-text" wx:for="{{candidate.conflicts}}" wx:key="*this">{{item}}</view></block>
+      <view class="field-label">待补充与检查</view><view class="assessment-text" wx:for="{{candidate.missing}}" wx:key="*this">{{item}}</view>
+      <block wx:if="{{candidate.reference}}"><view class="field-label">参考表现</view><view class="assessment-text">{{candidate.reference}}</view><view class="reference-note">{{candidate.sourceNote}}</view></block>
+      <block wx:if="{{candidate.differentials}}"><view class="field-label">鉴别参考</view><view class="assessment-text">{{candidate.differentials}}</view></block>
+    </view>
+  </view>
+  <view class="assessment-limit" wx:for="{{view.limitations}}" wx:key="*this">{{item}}</view>
+  <button wx:if="{{view.canRetry}}" class="assessment-button" bindtap="retry" loading="{{busy}}" disabled="{{busy}}">重试分析</button>
+  <button wx:if="{{view.canDeepen}}" class="assessment-button" bindtap="deepen" loading="{{busy}}" disabled="{{busy}}">{{view.deepeningLabel}}</button>
+  <button class="assessment-button secondary" bindtap="exportReport">生成报告图片</button>
+</view>

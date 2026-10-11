@@ -22,4 +22,5 @@ function summarize(samples) {
   })
   return {scope:'local_recent_samples_not_population_metrics',groups:groups}
 }
-module.exports={record:record,summarize:summarize}
+function recordWorkflow(event){analytics.track('ragWorkflow',event)}
+module.exports={record:record,summarize:summarize,recordWorkflow:recordWorkflow}

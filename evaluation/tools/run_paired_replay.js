@@ -42,59 +42,78 @@ async function runCase(entry, options) {
   validate(entry); options = options || {}
   const priorWx = global.wx, calls = [], sink = options.sink || sinkModule.create({ id: entry.scheduled_attempt_id })
   const meta = Object.assign({}, options.provenance || provenance(), { case_id: entry.case_id, run_id: entry.run_id, response_origin: entry.response_origin })
-  let flushed = false
+  const workflowMode = entry.workflow_mode || 'legacy'
+  const allowed = entry.allowed_phases || (entry.action === 'full_analysis' ? {'full-diagnosis':1} : entry.input.petInfo.useKnowledgeBase === false ? {'full-diagnosis':1} : {'vision-precheck':1,'full-diagnosis':1})
+  const transport = createFixtureTransport(entry, allowed, calls, options)
   global.wx = {
     getStorageSync() { return [] }, setStorageSync() {},
     request() { throw new Error('NETWORK_DISABLED') },
-    cloud: { callFunction(request) {
-      if (!['vision-precheck', 'full-diagnosis'].includes(request.data.phase)) throw new Error('unexpected fixture phase')
-      calls.push(request)
-      const expected = entry.input.petInfo.useKnowledgeBase === false ? 1 : 2
-      if (calls.length > expected) throw new Error('unexpected extra model call')
-      if (calls.length === expected && !flushed) {
-        flushed = true
-        const sorted = calls.slice().sort((a, b) => (entry.delivery_order || ['vision-precheck', 'full-diagnosis']).indexOf(a.data.phase) - (entry.delivery_order || ['vision-precheck', 'full-diagnosis']).indexOf(b.data.phase))
-        // 异步边界与云函数一致；不额外排程尝试。
-        Promise.resolve().then(() => sorted.forEach(call => {
-          const fixture = entry.fixtures[call.data.phase === 'vision-precheck' ? 'precheck' : 'full']
-          if (!fixture || fixture.failure) call.fail({ errMsg: fixture && fixture.failure || 'missing_fixture' })
-          else call.success({ result: { success: true, data: { choices: [{ message: { content: typeof fixture.raw === 'string' ? fixture.raw : JSON.stringify(fixture.raw) } }], usage: fixture.usage || null } } })
-        }))
-      }
-    } }
+    cloud: { callFunction: transport.call }
   }
   try {
     const api = require('../../utils/api')
-    const result = await api.diagnose(entry.input.images, entry.input.petInfo, { _skipLock: true, traceSink: sink, evaluationMetadata: meta, evaluationMode: 'paired_replay' })
+    const method = entry.action === 'full_analysis' ? api.deepenAssessment : api.diagnose
+    if (!method) throw new Error('action_not_implemented')
+    const result = await method(entry.input.images, entry.input.petInfo, { _skipLock: true, runId:entry.run_id, workflowMode, assessment:entry.assessment, evidenceSnapshot:entry.evidence_snapshot, traceSink: sink, evaluationMetadata: meta, evaluationMode: 'paired_replay' })
+    if (transport.errors.length) throw new Error(transport.errors.join(';'))
     const events = sink.events || []
     const last = stage => { const rows = events.filter(e => e.stage === stage); return rows.length ? rows[rows.length - 1].data : null }
     const canonical = last('precheck_canonical'), rawPre = last('precheck_provider_raw'), fullError = last('full_error')
     const common = Object.assign({}, meta, { animal_id_hash: entry.animal_id_hash, input_snapshot_id: entry.input_snapshot_id, input_sha256: hash(entry.input), precheck_ref: hash({ raw: rawPre, canonical }), image_hashes: entry.input.images.map(hash), evidence_context_hash: hash(entry.input.petInfo.evidenceContext || null), attempt_index: 1, stage: 'system_output', network_calls: 0, fixture_calls: calls.length, billed_cost: 0, trace_status: result.evaluationTraceStatus || 'unscorable', trace_reference: result.data && result.data.traceReference, requests: events.filter(e => /_request$/.test(e.stage)).map(e => Object.assign({}, e.data, { prompt_sha256: hash(e.data.prompt || null) })), provider_usage: events.filter(e => /_provider_raw$/.test(e.stage)).map(e => ({ stage: e.stage, usage: e.data.usage, origin: entry.response_origin })), elapsed_ms: events.length > 1 ? Date.parse(events[events.length - 1].at) - Date.parse(events[0].at) : null })
+    common.phase_calls=Object.assign({'vision-precheck':0,'full-diagnosis':0},transport.counts)
+    common.real_model_cost='not_measured';common.real_model_latency='not_measured';common.clinical_accuracy='not_measured'
+    common.actual_run_id=result.data&&result.data.assessment&&result.data.assessment.runId||null
+    common.actual_evidence_snapshot_id=result.data&&result.data.evidenceSnapshot&&result.data.evidenceSnapshot.snapshotId||null
+    common.actual_evidence_sha256=result.data&&result.data.evidenceSnapshot?hash(result.data.evidenceSnapshot):null
     function branch(name, output, eligible) {
-      const status = output && output.responseStatus || (output ? 'ok' : 'not_eligible')
-      const execution = common.trace_status !== 'complete' ? 'trace_error' : !output ? 'not_eligible' : ['schema_error', 'provider_error'].includes(status) ? fullError && fullError.errorCode === 'timeout' ? 'timeout' : status : 'completed'
+      const status = output && (output.assessment&&output.assessment.status || output.responseStatus) || (output ? 'ok' : 'not_eligible')
+      const execution = common.trace_status !== 'complete' ? 'trace_error' : !output ? (name === 'full' && !calls.some(c=>c.data.phase==='full-diagnosis') ? 'not_scheduled' : 'not_eligible') : ['schema_error', 'provider_error'].includes(status) ? fullError && fullError.errorCode === 'timeout' ? 'timeout' : status : 'completed'
       const filter = last(name === 'fast' ? 'fast_candidate_filter' : 'full_candidate_filter')
       const after = filter && filter.after || []
       const afterNames = after.map(v => typeof v === 'string' ? v : v.name)
       const excluded = (filter && filter.before || []).map(v => typeof v === 'string' ? v : v.name).filter(v => !afterNames.includes(v)).map(v => ({ name: v, reason: 'other', actual_filter_reason: filter.reason }))
-      return Object.assign({}, common, { branch: name, scheduled_attempt_id: entry.scheduled_attempt_id + ':' + name, execution_status: execution, responseStatus: status, eligible, excluded_candidates: excluded, output: output || null })
+      return Object.assign({}, common, { branch: name, scheduled_attempt_id: entry.scheduled_attempt_id + ':' + name, execution_status: execution, responseStatus: status, answerLevel:output&&output.assessment&&output.assessment.answerLevel||null,requestStats:output&&output.requestStats||null,eligible, excluded_candidates: excluded, output: output || null })
     }
     const fast = branch('fast', (last('fast_assembled') || {}).output, !!(last('fast_eligibility') || {}).eligible)
     const full = branch('full', (last('full_normalized') || {}).output || (fullError ? { responseStatus: 'provider_error', primaryDiagnosis: '', diagnosisCandidates: [] } : null), true)
     const final = branch('final', result.data, true)
-    const retrieved = last('retrieval')
+    const guidedRetrieved=last('rag_retrieval'),retrieved = last('retrieval')
     const kb = require('../../utils/kb')
     const worthy = retrieved ? retrieved.top3.filter(kb.isPromptWorthyResult) : []
-    const retrieval = branch('retrieval', retrieved ? { responseStatus: worthy.length ? 'ok' : 'clinical_abstain', primaryDiagnosis: worthy.length ? worthy[0].canonicalName || worthy[0].name : '', diagnosisCandidates: worthy.map(r => ({ name: r.canonicalName || r.name })), urgency: worthy.length ? worthy[0].urgency : 'low', abstainReason: worthy.length ? '' : 'no_prompt_worthy_result' } : null, !!retrieved)
-    return { records: [fast, full, final, retrieval], comparison: comparePair(fast, full), events, result }
+    const retrieval = branch('retrieval', guidedRetrieved ? {responseStatus:result.data.assessment.status,assessment:result.data.assessment,evidenceSnapshot:guidedRetrieved.snapshot,ranking:guidedRetrieved.ranking} : retrieved ? { responseStatus: worthy.length ? 'ok' : 'clinical_abstain', primaryDiagnosis: worthy.length ? worthy[0].canonicalName || worthy[0].name : '', diagnosisCandidates: worthy.map(r => ({ name: r.canonicalName || r.name })), urgency: worthy.length ? worthy[0].urgency : 'low', abstainReason: worthy.length ? '' : 'no_prompt_worthy_result' } : null, !!(retrieved||guidedRetrieved))
+    return { records: [fast, full, final, retrieval], comparison: comparePair(fast, full), events, result, calls:calls.map(c=>c.data.phase), stageStatus: {'vision-precheck':calls.some(c=>c.data.phase==='vision-precheck')?'scheduled':'not_scheduled','full-diagnosis':calls.some(c=>c.data.phase==='full-diagnosis')?'scheduled':'not_scheduled'} }
   } finally { global.wx = priorWx; if (!options.sink) sink.close() }
+}
+function createFixtureTransport(entry, allowed, calls, options) {
+  options = options || {}; calls = calls || []
+  const counts={},errors=[],schedule=options.schedule || ((fn,ms)=>setTimeout(fn,ms))
+  function call(request) {
+    const phase=request.data.phase
+    counts[phase]=(counts[phase]||0)+1
+    if (!allowed[phase] || counts[phase]>allowed[phase]) { errors.push('unexpected fixture phase or extra model call: '+phase); throw new Error(errors[errors.length-1]) }
+    calls.push(request)
+    const fixture=entry.fixtures[phase==='vision-precheck'?'precheck':'full']
+    const order=entry.delivery_order||['vision-precheck','full-diagnosis']
+    const delay=fixture && fixture.delay_ms !== undefined ? fixture.delay_ms : Math.max(0,order.indexOf(phase))
+    let delivered=false
+    schedule(()=>{
+      if(delivered) {errors.push('duplicate_fixture_delivery');return}
+      delivered=true
+      if(!fixture || fixture.failure)request.fail({errMsg:fixture&&fixture.failure||'missing_fixture'})
+      else request.success({result:{success:true,data:{choices:[{message:{content:typeof fixture.raw==='string'?fixture.raw:JSON.stringify(fixture.raw)},finish_reason:fixture.finish_reason||'stop'}],usage:fixture.usage||null}}})
+    },delay)
+  }
+  return {call,counts,errors}
 }
 async function runManifest(manifest, options) {
   if (manifest.adapter !== 'fixture' || manifest.manifest_version !== '1.0.0' || !Array.isArray(manifest.cases)) throw new Error('only versioned offline fixture manifest supported')
   const ids = new Set(), outputs = [], metadata = provenance()
   for (const entry of manifest.cases) {
     if (ids.has(entry.scheduled_attempt_id)) throw new Error('duplicate scheduled attempt')
-    ids.add(entry.scheduled_attempt_id); outputs.push(await runCase(entry, Object.assign({}, options, { provenance: metadata })))
+    ids.add(entry.scheduled_attempt_id)
+    let output
+    try{output=await runCase(entry,Object.assign({},options,{provenance:metadata}))}catch(err){output={events:[],records:schedule({adapter:'fixture',manifest_version:'1.0.0',cases:[entry]}).scheduled_attempts.map(r=>Object.assign({},metadata,r,{execution_status:'failed',responseStatus:'provider_error',error_code:'runner_error',error:String(err.message).slice(0,200),network_calls:0,trace_status:'unscorable'})),result:{success:false}}}
+    outputs.push(output);if(options&&options.onCase)options.onCase(output)
   }
   return outputs
 }
@@ -120,11 +139,10 @@ if (require.main === module) {
     fs.mkdirSync(path.dirname(out), { recursive: true })
     // 运行前落下唯一分母。进程失败/中断也不能令计划尝试消失。
     fs.writeFileSync(out + '.scheduled.json', JSON.stringify(schedule(manifest), null, 2), { flag: 'wx' })
-    runManifest(manifest).then(results => {
-      fs.writeFileSync(out, results.flatMap(r => r.records).map(r => JSON.stringify(r)).join('\n') + '\n', { flag: 'wx' })
-      fs.writeFileSync(out + '.trace.jsonl', results.flatMap(r => r.events).map(r => JSON.stringify(r)).join('\n') + '\n', { flag: 'wx' })
+    fs.writeFileSync(out,'',{flag:'wx'});fs.writeFileSync(out+'.trace.jsonl','',{flag:'wx'})
+    runManifest(manifest,{onCase:r=>{fs.appendFileSync(out,r.records.map(v=>JSON.stringify(v)).join('\n')+'\n');fs.appendFileSync(out+'.trace.jsonl',r.events.map(v=>JSON.stringify(v)).join('\n')+'\n')}}).then(results => {
       console.log(JSON.stringify({ cases: results.length, comparisons: results.map(r => r.comparison), actual_network_calls: 0, origin: 'offline_replay' }))
     }).catch(error => { console.error(error); process.exitCode = 1 })
   }
 }
-module.exports = { runCase, runManifest, schedule, comparePair, hash, stable, provenance }
+module.exports = { runCase, runManifest, schedule, comparePair, hash, stable, provenance, createFixtureTransport }

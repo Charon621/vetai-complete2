@@ -1,0 +1,10 @@
+const assert=require('assert'),cp=require('child_process'),fs=require('fs'),path=require('path'),kb=require('../utils/kb'),builder=require('../tools/build-retrieval-profiles')
+const data=require('../knowledge/retrieval-profiles.json'),bundle=require('../utils/retrievalProfileBundle')
+assert.equal(data.profiles.length,69)
+assert.equal(new Set(data.profiles.map(p=>p.cardId)).size,kb.DISEASE_KB.length)
+assert.equal(bundle.contentHash,builder.hash(data))
+assert(data.profiles.every(p=>p.role==='unknown'&&p.relations.length===0))
+for(const p of data.profiles)for(const g of p.conceptGroups){assert(p.sourceRefs.some(r=>r.conditionId===g.conditionId));assert.equal(g.evidenceStatus,'pending')}
+const check=cp.spawnSync(process.execPath,['tools/build-retrieval-profiles.js','--check'],{encoding:'utf8'});assert.equal(check.status,0,check.stderr)
+const changed=JSON.parse(JSON.stringify(data));changed.profiles[0].conceptGroups[0].sourceFieldHash='wrong';assert.notEqual(builder.hash(data),builder.hash(changed))
+console.log('all-card coverage / explicit pending / generator check passed')

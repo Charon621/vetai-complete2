@@ -1,6 +1,9 @@
 var storage = require('../../utils/storage')
 var analytics = require('../../utils/analytics')
 var textUtil = require('../../utils/text')
+var reportViewModel=require('../../utils/reportViewModel')
+var reportActions=require('../../utils/reportActions')
+var reportPresentation=require('../../utils/reportPresentation')
 
 var REPORT_DISCLAIMER = '本报告由 AI 根据图片和你填写的信息生成，仅用于初步观察和就医沟通参考，不构成确诊、处方或治疗方案。若症状加重、扩散、破溃、流脓或宠物精神食欲异常，请及时就医。'
 
@@ -260,6 +263,11 @@ Page({
   },
 
   buildDisplayRecord: function (record) {
+    var assessmentView = null
+    if(record.assessment) {
+      assessmentView = reportViewModel.build(record)
+      record = reportPresentation.prepare(record, assessmentView)
+    }
     var self = this
     var imagePaths = record.imagePaths && record.imagePaths.length
       ? record.imagePaths : (record.imagePath ? [record.imagePath] : [])
@@ -395,10 +403,37 @@ Page({
       { tag: '就医', cls: 'vet', text: display.vetList[0] || '如加重或不确定，尽快就诊' }
     ]
 
+    if (assessmentView) {
+      display.isNewAssessment = true
+      display.assessmentView = assessmentView
+      display.hasConfidence = false
+      display.confidenceText = ''
+      display.confidenceLevel = ''
+      display.diseaseList.forEach(function (candidate) { candidate.percent = null; candidate.scoreText = ''; candidate.levelText = '待核对' })
+      display.secondaryText = display.diseaseList.length > 1 ? '其他可能：' + display.diseaseList.slice(1).map(function (candidate) { return candidate.name }).join('；') : ''
+      display.observationText = sanitizeReportText(record.observations)
+      display.supportText = sanitizeReportText(record.explanation)
+      display.uncertaintyText = sanitizeReportText(record.diagnosisProbabilityNote)
+      display.riskUnknown = urgency === 'unknown'
+      if (display.riskUnknown) {
+        display.severityChip = '信息待补充'
+        display.severityLevel = null
+        display.actionConclusion = '还需要补充信息'
+        display.actionNote = assessmentView.riskText
+        display.prevCompare = null
+      } else if (urgency === 'low') {
+        display.actionConclusion = '继续观察患处变化'
+        display.actionNote = assessmentView.riskText
+      }
+      display.checklist[0].text = record.homeCare
+      display.checklist[1].text = record.whenToWatch
+      display.checklist[2].text = record.whenToSeeVet
+    }
+
     return {
       recordId: record.id,
       record: display,
-      severityInfo: URGENCY_MAP[urgency] || URGENCY_MAP.moderate
+      severityInfo: assessmentView ? {title:assessmentView.riskText} : URGENCY_MAP[urgency] || URGENCY_MAP.moderate
     }
   },
 
@@ -604,15 +639,19 @@ Page({
     var record = this.data.record
     analytics.track('share', { recordId: this.data.recordId, channel: 'appMessage' })
     return {
-      title: 'VetAI 宠物皮肤初筛报告：' + (record.disease || '初筛结果'),
+      title: record.assessment ? reportViewModel.build(record).shareTitle : 'VetAI 宠物皮肤初筛报告：' + (record.disease || '初筛结果'),
       path: '/pages/index/index',
       imageUrl: record.imageItems && record.imageItems[0] ? record.imageItems[0].path : ''
     }
   },
 
+  onDeepenAnalysis: function(){var self=this;reportActions.deepen(self,self.data.record,function(record){self.setData(self.buildDisplayRecord(record))})},
+  onRetryAnalysis: function(){var self=this;reportActions.retry(self,self.data.record,function(record){self.setData(self.buildDisplayRecord(record))})},
+  onUnload: function(){this._reportClosed=true},
   saveShareImage: function () {
     var self = this
     var record = self.data.record
+    if(record && record.assessment){reportActions.exportImage(self,record);return}
     if (!record || !record.disease) {
       wx.showToast({ title: '报告数据不完整', icon: 'none' })
       return

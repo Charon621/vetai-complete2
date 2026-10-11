@@ -1,4 +1,6 @@
 const assert = require('assert')
+// These fixtures exercise the retained legacy flow; guided is covered by ragWorkflow/ragPages.
+require('../utils/config').RAG_WORKFLOW_MODE = 'legacy'
 global.wx={getStorageSync:function(){return []},setStorageSync:function(){}}
 const decision=require('../utils/diagnosisDecision'),api=require('../utils/api'),kb=require('../utils/kb')
 const clear={quality:'clear',diagnosabilityScore:80},bad={quality:'unclear',diagnosabilityScore:10}

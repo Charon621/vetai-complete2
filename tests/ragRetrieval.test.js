@@ -1,0 +1,16 @@
+const assert=require('assert'),r=require('../utils/ragRetrieval'),c=require('../utils/ragContracts'),concept=require('../utils/clinicalConcepts'),profiles=require('../utils/retrievalProfileBundle')
+function snapshot(words,lesions){return c.snapshot({provenanceStatus:'compatibility_limited',facts:words.map((word,i)=>({evidenceId:'e'+i,conceptId:concept.lookup(word).conceptId,rawText:word,assertion:'present',certainty:'clear',observed:true,source:'photo',subject:'pet',temporality:'current',imageId:null,sourceImageId:null,lesionId:lesions?lesions[i]:'l1',site:'unknown'}))})}
+const a=snapshot(['圆形脱毛','鳞屑']),b=snapshot(['表皮环','脓疱','鳞屑'])
+assert(r.rank(a,{species:'猫'}).scopes[0].candidates.some(c=>/癣/.test(c.name)))
+assert(r.rank(b,{species:'犬'}).scopes[0].candidates.some(c=>/浅表脓皮/.test(c.name)))
+const dup=snapshot(['黑头','粉刺','黑头粉刺','脓疱']),single=snapshot(['黑头粉刺','脓疱'])
+assert.deepEqual(r.rank(dup,{species:'猫'},{strategy:'concept'}).scopes[0].pool.map(c=>[c.cardId,c.rankScore]),r.rank(single,{species:'猫'},{strategy:'concept'}).scopes[0].pool.map(c=>[c.cardId,c.rankScore]))
+const split=r.rank(snapshot(['圆形脱毛','鳞屑'],['l1','l2']),{species:'猫'})
+assert.equal(split.scopes.length,2);assert(split.scopes.every(s=>s.candidates.length===0))
+assert(r.rank(snapshot(['红斑','脱毛']),{species:'猫'}).scopes[0].candidates.length===0)
+assert(r.rank(a,{species:'兔'}).scopes.every(s=>!s.candidates.length))
+const baseline=r.rank(a,{species:'猫'}),extra=r.rank(a,{species:'猫'},{profiles:profiles.profiles.concat(profiles.profiles)})
+assert.deepEqual(baseline,extra)
+a.facts[0].assertion='unknown';assert.equal(r.rank(a,{species:'猫'}).scopes[0].candidates.length,0)
+console.log('A01/A02 / duplicate concepts / scopes / generic / species / profile count passed')
+module.exports={snapshot}

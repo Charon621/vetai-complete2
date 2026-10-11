@@ -10,6 +10,7 @@
     "eval:retrieval": "node evaluation/tools/rag_compare.js",
     "knowledge:status": "node tools/knowledge-ops.js status",
     "knowledge:bundle": "node tools/build-knowledge-bundle.js",
+    "retrieval:bundle": "node tools/build-retrieval-profiles.js",
     "knowledge:publish": "node tools/knowledge-ops.js publish",
     "knowledge:plan": "node tools/knowledge-ops.js plan",
     "knowledge:restore": "node tools/knowledge-ops.js restore",

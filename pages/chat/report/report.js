@@ -1,5 +1,8 @@
 var storage = require('../../../utils/storage')
 var chatDoctor = require('../../../utils/chatDoctor')
+var reportViewModel=require('../../../utils/reportViewModel')
+var reportActions=require('../../../utils/reportActions')
+var reportPresentation=require('../../../utils/reportPresentation')
 
 Page({
   data: {
@@ -23,13 +26,15 @@ Page({
 
   _buildDisplay: function (record) {
     var d = record || {}
+    var assessmentView = d.assessment ? reportViewModel.build(d) : null
+    if (assessmentView) d = reportPresentation.prepare(d, assessmentView)
     var lines = []
 
     // 诊断结论
     var diagnosis = d.disease || d.primaryDiagnosis || '未能明确判断'
     lines.push({ label: '初步判断', value: diagnosis })
 
-    if (typeof d.confidence === 'number') {
+    if (!assessmentView && typeof d.confidence === 'number') {
       lines.push({
         label: '参考把握',
         value: (d.confidenceLabel ? d.confidenceLabel + ' ' : '') + d.confidence + '%'
@@ -47,6 +52,9 @@ Page({
     if (d.possibleMeaning) {
       lines.push({ label: '说明', value: chatDoctor.cleanText(d.possibleMeaning) })
     }
+    if (assessmentView && d.observations) lines.push({label:'客观观察', value:d.observations})
+    if (assessmentView && d.explanation) lines.push({label:'判断依据', value:d.explanation})
+    if (assessmentView && d.diagnosisProbabilityNote) lines.push({label:'待核对信息', value:d.diagnosisProbabilityNote})
 
     // 护理建议
     if (d.homeCare || d.careSuggestion) {
@@ -84,7 +92,8 @@ Page({
 
     // 紧急程度
     var urgencyText = ''
-    if (d.urgency === 'emergency') urgencyText = '紧急'
+    if (assessmentView) urgencyText = assessmentView.riskText
+    else if (d.urgency === 'emergency') urgencyText = '紧急'
     else if (d.urgency === 'urgent') urgencyText = '建议尽快就诊'
     else if (d.urgency === 'moderate') urgencyText = '建议关注'
     else urgencyText = '观察即可'
@@ -107,10 +116,15 @@ Page({
       lines: lines,
       photos: photos,
       urgency: d.urgency || 'low',
-      urgencyText: urgencyText
+      urgencyText: urgencyText,
+      assessmentView: assessmentView
     }
   },
 
+  onDeepenAnalysis: function(){var self=this;reportActions.deepen(self,self.data.record,function(record){self.setData({record:record,displayRecord:self._buildDisplay(record)})})},
+  onRetryAnalysis: function(){var self=this;reportActions.retry(self,self.data.record,function(record){self.setData({record:record,displayRecord:self._buildDisplay(record)})})},
+  saveShareImage: function(){reportActions.exportImage(this,this.data.record)},
+  onUnload: function(){this._reportClosed=true},
   onBack: function () {
     // BUG-UI24：作为入口页（冷启动/被微信恢复）时没有上一页，navigateBack 无反应
     if (getCurrentPages().length > 1) {

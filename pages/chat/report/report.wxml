@@ -76,6 +76,10 @@ module.exports = { serial: serial, no: no, tail: tail }
     </view>
 
     <!-- 底部操作 -->
+    <view class="report-actions" wx:if="{{displayRecord.assessmentView.canRetry || displayRecord.assessmentView.canDeepen}}">
+      <view class="vet-btn vet-btn-secondary report-btn" wx:if="{{displayRecord.assessmentView.canRetry}}" bindtap="onRetryAnalysis">{{deepening ? '分析中…' : '重试分析'}}</view>
+      <view class="vet-btn vet-btn-secondary report-btn" wx:if="{{displayRecord.assessmentView.canDeepen}}" bindtap="onDeepenAnalysis">{{deepening ? '分析中…' : displayRecord.assessmentView.deepeningLabel}}</view>
+    </view>
     <view class="report-actions">
       <view class="vet-btn vet-btn-secondary report-btn" bindtap="goHistory">查看记录</view>
       <view class="vet-btn vet-btn-ink report-btn" bindtap="onBack">返回对话</view>
@@ -89,4 +93,5 @@ module.exports = { serial: serial, no: no, tail: tail }
     </view>
     <view class="vet-btn vet-btn-primary report-empty-btn" bindtap="onBack">返回</view>
   </view>
+  <canvas type="2d" id="shareCanvas" style="position:fixed;left:-9999px;top:-9999px;width:750px;height:1200px;"></canvas>
 </view>

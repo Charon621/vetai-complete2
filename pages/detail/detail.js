@@ -1,6 +1,7 @@
 var storage = require('../../utils/storage')
 var analytics = require('../../utils/analytics')
 var textUtil = require('../../utils/text')
+var reportViewModel=require('../../utils/reportViewModel')
 
 var PAGE_SIZE = 20
 
@@ -304,10 +305,12 @@ Page({
     })
 
     return source.map(function (r) {
+      var newView=r.assessment?reportViewModel.build(r):null
       var confidence = textUtil.normalizePercent(r.confidence, null)
       if (confidence === null) confidence = textUtil.normalizePercent(r.primaryDiagnosisProbability, null)
       var disease = cleanText(r.disease || r.primaryDiagnosis || r.lesionNameCn || '')
       var summary = cleanText(r.possibleMeaning || r.explanation || r.observations || r.careSuggestion || '')
+      if(newView){confidence=null;disease=newView.title;summary=newView.summary}
       var matchText = confidenceLevelText(confidence)
       // BUG-UI49：列表里混装多只宠物（含临时问诊）时，每条都要标出宠物名，
       // 否则用户无法判断这条记录属于谁；已按单一档案过滤时不再重复宠物名。
@@ -329,7 +332,7 @@ Page({
         monthLabel: getMonthLabel(r),
         sourceLabel: r.source === 'chat' ? '对话问诊' : '拍照初筛',
         metaLine: metaLine,
-        urgencyText: URGENCY_TEXT[r.urgency] || '建议关注',
+        urgencyText: newView?newView.riskText:URGENCY_TEXT[r.urgency] || '建议关注',
         confidenceText: confidence === null ? '' : confidence + '%',
         matchText: matchText,
         summaryText: summary || '点击查看完整初筛报告',

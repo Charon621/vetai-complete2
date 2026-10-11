@@ -21,8 +21,8 @@
         <view class="verdict-title">{{record.actionConclusion}}</view>
       </view>
       <view class="verdict-gauge">
-        <image class="gauge-img" src="/assets/icons/gauge-{{record.urgency || 'moderate'}}.svg" mode="aspectFit" />
-        <view class="gauge-num"><text class="gauge-num-cur">{{record.severityLevel}}</text> / 4</view>
+        <image class="gauge-img" src="/assets/icons/gauge-{{record.riskUnknown ? 'moderate' : (record.urgency || 'moderate')}}.svg" mode="aspectFit" />
+        <view class="gauge-num"><text class="gauge-num-cur">{{record.riskUnknown ? '待评估' : record.severityLevel}}</text><text wx:if="{{!record.riskUnknown}}"> / 4</text></view>
       </view>
     </view>
     <view class="verdict-note">{{record.actionNote}}</view>
@@ -143,6 +143,8 @@
 
   <!-- ═══ 次级操作 + 页脚 ═══ -->
   <view class="report-more">
+    <text class="report-more-link" wx:if="{{record.assessmentView.canRetry}}" bindtap="onRetryAnalysis">{{deepening ? '分析中…' : '重试分析'}}</text>
+    <text class="report-more-link" wx:if="{{record.assessmentView.canDeepen}}" bindtap="onDeepenAnalysis">{{deepening ? '分析中…' : record.assessmentView.deepeningLabel}}</text>
     <text class="report-more-link" bindtap="saveShareImage">保存报告</text>
     <text class="report-more-link" bindtap="goBack">返回首页</text>
     <text class="report-more-link" bindtap="goHistory">查看历史</text>

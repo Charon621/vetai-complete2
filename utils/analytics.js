@@ -27,6 +27,11 @@ function eventsKey() {
  * @param {object} data 附加数据
  */
 function track(event, data) {
+  if(event==='ragWorkflow'){
+    var allowed=['answerLevel','status','reasonCode','precheckCalls','fullCalls','evidenceCount','candidateCount','firstUsefulMs','finalMs','conceptVersion','rankPolicyVersion','promptVersion','knowledgeReleaseId'],safe={}
+    allowed.forEach(function(k){var v=(data||{})[k];if(typeof v==='number'&&isFinite(v)&&v>=0 || typeof v==='string'&&/^[a-zA-Z0-9_.:-]{1,100}$/.test(v))safe[k]=v})
+    data=safe
+  }
   try {
     var key = eventsKey()
     var events = wx.getStorageSync(key) || []

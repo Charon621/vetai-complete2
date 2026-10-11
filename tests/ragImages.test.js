@@ -1,0 +1,13 @@
+const assert=require('assert')
+global.wx={env:{USER_DATA_PATH:'/user'}}
+const image=require('../utils/image')
+const manifest=image.createImageManifest(['first','second','third'],['overview','closeup','reference'],[null,{x:0},null])
+const bundle=image.buildModelImageBundle(['','second-data','third-data'],['overview','closeup','reference'],[{imageId:'roi',sourceImageId:manifest[1].imageId,lesionId:manifest[1].lesionId,role:'roi',base64:''}],manifest)
+assert.deepEqual(bundle.roles,['closeup','reference'])
+assert.equal(bundle.manifest[0].isSent,false)
+assert.equal(bundle.manifest[1].sentImageIndex,0)
+assert.equal(bundle.manifest[3].dropReason,'read_or_crop_failed')
+assert.equal(image.createImageManifest(['second'])[0].imageId,manifest[1].imageId)
+const roi=image.buildModelImageBundle(['a','b'],['overview','closeup'],[{imageId:'roi',sourceImageId:manifest[1].imageId,lesionId:'l2',role:'roi',base64:'r'}],manifest.slice(0,2))
+assert.deepEqual(roi.roles,['overview','roi']);assert.equal(roi.manifest[2].sourceImageId,manifest[1].imageId)
+console.log('manifest alignment / failed read / failed ROI / stable ids passed')

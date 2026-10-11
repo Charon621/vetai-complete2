@@ -21,8 +21,10 @@ function safeGet(key, fallback) {
 function safeSet(key, value) {
   try {
     wx.setStorageSync(key, value)
+    return true
   } catch (e) {
     console.error('[VetAI] storage save failed:', key, e)
+    return false
   }
 }
 
@@ -201,7 +203,7 @@ function addRecord(data) {
   if (records.length > MAX_RECORDS) {
     records = records.slice(0, MAX_RECORDS)
   }
-  safeSet(scopedKey(RECORDS_KEY), records)
+  if (!safeSet(scopedKey(RECORDS_KEY), records)) return null
 
   if (data.profileId) {
     touchPetProfile(data.profileId)
@@ -209,6 +211,33 @@ function addRecord(data) {
 
   return record
 }
+
+var MAX_RECORD_REVISIONS = 3
+var MAX_RECORD_BYTES = 256 * 1024
+function commitRecord(data, options) {
+  options = options || {}
+  var scope = options.ownerScope || getUserScope()
+  if (scope !== getUserScope()) return {success:false,code:'space_changed'}
+  var key = RECORDS_KEY + '_' + scope, records
+  try { records = wx.getStorageSync(key) || [] } catch(e) {return {success:false,code:'read_failed'}}
+  if (!Array.isArray(records)) return {success:false,code:'history_corrupt'}
+  if((data.imagePaths||[]).concat(data.imagePath||[]).some(function(p){return typeof p!=='string'||/^data:/.test(p)||p.length>2048}))return {success:false,code:'invalid_image_path'}
+  var a=data.assessment,duplicate=a && records.filter(function(r){return r.assessment && r.assessment.runId===a.runId && r.assessment.revision===a.revision})[0]
+  if(duplicate)return {success:true,record:duplicate,duplicate:true}
+  var prior=options.replaceId ? records.filter(function(r){return r.id===options.replaceId})[0] : a && records.filter(function(r){return r.assessment && r.assessment.runId===a.runId})[0]
+  if(prior && a && prior.assessment && prior.assessment.runId===a.runId && prior.assessment.revision>=a.revision)return {success:false,code:'stale_revision'}
+  if(options.replaceId&&!prior)return {success:false,code:'record_missing'}
+  if(prior && (prior.revisions || []).length>=MAX_RECORD_REVISIONS)return {success:false,code:'revision_limit'}
+  if(!prior && records.length>=MAX_RECORDS)return {success:false,code:'record_limit'}
+  var record=Object.assign({},data,{id:prior?prior.id:createId(),ownerId:scope,ownerName:getCurrentUserLabel(),createdAt:prior?prior.createdAt:nowMs(),timestamp:prior?prior.timestamp:nowText(),dateStr:prior?prior.dateStr:nowText()})
+  delete record.rawResponse
+  if(prior)record.revisions=(prior.revisions || []).concat([Object.assign(require('./recordEvidence').fields(prior),{imagePath:prior.imagePath||'',imagePaths:prior.imagePaths||[],savedAt:nowText()})])
+  if(JSON.stringify(record).length*2>MAX_RECORD_BYTES)return {success:false,code:'record_too_large'}
+  var next=prior?records.map(function(r){return r.id===prior.id?record:r}):[record].concat(records)
+  if(!safeSet(key,next))return {success:false,code:'write_failed'}
+  return {success:true,record:record}
+}
+function findRecordByRun(runId) {return getAllRecords().filter(function(r){return r.assessment&&r.assessment.runId===runId})[0] || null}
 
 function getRecordById(id) {
   return getAllRecords().find(function (item) { return item.id === id }) || null
@@ -367,6 +396,9 @@ function deletePetProfile(id) {
 }
 
 module.exports = {
+  commitRecord: commitRecord,
+  findRecordByRun: findRecordByRun,
+  MAX_RECORD_REVISIONS: MAX_RECORD_REVISIONS,
   addRecord: addRecord,
   getRecordById: getRecordById,
   getAllRecords: getAllRecords,

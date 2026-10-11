@@ -1,0 +1,4 @@
+# Release manifests hash exact source bytes. Preserve them on every platform.
+/utils/*.js -text
+/knowledge/*.json -text
+/evaluation/datasets/retrieval_scenarios.json -text

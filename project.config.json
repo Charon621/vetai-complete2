@@ -3,6 +3,10 @@
   "packOptions": {
     "ignore": [
       {
+        "value": "knowledge",
+        "type": "folder"
+      },
+      {
         "value": "cloudfunctions",
         "type": "folder"
       },
