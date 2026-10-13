@@ -665,6 +665,8 @@ Page({
         lines.push('预检耗时: ' + rag.precheckMs.count + '单, p50=' + rag.precheckMs.p50 + 'ms, p90=' + rag.precheckMs.p90 + 'ms')
       }
     }
+    var performance = require('../../utils/modelPerformance').summarize(analytics.getSamples('modelPerformance'))
+    lines.push('模型耗时与用量（近期调用，含快路径后仍完成的调用）: ' + JSON.stringify(performance))
     lines.push('')
     for (var i = events.length - 1; i >= 0; i--) {
       var e = events[i]

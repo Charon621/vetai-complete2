@@ -29,7 +29,9 @@ function fromOwnerContext(context,runId) {
     var row=lookup(event.concept,'owner_text')
     if(!row || event.source!=='owner_text' || !cf.validateFact(event))return null
     var raw=String(event.evidenceSpan.text||'')
-    if(!row.equivalents.concat([row.term]).some(function(term){return raw.indexOf(term)>=0}))return null
+    // 原话须字面含概念词，或经主诉口语桥接（如“黑色小点”→黑色颗粒）从同一片段得出；桥接只认当前、肯定、宠物本身的片段。
+    var literal=row.equivalents.concat([row.term]).some(function(term){return raw.indexOf(term)>=0})
+    if(!literal && !require('./kb').expandQueryFacts(raw).expansions.some(function(e){var hit=lookup(e.concept,'owner_text');return hit&&hit.conceptId===row.conceptId}))return null
     return {evidenceId:runId+':owner:'+index,conceptId:row.conceptId,rawText:String(event.evidenceSpan.text||event.concept).slice(0,160),assertion:event.assertion,certainty:event.assertion==='unknown'?'indeterminate':'clear',observed:true,source:'owner_text',subject:event.subject,temporality:event.temporality,imageId:null,sourceImageId:null,lesionId:event.lesionId||'unknown',site:event.site||'unknown',factEventId:event.factId,supersedes:[]}
   }).filter(Boolean)
 }

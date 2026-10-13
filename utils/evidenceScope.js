@@ -21,7 +21,7 @@ function fragments(text) {
     if (/以前|过去|去年|曾经|之前/.test(part)) time='past'
     if (/现在|目前|今天|刚刚|新起/.test(part)) time='current'
     var found=part.match(SITE_RE);if(found)site=found[0]
-    var assertion=/会不会|是不是|是否|如果|假如|万一|可能|不确定|不知道|怀疑|没注意|有没有|看不清|无法判断|怎么办|[吗么]$/.test(part.trim())?'uncertain':/没有|未见|否认|不伴|没(?:有|见|怎么|甩|抓|挠|红|皮)|不(?:痒|痛|疼|红|挠|甩|抓)|无(?:瘙痒|痛|红|皮损|溃疡)/.test(part)?'absent':'present'
+    var assertion=/会不会|是不是|是否|如果|假如|万一|可能|不确定|不知道|怀疑|没注意|有没有|看不清|无法判断|怎么办|[吗么]$/.test(part.trim())?'uncertain':/没有|未见|未发现|否认|不伴|看不到|没(?:有|见|怎么|甩|抓|挠|红|皮|看到|看见|发现)|不(?:痒|痛|疼|红|挠|甩|抓)|无(?:瘙痒|痛|红|皮损|溃疡)/.test(part)?'absent':'present'
     out.push({text:part,subject:subject,assertion:assertion,temporality:time,site:site,lesionId:site||'unspecified',evidenceSpan:{start:start,end:end,text:part},source:'owner_text'})
   }
   return out

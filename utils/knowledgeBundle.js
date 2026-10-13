@@ -3,9 +3,9 @@
 module.exports = {
   "ledger": {
     "schema_version": 2,
-    "version": "evidence-2026.10.08.2",
+    "version": "evidence-2026.10.12.1",
     "scenario": "犬猫反复瘙痒：食物因素与环境过敏鉴别",
-    "coverage": "两张知识卡的重要鉴别与检查结论；未覆盖字段不自动获得核验状态。",
+    "coverage": "两张知识卡的重要鉴别与检查结论；未覆盖字段不自动获得核验状态。 本次新增猫鼻部丘疹表型的片段核验；不核验整卡或快路径准确率。",
     "sources": [
       {
         "id": "AAHA-ALLERGY-2023",
@@ -20,6 +20,20 @@ module.exports = {
         "original_import_provenance": "unknown",
         "verification_method": "后补核验；通过公开全文核对页码和章节，不声称历史来源已找回",
         "redistribution": "不复制全文；仅存短定位片段和链接"
+      },
+      {
+        "id": "AAFP-REGIONAL-2023",
+        "title": "2023 Spring into Feline Medicine — Feline Regional Dermatoses (Catherine Outerbridge)",
+        "url": "https://catvets.com/wp-content/uploads/2024/01/SFM-2023-Proceedings.pdf",
+        "publisher": "American Association of Feline Practitioners",
+        "publication_date": "2023-04-30",
+        "retrieved_on": "2026-10-12",
+        "review_due": "2027-04-10",
+        "version": "2023 conference proceedings; 57-page PDF",
+        "access": "public_readable",
+        "original_import_provenance": "not_applicable_new_supplement",
+        "verification_method": "本次补证；对照PDF第12页猫蚊虫叮咬超敏反应章节，Codex资料比对，非兽医签署",
+        "redistribution": "仅保存短定位与链接"
       }
     ],
     "spans": [
@@ -107,6 +121,17 @@ module.exports = {
         "section": "Section 3 / Step Four: Treat Ectoparasites and Secondary Infections",
         "quote": "",
         "quote_role": "短片段仅作原文定位；需结合完整章节核验",
+        "species": [
+          "猫"
+        ]
+      },
+      {
+        "id": "S-CAT-NASAL-2023",
+        "source_id": "AAFP-REGIONAL-2023",
+        "pdf_page": 12,
+        "section": "Feline Regional Dermatoses / Feline Mosquito Bite Hypersensitivity",
+        "quote": "Lesions start as papules",
+        "quote_role": "仅作定位，结合整段核验鼻部、丘疹及脱毛范围",
         "species": [
           "猫"
         ]
@@ -620,10 +645,50 @@ module.exports = {
           }
         ],
         "evidence_sha256": "ec65d1957a2be10eb1439f8ba25651ccd0029fa792ad64b7b27b96d4cfa492a0"
+      },
+      {
+        "id": "INSECT-CAT-NASAL",
+        "card_id": "insect_bite_犬_猫",
+        "card_name": "蚊虫叮咬/昆虫过敏",
+        "field": "photoPatterns",
+        "original_fragment": "猫的蚊虫叮咬超敏反应可累及鼻部，出现丘疹及脱毛；该形态仅提示鉴别方向，需结合暴露史与检查。",
+        "field_sha256": "191239a8d7dee85c826608bc1ec28a7b7dbf13bb23a596899fb2d3b0f2a1edf8",
+        "statement": "猫的蚊虫叮咬超敏反应可累及鼻部，出现丘疹及脱毛；该形态仅提示鉴别方向，需结合暴露史与检查。",
+        "evidence": [
+          "S-CAT-NASAL-2023"
+        ],
+        "applicability": {
+          "species": [
+            "猫"
+          ],
+          "conditions": [
+            "鼻部丘疹性皮损的鉴别场景；需核对病史、暴露情况与兽医检查"
+          ]
+        },
+        "status": "source_verified",
+        "limitation": "仅核验所绑定文字片段。鼻部结痂与丘疹的检索组合是工程召回条件，不是来源验证的诊断规则；不证明当前照片的病因，不扩展到犬，不代表特异性或快路径安全性已验证。",
+        "review": {
+          "reviewer": "Codex",
+          "role": "automated_source_comparison",
+          "reviewed_on": "2026-10-12",
+          "decision": "source_verified",
+          "clinical_reviewer": null,
+          "clinical_signed_at": null,
+          "note": "阅读PDF第12页原文后补充；原卡其他字段来源状态不变。"
+        },
+        "history": [
+          {
+            "date": "2026-10-12",
+            "action": "new_source_supplement",
+            "historical_origin": "not_applicable",
+            "note": "用户报告鼻部典型照片低命中后，按原文补充猫表型。未登记为历史编写来源。"
+          }
+        ],
+        "evidence_sha256": "e06fa0f58c69383b0418c706ed388072c0780bdc252835bc19ca4809d46f6118"
       }
     ]
   },
   "release": {
-    "id": "kb-2026.10.11-rag.6"
+    "id": "kb-2026.10.13-sync.1"
   }
 }

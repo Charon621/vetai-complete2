@@ -21,4 +21,16 @@ for(const text of ['我现在呼吸困难，猫只有鳞屑','我的猫以前呼
 }
 const riskWithPhoto=a.build(s,r.rank(s,{species:'猫'}),{complaint:'我的猫现在呼吸困难'},{guardrails:api.applyGuardrails})
 assert.deepEqual(riskWithPhoto.triage.supportEvidenceIds,[],'unrelated photo morphology is not risk evidence')
+// 点名分级：照片清晰可见且本组独有的特异表现才点名；并列、仅“可能可见”或文字证据只作可能方向。
+assert.equal(assessment.scopeResults[0].candidates[0].evidenceTier,'named')
+function fake(id,ids){return {cardId:id,name:id,role:'etiology',supports:ids.map(e=>({evidenceId:e,conceptId:s.facts.find(f=>f.evidenceId===e).conceptId,specific:true,soft:false})),conflicts:[],missing:[],knowledgeBindings:[{cardId:id,conditionId:id+':c',field:'visualSigns',sourceFieldHash:'h',evidenceStatus:'pending'}],referenceKnowledge:'',ddx:'',sourceStatus:'pending'}}
+function tiersOf(snap,cands){return a.build(snap,{scopes:[{lesionId:'l',site:'unknown',coverage:'covered',candidates:cands}]},{},{}).scopeResults[0].candidates.map(x=>x.name+':'+x.evidenceTier)}
+assert.deepEqual(tiersOf(s,[fake('X',['e0']),fake('Y',['e1'])]),['X:tentative','Y:tentative'],'两个候选各有独有证据视为并列')
+assert.deepEqual(tiersOf(s,[fake('Y',['e0']),fake('X',['e0','e1'])]),['X:named','Y:tentative'],'独有证据的候选点名并排到首位')
+const soft=JSON.parse(JSON.stringify(s));soft.facts[1].certainty='possible'
+assert.deepEqual(tiersOf(soft,[fake('Y',['e0']),fake('X',['e0','e1'])]),['Y:tentative','X:tentative'],'可能可见不构成独有证据')
+const text=JSON.parse(JSON.stringify(s));text.facts.forEach(f=>f.source='owner_text')
+assert.deepEqual(tiersOf(text,[fake('X',['e0','e1'])]),['X:tentative'],'文字证据不点名')
+const badTier=JSON.parse(JSON.stringify(assessment));badTier.scopeResults[0].candidates[0].evidenceTier='confirmed'
+assert.equal(c.validateAssessment(badTier).code,'invalid_candidate')
 console.log('candidate / morphology / independent risk / new-field safety passed')

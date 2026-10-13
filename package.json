@@ -5,6 +5,7 @@
     "test": "node tools/run-tests.js",
     "audit:kb": "node evaluation/tools/kb_audit.js",
     "probe:recall": "node evaluation/tools/recall_probe.js",
+    "probe:guided": "node evaluation/tools/guided_probe.js",
     "build:icons": "node tools/build-icons.js",
     "audit:evidence": "node evaluation/tools/evidence_audit.js",
     "eval:retrieval": "node evaluation/tools/rag_compare.js",

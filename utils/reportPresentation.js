@@ -8,12 +8,15 @@ function prepare(record, view) {
   scopes.forEach(function (scope) {
     morphology = morphology.concat(scope.morphology || [])
     ;(scope.candidates || []).forEach(function (candidate) {
-      candidates.push({name:candidate.name, supporting:(candidate.supports || []).join('；'), against:(candidate.conflicts || []).join('；')})
+      candidates.push({name:candidate.name, evidenceTier:candidate.evidenceTier, supporting:(candidate.supports || []).join('；'), against:(candidate.conflicts || []).join('；')})
       supports = supports.concat(candidate.supports || [])
       conflicts = conflicts.concat(candidate.conflicts || [])
       missing = missing.concat(candidate.missing || [])
     })
   })
+  // 照片证据足以点名的候选优先；全部为可能方向时不把第一项当作判断结论。
+  candidates = candidates.filter(function (c) { return c.evidenceTier === 'named' }).concat(candidates.filter(function (c) { return c.evidenceTier !== 'named' }))
+  var tentative = !full && !!view.tentative
   if (full) {
     candidates = (full.modelSuggestions || []).map(function (candidate) {
       return {name:candidate.name, reason:candidate.note || '', supporting:candidate.supporting || '', against:candidate.against || ''}
@@ -29,8 +32,9 @@ function prepare(record, view) {
   var tests = full && full.recommendedTests || []
   var uncertainty = unique(conflicts).concat(unique(missing).length ? ['待补充：' + unique(missing).join('、')] : [])
   return Object.assign({}, record, {
-    disease:candidates.length ? candidates[0].name : morphology.join('、') || view.title,
-    primaryDiagnosis:candidates.length ? candidates[0].name : '',
+    disease:tentative ? '可能方向待核对' : candidates.length ? candidates[0].name : morphology.join('、') || view.title,
+    primaryDiagnosis:candidates.length && !tentative ? candidates[0].name : '',
+    tentativeCandidates:tentative,
     lesionNameCn:morphology.join('、'),
     diseaseList:candidates,
     diagnosisCandidates:candidates,

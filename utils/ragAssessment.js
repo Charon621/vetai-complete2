@@ -1,10 +1,24 @@
 var contracts=require('./ragContracts'),concepts=require('./clinicalConcepts'),retrieval=require('./ragRetrieval')
 function versions(snapshot) {return Object.assign({evidenceSchemaVersion:contracts.EVIDENCE_VERSION,assessmentSchemaVersion:contracts.ASSESSMENT_VERSION,conceptVersion:concepts.VERSION,retrievalProfileVersion:require('./retrievalProfileBundle').version,rankPolicyVersion:retrieval.POLICY.version,promptVersion:contracts.PROMPT_VERSION,knowledgeReleaseId:require('./knowledgeBundle').release.id || require('./retrievalProfileBundle').knowledgeReleaseId},snapshot.versions||{})}
+// 快报告点名门槛：候选须有照片清晰可见、且本组其他候选没有的特异表现，并且全组只有它满足。
+// 纯文字、仅“可能可见”或多个候选证据并列时只作可能方向；不用分数阈值，免校准。
+function tiers(candidates,snapshot) {
+  var facts={}
+  snapshot.facts.forEach(function(f){facts[f.evidenceId]=f})
+  var anchors=candidates.map(function(c){return c.supports.filter(function(s){var f=facts[s.evidenceId];return s.specific&&!s.soft&&f&&f.source==='photo'&&f.certainty==='clear'}).map(function(s){return s.conceptId})})
+  var distinct=anchors.map(function(own,i){return own.filter(function(id){return !anchors.some(function(other,j){return j!==i&&other.indexOf(id)>=0})}).length>0})
+  var claims=distinct.filter(Boolean).length
+  return distinct.map(function(d){return d&&claims===1?'named':'tentative'})
+}
 function build(snapshot,ranking,context,options) {
   options=options||{};context=context||{}
   var scopeResults=(ranking.scopes||[]).map(function(scope) {
     var morphology=snapshot.facts.filter(function(f){return retrieval.scopeKey(f)===scope.lesionId && f.source==='photo' && f.assertion==='present' && retrieval.eligible(f,snapshot)}).map(function(f){return {evidenceId:f.evidenceId,text:(f.certainty==='possible'?'可能可见':'可见')+concepts.lookup(f.conceptId).term,source:f.source,site:f.site,imageId:f.imageId}})
-    return {lesionId:scope.lesionId,site:scope.site,coverage:scope.coverage,morphology:morphology,candidates:scope.candidates.map(function(c){return {cardId:c.cardId,name:c.name,role:c.role,supportEvidenceIds:c.supports.map(function(s){return s.evidenceId}),conflictEvidenceIds:c.conflicts.map(function(s){return s.evidenceId}),missingItems:c.missing,knowledgeBindings:c.knowledgeBindings,referenceKnowledge:c.referenceKnowledge,differentials:c.ddx,knowledgeStatus:c.sourceStatus}})}
+    var tier=tiers(scope.candidates,snapshot)
+    var candidates=scope.candidates.map(function(c,i){return {cardId:c.cardId,name:c.name,role:c.role,evidenceTier:tier[i],supportEvidenceIds:c.supports.map(function(s){return s.evidenceId}),conflictEvidenceIds:c.conflicts.map(function(s){return s.evidenceId}),missingItems:c.missing,knowledgeBindings:c.knowledgeBindings,referenceKnowledge:c.referenceKnowledge,differentials:c.ddx,knowledgeStatus:c.sourceStatus}})
+    // 点名候选排在本组首位，其余保持检索顺序。
+    candidates=candidates.filter(function(c){return c.evidenceTier==='named'}).concat(candidates.filter(function(c){return c.evidenceTier!=='named'}))
+    return {lesionId:scope.lesionId,site:scope.site,coverage:scope.coverage,morphology:morphology,candidates:candidates}
   })
   var hasCandidates=scopeResults.some(function(s){return s.candidates.length}),hasMorphology=scopeResults.some(function(s){return s.morphology.length})
   var status=options.status || (hasCandidates||hasMorphology?'ok':'clinical_abstain'),level=hasCandidates?'ranked_candidates':hasMorphology?'morphology_only':'unavailable'

@@ -1,22 +1,22 @@
 {
   "schema_version": 1,
-  "id": "kb-2026.10.11-rag.6",
-  "content_sha256": "c5282004a6f71a81caa96a8401bc322c4ec16311aebea22fdf889adf00845dc5",
+  "id": "kb-2026.10.13-sync.1",
+  "content_sha256": "418d9c5fabe3009702f532bb7f8fceb515bbb9bd0610c3c0903b1efea6cad9e7",
   "files": {
     "evaluation/datasets/retrieval_scenarios.json": {
       "sha256": "1019da03db3c12cd10873a0bfa9ace057215321e7b0e7e27da8382f4b81ea7f8"
     },
     "knowledge/evidence-ledger.json": {
-      "sha256": "960166fb14a48c04b4ffabe256ec8ccf3e0458b490d6fb8c222b4f1c00b16a88"
+      "sha256": "8979f232545352d195a91799b87d4d3f47c24fba9ce38fa2975eb8798c586d54"
     },
     "knowledge/retrieval-profiles.json": {
-      "sha256": "61f2459e12bb63d94077c92fd7c20d3f1dde2856fa2a464bad0f9abe51586e5e"
+      "sha256": "6aefc4be58759124a872a7410b6570cb9a20003e32d6d5a15103a95041b8bbe8"
     },
     "utils/analytics.js": {
       "sha256": "a5685979997aef80ae9bb0df0f793089ffccbf29df2a10df29783d0afbcc3f52"
     },
     "utils/api.js": {
-      "sha256": "abcbf2b987f715a4ff630d3bc13c39f4e3f78ca8aa59cc9ebcb6de88c4685fa0"
+      "sha256": "8d1bda33a8e2f0cf9804ce9a432aa33123eb52623b27fe625cbbb9d46d7bae94"
     },
     "utils/caseFacts.js": {
       "sha256": "cae4d649a4a7208b3d38f2df98c2ed3b4f763e6bbf8bb88f5af2cde788a55ec6"
@@ -25,10 +25,10 @@
       "sha256": "07117416fa8e89b91f80e43135dbf626f8d42851ddcb06d2045789c26940b243"
     },
     "utils/clinicalConcepts.js": {
-      "sha256": "40c2342524ecb04a6149ea4c55119863d0c9693f73c68694ae239583b1705866"
+      "sha256": "a6e618a88a1f6698ee87653260bbc59bfca5a75d9fd8cd684623620cc3c8b176"
     },
     "utils/config.js": {
-      "sha256": "b0a9eaec55e6fa1b55d7065e3cdf83ca3f46554b15eac1cb93fdf1f35ca39319"
+      "sha256": "3629a01b560eaa9513569e242e86b83fc416204820e2b1bcfaea18ee63fb7cf4"
     },
     "utils/diagnosisDecision.js": {
       "sha256": "8a9f56bd31d5f91561475e3371b19ec907eb00972fed7fb067adb9677e4fa8fd"
@@ -37,7 +37,7 @@
       "sha256": "037f4482e4c102c6013c7419a85aaaa640a1132cf919a433dcf4ff51cbb99087"
     },
     "utils/evidenceScope.js": {
-      "sha256": "ad5d05e3af3b421c7bf026c2a434897cb57a366ccf8147ec0cbb33b458370bab"
+      "sha256": "3f6c5d7d69bd368f884f270af3d8676fc5bba84cb3f0f2cd9416b018b95d6c6a"
     },
     "utils/fontData.js": {
       "sha256": "5516601680038b0d7edbc69fb4c767817693ebd5b915b51fec3d6f943f100a9a"
@@ -55,13 +55,13 @@
       "sha256": "ab7b4879ec53753293023fb94a842baa374fe70567f6755cf8f36bfbb07ed6d9"
     },
     "utils/kb.js": {
-      "sha256": "e3e0e960a9274a0589ee444719aa7aa73c2715348c90fe9283650fe67ce047b2"
+      "sha256": "c80dcdab965d069a709952dc67513a324d1d3a360b70ca696b12e43a799ffd60"
     },
     "utils/knowledge.js": {
       "sha256": "e27b1a9b761039afe71d0da6c19ba52357a04e6e402ba4ff5258d001c5cbc04d"
     },
     "utils/knowledgeBundle.js": {
-      "sha256": "7fd0b67813fb16e3f62703cfec025da1a5711b260ad8a5fcc3313f4a42b9996d"
+      "sha256": "da759616099c28e09d7c5521c2e3e08a0f0dbd64129ae727220a8a3498e21620"
     },
     "utils/knowledgeEvidence.js": {
       "sha256": "01e1dcd7acd47a91050b314e39a9268d68ae65090494031d7ddd6a03426a1a6a"
@@ -69,11 +69,14 @@
     "utils/lesion.js": {
       "sha256": "c52fc4edae3d938cc35ab5259d7047cd7aa698099fc278e50bb26d84d4b0874e"
     },
+    "utils/modelPerformance.js": {
+      "sha256": "395f1875bbb09b7abef9030c05300a7ae9f99748e5f11899f3c462c564972600"
+    },
     "utils/ragAssessment.js": {
-      "sha256": "0e59883b83ae9bfeb8963d5a12938311b3bb495bf6bf34447937072279a2a0da"
+      "sha256": "c2c2dfde08fd5622b1548939fb13a21d04caaffa93ded8c81bd7ec92ce1e0862"
     },
     "utils/ragContracts.js": {
-      "sha256": "f385e80390c5db29f961a93be08dad7475bc2fec3827dc11e9bae9de92985156"
+      "sha256": "010a4f5711886ef08eabe51d85a6394f4d498864bf5c05b61083941a121cb281"
     },
     "utils/ragInput.js": {
       "sha256": "5d66912887f74fde7ece75e17157740481f7536f8bfefc7e036c90fb8e0b2cfc"
@@ -82,28 +85,28 @@
       "sha256": "300a3774f9b50cf1b4e0aada394565731410b86cef527ce604561da9b667cfc1"
     },
     "utils/ragRetrieval.js": {
-      "sha256": "b4e2dc2eea4b7339736134ff9b0ebf1d8987852616f5e6e3479a4b31fc17c179"
+      "sha256": "ef2f0dedfdb39e2f8bd7dea8ecdbfcc12599ec4ad5a4b6b9e818f02ae55bdcfc"
     },
     "utils/ragWorkflow.js": {
       "sha256": "5351922153230ada5a92cab54deb95b3d249581d15b59b06da3961984975e783"
     },
     "utils/recordEvidence.js": {
-      "sha256": "a4080c5391c42f1fcdf90da5f12813f55fddb089bcca58d8a7e1588184a72c2c"
+      "sha256": "6fec94de1f8fd3ef451f1c4c37261726597dd812301af90a6807c8e273723cb6"
     },
     "utils/reportActions.js": {
       "sha256": "fc2566bdedc5e0f264a7ab978792fc83bceac46805ee5702b6ad6ff897191352"
     },
     "utils/reportPresentation.js": {
-      "sha256": "c93771fa4809f1aa861075287658463ff794ca0df1c7d20bb8eee95d11ab6b65"
+      "sha256": "4ddc027882a83456063a6dc29090609ced13607d351a995aa6f1631a762b9a4e"
     },
     "utils/reportViewModel.js": {
-      "sha256": "4dc3ac1f7130d0668c59d03db9d120a3113113772d355a2be8175bce8fcc9af0"
+      "sha256": "f31fd6cfc5e48b917b09ba9a8d433baae03af2008177703df98b4bb3fe71091c"
     },
     "utils/retrievalMonitor.js": {
       "sha256": "aab05d740d80f57ba2be53cfc4315cb44c165da099c980db57c9319c7c203d52"
     },
     "utils/retrievalProfileBundle.js": {
-      "sha256": "b2d463e45ef15898c780e5af5922c451e8d728c6beca7218f1a7413ca7365355"
+      "sha256": "f15f7afa3404e5bb52573f254e5ebfb31f5410f607ad0694089a660f3e963dac"
     },
     "utils/retrievalWeights.js": {
       "sha256": "add8257d6b2165416ebc02c02c4493211f0b212608e0cbf09ee9d05b5cf4b600"

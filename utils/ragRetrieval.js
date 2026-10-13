@@ -1,6 +1,6 @@
 var kb=require('./kb'),concepts=require('./clinicalConcepts'),profiles=require('./retrievalProfileBundle'),contracts=require('./ragContracts'),weights=require('./retrievalWeights').weights
 // 工程门限，与旧快路径阈值独立；未证明新排序更好时保留规则顺序。
-var POLICY={version:'rag-rank-v1',defaultStrategy:'rules',poolLimit:8,displayLimit:3,minDistinctSupport:2,minClearSpecificSupport:1,possibleFactor:0.25}
+var POLICY={version:'rag-rank-v2',defaultStrategy:'rules',poolLimit:8,displayLimit:3,minDistinctSupport:2,minClearSpecificSupport:1,possibleFactor:0.25}
 function eligible(f,snapshot) {
   if(f.subject!=='pet'||f.temporality!=='current'||!f.observed||f.certainty==='indeterminate'||f.assertion==='unknown')return false
   if(f.source==='photo' && snapshot.imageQuality.some(function(q){return q.imageId===f.imageId&&q.quality==='unusable'}))return false
@@ -14,6 +14,26 @@ function groupFacts(snapshot) {
   var grouped={}
   snapshot.facts.forEach(function(f){var key=scopeKey(f);if(!grouped[key])grouped[key]=[];grouped[key].push(f)})
   return Object.keys(grouped).sort().map(function(key){return {lesionId:key,facts:grouped[key],site:grouped[key][0].site||'unknown'}})
+}
+// 部位冲突只用于所有部位都能归入区域的卡（如耳螨只在耳部、尾根腺炎在尾背），取其区域并集；含头部、全身、躯干等不归区域的部位时不锁定，病灶部位未知时也不排除。
+var REGIONS={ear:['耳'],tail:['尾','臀','肛','会阴','屁股'],back:['背','腰'],belly:['腹','腋','胸'],limb:['腿','肢','肘','腕','跗'],paw:['爪','足','趾','脚','甲','垫'],eye:['眼','睑'],nose:['鼻'],mouth:['唇','口','嘴','下巴','下颌','颏'],neck:['颈','脖']}
+function regionsOf(text) {
+  text=String(text||'')
+  return Object.keys(REGIONS).filter(function(key){return REGIONS[key].some(function(word){return text.indexOf(word)>=0})})
+}
+function lockedRegions(card) {
+  var locations=card.locations||[],out=[]
+  for(var i=0;i<locations.length;i++){var r=regionsOf(locations[i]);if(!r.length)return [];r.forEach(function(k){if(out.indexOf(k)<0)out.push(k)})}
+  return out
+}
+function siteConflict(card,sites) {
+  var regions=lockedRegions(card),mapped=sites.map(regionsOf)
+  return regions.length>0 && mapped.length>0 && mapped.every(function(r){return r.length>0&&!r.some(function(k){return regions.indexOf(k)>=0})})
+}
+function knownSites(facts,petInfo) {
+  var sites=facts.map(function(f){return f.site}).filter(function(s,i,all){return s&&s!=='unknown'&&all.indexOf(s)===i})
+  var form=petInfo.bodyPartLabel||petInfo.bodyPart||''
+  return sites.length?sites:(form?[form]:[])
 }
 function binding(profile,condition) {return {profileId:profile.profileId,cardId:profile.cardId,conditionId:condition.conditionId,field:condition.field,sourceFieldHash:condition.sourceFieldHash,evidenceStatus:condition.evidenceStatus}}
 function ancestors(id) {var out=[id],row=concepts.lookup(id);while(row&&row.parentId){out.push(row.parentId);row=concepts.lookup(row.parentId)}return out}
@@ -29,7 +49,7 @@ function rank(snapshot,petInfo,options) {
     var query={species:species,bodyPart:scope.site==='unknown'?'':scope.site,complaint:present.filter(function(f){return f.source==='owner_text'}).map(function(f){return concepts.lookup(f.conceptId).term}).join(' '),visualFeatures:photo}
     // 主人否定不生成照片阴性；保留显式负证据。
     query.complaint+=' '+negative.map(function(f){return '未见'+concepts.lookup(f.conceptId).term}).join(' ')
-    var rules=(species==='猫'||species==='犬')?kb.searchCandidates(query):[],ruleIndex={},byCard={}
+    var rules=(species==='猫'||species==='犬')?kb.searchCandidates(query):[],ruleIndex={},byCard={},sites=knownSites(present,petInfo)
     rules.forEach(function(hit,index){ruleIndex[hit.id]={index:index,score:hit.score,hit:hit}})
     if(species!=='猫'&&species!=='犬')return {lesionId:scope.lesionId,site:scope.site,candidates:[],pool:[],coverage:'out_of_scope'}
     ;(options.profiles || profiles.profiles).forEach(function(profile) {
@@ -66,7 +86,8 @@ function rank(snapshot,petInfo,options) {
       if(ruleIndex[card.id])channels.push('rules')
       if(profile.retrievalTexts.some(function(text){return terms.some(function(term){return text.indexOf(term)>=0})}))channels.push('profile_text')
       if(!channels.length)return
-      var candidate={cardId:card.id,name:card.name,lesionId:scope.lesionId,rankScore:Math.round(score*100)/100,retrievalScore:ruleIndex[card.id]?ruleIndex[card.id].score:0,supports:supports,conflicts:conflicts,combinations:combinations,missing:missing,role:profile.role,retrievalChannels:channels,knowledgeBindings:bindings,eligible:supports.length>=POLICY.minDistinctSupport && specific>=POLICY.minClearSpecificSupport && score>0,ruleOrder:ruleIndex[card.id]?ruleIndex[card.id].index:999,referenceKnowledge:card.typicalFeatures,ddx:card.ddxSource||'',sourceStatus:profile.evidenceStatus}
+      var mismatch=siteConflict(card,sites)
+      var candidate={cardId:card.id,name:card.name,lesionId:scope.lesionId,rankScore:Math.round(score*100)/100,retrievalScore:ruleIndex[card.id]?ruleIndex[card.id].score:0,supports:supports,conflicts:conflicts,combinations:combinations,missing:missing,role:profile.role,retrievalChannels:channels,knowledgeBindings:bindings,siteConflict:mismatch,eligible:!mismatch && supports.length>=POLICY.minDistinctSupport && specific>=POLICY.minClearSpecificSupport && score>0,ruleOrder:ruleIndex[card.id]?ruleIndex[card.id].index:999,referenceKnowledge:card.typicalFeatures,ddx:card.ddxSource||'',sourceStatus:profile.evidenceStatus}
       if(!byCard[card.id] || candidate.rankScore>byCard[card.id].rankScore)byCard[card.id]=candidate
     })
     var pool=Object.keys(byCard).map(function(id){return byCard[id]})
@@ -75,4 +96,4 @@ function rank(snapshot,petInfo,options) {
     return {lesionId:scope.lesionId,site:scope.site,pool:pool,candidates:pool.filter(function(c){return c.eligible}).slice(0,POLICY.displayLimit),coverage:pool.length?'covered':'no_supported_card'}
   })}
 }
-module.exports={POLICY:POLICY,rank:rank,groupFacts:groupFacts,eligible:eligible,scopeKey:scopeKey}
+module.exports={POLICY:POLICY,rank:rank,groupFacts:groupFacts,eligible:eligible,scopeKey:scopeKey,lockedRegions:lockedRegions,siteConflict:siteConflict}

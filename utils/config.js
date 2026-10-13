@@ -17,15 +17,15 @@ module.exports = {
   // 预检与完整报告均使用 Qwen3.8-Flash
   QWEN_MODEL: 'qwen3.8-flash',
   QWEN_LABEL: 'Qwen3.8-Flash',
-  // 完整报告开启 medium 思考；预检与问诊关闭思考
+  // 完整报告限定思考预算；预检与问诊关闭思考
   QWEN_ENABLE_THINKING: true,
-  QWEN_REASONING_EFFORT: 'medium',
+  QWEN_THINKING_BUDGET: 2048,
 
   // ---------- 视觉特征驱动 RAG ----------
   // 总开关：开启时接入本地皮肤病知识库；关闭时只走模型诊断，不注入知识库、不走知识库快路径
   USE_KNOWLEDGE_BASE: true,
-  // 唯一主流程开关。2026-10-11 云端兼容部署后启用新初筛流程；legacy 可回退。
-  RAG_WORKFLOW_MODE: 'guided',
+  // 恢复原诊断流程：并行预检与完整报告，强命中才走原快路径。guided 仅显式试验使用。
+  RAG_WORKFLOW_MODE: 'legacy',
   // 快路径（BUG-G8：2026-07-31 起启用；BUG-G9 收紧证据来源；2026-10-01 加区分度门槛）。
   // 视觉预检强命中知识库时立即出报告（约 3-5s），不再等完整诊断；门槛严格：
   // score≥8 + 非泛词证据≥2 + top2 间隔≥VISION_RAG_MIN_GAP + 组合规则/别名/3 个非泛词视觉特征，
@@ -59,8 +59,8 @@ module.exports = {
   // ---------- 请求超时（毫秒，与 app.json networkTimeout 保持一致）----------
   API_TIMEOUT: 60000,
   PRECHECK_TIMEOUT: 18000,
-  // 思考与最终报告共享输出额度，给思考及结构化报告留余量
-  MODEL_MAX_TOKENS: 8192,
+  // max_completion_tokens 限制思考与正文总量；2048 思考预算后仍留 4096 给完整 JSON。
+  MODEL_MAX_COMPLETION_TOKENS: 6144,
 
   // ---------- 图片限制 ----------
   MAX_IMAGES: 5,

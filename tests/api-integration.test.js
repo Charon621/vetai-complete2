@@ -1,6 +1,6 @@
 const assert = require('assert')
-// These fixtures exercise the retained legacy flow; guided is covered by ragWorkflow/ragPages.
-require('../utils/config').RAG_WORKFLOW_MODE = 'legacy'
+// 默认配置必须走原诊断流程；不在测试中改开关，以防默认值再次被切换。
+assert.strictEqual(require('../utils/config').RAG_WORKFLOW_MODE, 'legacy')
 
 const localStore = {}
 const calls = []
@@ -91,6 +91,16 @@ async function run() {
 
   let result = await api.diagnose([image], petInfo)
   assert.strictEqual(result.success, true, 'knowledge-enabled diagnosis should complete')
+  assert.strictEqual(result.data.assessment, undefined, 'default report must not use observation-only assessment')
+  assert.ok(result.data.diagnosisCandidates.length > 0, 'default report retains disease candidates')
+  assert.ok(result.data.primaryDiagnosisProbability > 0, 'default report retains its model matching score')
+  let reportPage
+  global.Page = function (definition) { reportPage = definition }
+  require('../pages/result/result')
+  const display = reportPage.buildDisplayRecord.call({}, Object.assign({ id: 'default-flow' }, result.data)).record
+  assert.strictEqual(display.hasConfidence, true, 'original matching display is used')
+  assert.strictEqual(display.actionConclusion, '建议尽快复查', 'original action headline is used')
+  assert.ok(!display.isNewAssessment, 'new diagnoses must not enter the guided presentation')
   assert.strictEqual(calls[0].phase, 'vision-precheck', 'knowledge mode should still fire visual precheck (parallel)')
   assert.deepStrictEqual(calls.map(function (call) { return call.phase }), ['vision-precheck', 'full-diagnosis'],
     'precheck and full diagnosis run in parallel; unvalidated KB fast path stays disabled')
@@ -98,8 +108,10 @@ async function run() {
   assert.strictEqual(calls[0].payload.model, 'qwen3.8-flash', 'visual precheck must use the new fast model')
   assert.strictEqual(fullCall.payload.model, 'qwen3.8-flash', 'full diagnosis must use the new report model')
   assert.strictEqual(fullCall.payload.enable_thinking, true, 'report thinking enabled')
-  assert.strictEqual(fullCall.payload.reasoning_effort, 'medium', 'report effort follows the confirmed medium setting')
-  assert.strictEqual(fullCall.payload.max_tokens, 8192, 'report has room for thinking and JSON')
+  assert.strictEqual(fullCall.payload.thinking_budget, 2048, 'report has an explicit thinking budget')
+  assert.ok(!('reasoning_effort' in fullCall.payload), 'thinking budget and effort must not conflict')
+  assert.strictEqual(fullCall.payload.max_completion_tokens, 6144, 'combined budget leaves space for JSON')
+  assert.ok(!('max_tokens' in fullCall.payload), 'full report uses the combined output limit')
   assert.strictEqual(calls[0].payload.enable_thinking, false, 'precheck thinking disabled')
   const prompt = fullCall.payload.messages[1].content[0].text
   assert.ok(prompt.indexOf('临床参考核对清单') >= 0,
@@ -208,6 +220,17 @@ async function run() {
   assert.strictEqual(multi.success, true)
   assert.strictEqual(calls.filter(function (call) { return call.phase === 'full-diagnosis' }).length, 3,
     'diagnoseMulti(samples=3) must execute three full model calls')
+
+  // 线上旧函数拒绝新客户端版本时，不能把可定位错误吞成泛化失败。
+  const originalCall = wx.cloud.callFunction
+  wx.cloud.callFunction = function (options) {
+    options.success({ result: { success: false, error: '客户端提示词版本不受支持，请更新小程序' } })
+  }
+  try {
+    const incompatible = await api.diagnose([image], petInfo)
+    assert.strictEqual(incompatible.success, false)
+    assert.strictEqual(incompatible.error, '分析服务版本不匹配，请联系维护人员更新服务后重试')
+  } finally { wx.cloud.callFunction = originalCall }
 
   console.log('api integration tests passed')
 }

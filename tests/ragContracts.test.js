@@ -1,5 +1,5 @@
 const assert = require('assert'), c = require('../utils/ragContracts')
-assert.equal(require('../utils/config').RAG_WORKFLOW_MODE, 'guided')
+assert.equal(require('../utils/config').RAG_WORKFLOW_MODE, 'legacy')
 assert.equal(require('../utils/caseFacts').VERSION, 'case-facts-v1')
 const s = c.snapshot()
 assert(c.validateSnapshot(s).valid)

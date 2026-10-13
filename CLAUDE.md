@@ -6,13 +6,13 @@
 
 - 仓库：本目录（GitHub 私有 Charon621/vetai-complete2），当前分支以 `git status` 为准
 - 形态：原生微信小程序，无框架，后端是微信云函数
-- 模型：阿里云 qwen3.8-flash（Qwen3.8-Flash）用于所有阶段；完整报告开启 medium 思考，预检与问诊关闭思考
+- 模型：阿里云 qwen3.8-flash（Qwen3.8-Flash）用于所有阶段；完整报告思考预算 2048 token、总输出上限 6144 token，预检与问诊关闭思考
 
 ## 目录结构
 
 pages/ 下有 index（拍照初筛）、chat（对话问诊）、result（完整报告）、chat/report（简版报告）、detail（档案时间线）、profile（宠物档案）、user（我的）。
 
-utils/ 是逻辑层：api.js（诊断编排）、chatDoctor.js（对话状态机）、kb.js（知识库 RAG）、image.js（图片与 ROI）、lesion.js（圈选）、storage.js（本机空间隔离）、knowledge.js（红线规则）、config.js（配置）、analytics.js（埋点）、text.js（文本处理）、greeting.js（首页问候语）、fontFace.js/fontData.js（内置衬线字体）、caseFacts.js（结构化病例事实）、evidenceScope.js（证据分段与否定识别）、knowledgeEvidence.js（证据台账读取）、knowledgeBundle.js（生成文件，勿手改）、retrievalMonitor.js（检索运行计数，不含主诉与照片）、retrievalWeights.js（检索权重与哈希）、diagnosisDecision.js（诊断终态裁决）、recordEvidence.js（最终证据字段）、evaluationTrace.js（显式注入的离线追踪，默认 no-op）。hybridRetrieval.js（BM25 + RRF 混合检索）目前只被评测脚本与测试使用，运行路径仍是规则检索。
+utils/ 是逻辑层：api.js（诊断编排）、chatDoctor.js（对话状态机）、kb.js（知识库 RAG）、image.js（图片与 ROI）、lesion.js（圈选）、storage.js（本机空间隔离）、knowledge.js（红线规则）、config.js（配置）、analytics.js（埋点）、text.js（文本处理）、greeting.js（首页问候语）、fontFace.js/fontData.js（内置衬线字体）、caseFacts.js（结构化病例事实）、evidenceScope.js（证据分段与否定识别）、knowledgeEvidence.js（证据台账读取）、knowledgeBundle.js（生成文件，勿手改）、retrievalMonitor.js（检索运行计数，不含主诉与照片）、modelPerformance.js（调用耗时和 token 计数，不含病例内容）、retrievalWeights.js（检索权重与哈希）、diagnosisDecision.js（诊断终态裁决）、recordEvidence.js（最终证据字段）、evaluationTrace.js（显式注入的离线追踪，默认 no-op）。hybridRetrieval.js（BM25 + RRF 混合检索）目前只被评测脚本与测试使用，运行路径仍是规则检索。
 
 knowledge/ 是证据台账 `evidence-ledger.json` 与当前版本指针 `current-release.json`。版本包保存在仓库外。小程序不能 require JSON，运行时读取生成文件 `utils/knowledgeBundle.js`，修改台账后需运行 `npm run knowledge:bundle`。
 

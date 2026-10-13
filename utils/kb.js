@@ -760,6 +760,12 @@ var DISEASE_KB = [
 
   {
     name: '蚊虫叮咬/昆虫过敏',
+    // 本次补证：猫鼻部丘疹结痂型；不把猫的表型扩展到犬，也不据照片确认病因。
+    photoPatterns: [{
+      id: 'feline-nasal-papulocrust', species: ['猫'],
+      allOf: [['鼻部结痂'], ['丘疹', '小丘疹', '小红疙瘩', '多发小疙瘩']],
+      statement: '猫的蚊虫叮咬超敏反应可累及鼻部，出现丘疹及脱毛；该形态仅提示鉴别方向，需结合暴露史与检查。'
+    }],
     category: 'allergy',
     aliases: ['蚊虫叮咬', '虫咬', '昆虫叮咬', 'insect bite'],
     species: ['犬', '猫'],
@@ -1462,9 +1468,9 @@ DISEASE_KB.forEach(function (disease, idx) {
 // 改动包括：特应性皮炎、食物过敏、蠕形螨（犬/猫）、行为性脱毛等卡的鉴别句与典型表现改为证据边界表述，
 // 猫蠕形螨补充与癣菌、疥螨、继发脓皮病的并存关系；同义词扩展表中部分加词收窄。
 // 版本号只表示知识内容的可追溯标签，检索逻辑未因升版而改变。
-var KB_VERSION = '2026-10-09-v12'
+var KB_VERSION = '2026-10-12-v12.1'
 var KB_SEMVER = { major: 12, minor: 0, patch: 0 }
-var KB_VERSION_DATE = '2026-10-09'
+var KB_VERSION_DATE = '2026-10-12'
 
 // ── K12/K13（2026-10-01 / 2026-10-02）：审核状态 ──
 //
@@ -2288,6 +2294,7 @@ function toClinicalCard(entry, index) {
     prevalence: inferPrevalence(priority, category),
     baselinePriority: priority,
     visualSigns: visualSigns,
+    photoPatterns: entry.photoPatterns || [],
     historySigns: historySigns,
     locations: (entry.keywords && entry.keywords.locations) || entry.locations || [],
     breeds: (entry.keywords && entry.keywords.breeds) || entry.breeds || [],
@@ -2954,7 +2961,9 @@ function applyCombinationRules(disease, searchText, bodyPart, state) {
     var hasHairLoss = hasAny(searchText, ['脱毛', '圆形脱毛', '断毛'])
     var hasScaleOrCrust = hasAny(searchText, ['鳞屑', '结痂', '断毛'])
     var hasShape = hasAny(searchText, ['圆形脱毛', '圆形', '环形', '边界清楚', '局灶'])
-    if (hasHairLoss && hasScaleOrCrust && hasShape) {
+    // 照片明确不规则时，不能把局灶分布冒充圆形/环形边界。
+    var irregularOnly = state.photoShape === '不规则' && !hasAny(searchText, ['圆形脱毛', '圆形', '环形', '边界清楚'])
+    if (hasHairLoss && hasScaleOrCrust && hasShape && !irregularOnly) {
       state.score += 6
       state.comboCount++
       recordCombination(state, 'morphology-1', [["脱毛","圆形脱毛","断毛"],["鳞屑","结痂","断毛"],["圆形脱毛","圆形","环形","边界清楚","局灶"]].map(function(group) { return matchedTerms(searchText+' '+locationText,group) }))
@@ -3113,6 +3122,7 @@ function buildSearchResult(disease, state) {
     score: Math.round(state.score * 10) / 10,
     matched: state.matched,
     comboEvidence: state.comboEvidence || [],
+    photoEvidence: state.photoEvidence || [],
     evidenceScope: {site:state.site||'',lesionId:state.lesionId||'unspecified',sourceSpans:state.sourceSpans||[]},
     siteConflict: state.siteConflict === true,
     redFlagMatches: uniq(redFlagMatches),
@@ -3133,7 +3143,10 @@ function buildSearchResult(disease, state) {
     category: disease.category,
     prevalence: disease.prevalence,
     baselinePriority: disease.baselinePriority,
-    visualSigns: disease.visualSigns,
+    // 区分度比较也须看见物种适用的形态词，不能把其他候选同样支持的丘疹算成独有证据。
+    visualSigns: uniq(disease.visualSigns.concat((disease.photoPatterns || []).filter(function (p) {
+      return p.species.indexOf(state.species) >= 0
+    }).reduce(function (terms, p) { return terms.concat.apply(terms, p.allOf) }, []))),
     historySigns: disease.historySigns,
     locations: disease.locations,
     relatedDiseases: disease.relatedDiseases,
@@ -3312,6 +3325,8 @@ function searchOneScope(query, candidateLimit) {
       breedCount: 0,
       comboCount: 0,
       comboEvidence: [],
+      photoEvidence: [],
+      photoShape: visualFeatures.length ? lesionShape : '',
       site: query.site || bodyPart,
       lesionId: query.lesionId || bodyPart || 'unspecified',
       sourceSpans: query.sourceSpans || [],
@@ -3363,6 +3378,10 @@ function searchOneScope(query, candidateLimit) {
       var vfMatches = matchedTerms(visualFeatText, disease.visualSigns)
       for (var vf = 0; vf < vfMatches.length; vf++) {
         var vfSign = vfMatches[vf]
+        // 保留观察原词与卡片命中词的对应，泛词仍按原权重计分。
+        state.photoEvidence.push({ matched: vfSign, observed: visualFeatures.filter(function (term) {
+          return matchedTerms(term, [vfSign]).length > 0
+        }), specific: !isGenericSign(vfSign) })
         // 预检标准词权重：非泛词 5 分，泛词 1.5 分
         addMatches(state, '视觉预检', [vfSign], isGenericSign(vfSign) ? WEIGHTS.photoGeneric : WEIGHTS.photoSpecific, {
           strong: !isGenericSign(vfSign),
@@ -3371,6 +3390,29 @@ function searchOneScope(query, candidateLimit) {
         })
       }
     }
+
+    // 物种限定的整组照片形态；必须精确匹配同一作用域，不用主诉填补照片条件。
+    ;(disease.photoPatterns || []).forEach(function (pattern) {
+      if (pattern.species.indexOf(species) < 0) return
+      // 旧预检无逐特征病灶ID：有其他部位的复合词或定位冲突时不拼接为鼻部组合。
+      if (pattern.id === 'feline-nasal-papulocrust' && (
+        /耳|爪|趾|背|腹|尾|肛|下巴/.test(visualFeatText) ||
+        /耳|爪|趾|背|腹|尾|肛/.test(query.visualBodyPartGuess || '') ||
+        /耳|爪|趾|背|腹|尾|肛/.test(query.site || bodyPart))) return
+      var groups = pattern.allOf.map(function (terms) {
+        return terms.filter(function (term) { return visualFeatures.indexOf(term) >= 0 })
+      })
+      if (groups.some(function (g) { return !g.length })) return
+      groups.forEach(function (g) {
+        // 一组同义描述最多记一次，避免小丘疹/丘疹重复推高分数。
+        var term = g[0]
+        state.photoEvidence.push({ matched: term, observed: g, specific: true, patternId: pattern.id })
+        addMatches(state, '视觉预检', [term], WEIGHTS.photoSpecific, { strong: true, seenFamily: '视觉' })
+      })
+      state.score += 6
+      state.comboCount++
+      recordCombination(state, pattern.id, groups)
+    })
 
     var visualMatches = matchedTerms(complaint, disease.visualSigns)
     for (var v = 0; v < visualMatches.length; v++) {

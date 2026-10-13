@@ -1,0 +1,166 @@
+{
+  "version": "nasal-retrieval-2026.10.12.1",
+  "source": "首题来自同图模型复测的脱敏视觉词；其余为工程构造的缺项、物种及多部位反例。不包含照片或身份信息。",
+  "label_author": "Codex",
+  "professional_review": false,
+  "development_exposure": "used_during_this_fix",
+  "scope": "只验证候选召回与排除合同，不代表该照片已确诊",
+  "cases": [
+    {
+      "id": "replayed-nasal-features",
+      "query": {
+        "species": "猫",
+        "bodyPart": "头部",
+        "visualBodyPartGuess": "面部",
+        "complaint": "",
+        "visualFeatures": [
+          "鼻部结痂",
+          "面部结痂",
+          "局灶脱毛",
+          "红斑",
+          "丘疹"
+        ],
+        "lesionPattern": "局灶性",
+        "lesionShape": "不规则"
+      },
+      "expect_pattern": true,
+      "no_ring_combo": true
+    },
+    {
+      "id": "dog",
+      "query": {
+        "species": "犬",
+        "bodyPart": "头部",
+        "visualBodyPartGuess": "面部",
+        "complaint": "",
+        "visualFeatures": [
+          "鼻部结痂",
+          "面部结痂",
+          "局灶脱毛",
+          "红斑",
+          "丘疹"
+        ],
+        "lesionPattern": "局灶性",
+        "lesionShape": "不规则"
+      },
+      "expect_pattern": false
+    },
+    {
+      "id": "unknown-species",
+      "query": {
+        "species": "",
+        "bodyPart": "头部",
+        "visualBodyPartGuess": "面部",
+        "complaint": "",
+        "visualFeatures": [
+          "鼻部结痂",
+          "面部结痂",
+          "局灶脱毛",
+          "红斑",
+          "丘疹"
+        ],
+        "lesionPattern": "局灶性",
+        "lesionShape": "不规则"
+      },
+      "expect_pattern": false
+    },
+    {
+      "id": "missing-papule",
+      "query": {
+        "species": "猫",
+        "bodyPart": "头部",
+        "visualBodyPartGuess": "面部",
+        "complaint": "",
+        "visualFeatures": [
+          "鼻部结痂",
+          "红斑"
+        ],
+        "lesionPattern": "局灶性",
+        "lesionShape": "不规则"
+      },
+      "expect_pattern": false
+    },
+    {
+      "id": "missing-nasal",
+      "query": {
+        "species": "猫",
+        "bodyPart": "头部",
+        "visualBodyPartGuess": "面部",
+        "complaint": "",
+        "visualFeatures": [
+          "面部结痂",
+          "丘疹"
+        ],
+        "lesionPattern": "局灶性",
+        "lesionShape": "不规则"
+      },
+      "expect_pattern": false
+    },
+    {
+      "id": "text-not-photo",
+      "query": {
+        "species": "猫",
+        "bodyPart": "头部",
+        "visualBodyPartGuess": "面部",
+        "complaint": "鼻部结痂和丘疹",
+        "visualFeatures": [],
+        "lesionPattern": "局灶性",
+        "lesionShape": "不规则"
+      },
+      "expect_pattern": false
+    },
+    {
+      "id": "other-site",
+      "query": {
+        "species": "猫",
+        "bodyPart": "腹部",
+        "visualBodyPartGuess": "腹部",
+        "complaint": "",
+        "visualFeatures": [
+          "鼻部结痂",
+          "面部结痂",
+          "局灶脱毛",
+          "红斑",
+          "丘疹"
+        ],
+        "lesionPattern": "局灶性",
+        "lesionShape": "不规则"
+      },
+      "expect_pattern": false
+    },
+    {
+      "id": "mixed-photo-sites",
+      "query": {
+        "species": "猫",
+        "bodyPart": "头部",
+        "visualBodyPartGuess": "面部",
+        "complaint": "",
+        "visualFeatures": [
+          "鼻部结痂",
+          "爪部渗脓",
+          "丘疹"
+        ],
+        "lesionPattern": "局灶性",
+        "lesionShape": "不规则"
+      },
+      "expect_pattern": false
+    },
+    {
+      "id": "duplicate-papule-terms",
+      "query": {
+        "species": "猫",
+        "bodyPart": "头部",
+        "visualBodyPartGuess": "面部",
+        "complaint": "",
+        "visualFeatures": [
+          "鼻部结痂",
+          "丘疹",
+          "小丘疹"
+        ],
+        "lesionPattern": "局灶性",
+        "lesionShape": "不规则"
+      },
+      "expect_pattern": true
+    }
+  ]
+}

@@ -2,8 +2,8 @@
   "schemaVersion": "retrieval-profiles-v1",
   "version": "retrieval-profiles-2026.10.11.1",
   "conceptVersion": "clinical-concepts-v1",
-  "knowledgeReleaseId": "kb-2026.10.11-rag.6",
-  "sourceHash": "c239af61c2e22fd17cdc66b4eacbcb4ffd81360cc1bf9ebd0b07bef79840441c",
+  "knowledgeReleaseId": "kb-2026.10.13-sync.1",
+  "sourceHash": "dc80e3a5c9bdf78ea7d15ef8857b423c97636568e399756fe73481749d6fe36b",
   "provenance": "compiled_existing_card_fields_no_new_clinical_claims",
   "profiles": [
     {
@@ -7495,7 +7495,13 @@
           "sourceStatus": "pending"
         }
       ],
-      "existingClaimRefs": [],
+      "existingClaimRefs": [
+        {
+          "claimId": "INSECT-CAT-NASAL",
+          "field": "photoPatterns",
+          "status": "source_verified"
+        }
+      ],
       "evidenceStatus": "pending"
     },
     {

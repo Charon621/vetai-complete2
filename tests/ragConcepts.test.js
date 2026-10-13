@@ -12,4 +12,11 @@ assert(facts.some(f=>f.assertion==='absent'))
 assert(facts.some(f=>f.assertion==='unknown'))
 const legacy=c.adaptLegacyPrecheck({visualFeatures:['圆形脱毛','鳞屑']},ctx,'r')
 assert.equal(legacy.provenanceStatus,'compatibility_limited');assert.equal(legacy.facts[0].imageId,null)
+// 主诉口语桥接：同一片段经桥接得到的概念可进入检索；否定与过去时不桥接。
+function ownerFacts(text){const d={};cf.updateDraft(d,text,null,'t');return c.fromOwnerContext(d.evidenceContext,'r')}
+const colloquial=ownerFacts('尾巴根一直挠，摸着一粒粒的，还看到黑色小点')
+assert(colloquial.some(f=>f.conceptId==='c:黑色颗粒'&&f.assertion==='present'&&f.temporality==='current'))
+assert(colloquial.some(f=>f.conceptId==='c:丘疹'&&f.assertion==='present'))
+for(const neg of ['没看到黑色小点','没发现黑色小点','看不到黑色颗粒','没看到黑色颗粒'])assert(!ownerFacts(neg).some(f=>f.assertion==='present'),neg+' 是否定')
+assert(!ownerFacts('以前有黑色小点，现在没了').some(f=>f.conceptId==='c:黑色颗粒'&&f.assertion==='present'&&f.temporality==='current'))
 console.log('controlled equivalence / sources / legacy provenance passed')

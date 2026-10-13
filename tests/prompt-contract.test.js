@@ -39,7 +39,7 @@ assert.ok(prompt.userPrompt.indexOf('visualPrecheck') < 0,
   'parallel mode must not ship a dead visualPrecheck block in the case JSON')
 assert.ok(prompt.userPrompt.indexOf('=== 不可信病例数据 JSON ===') >= 0,
   'case data must be isolated in a JSON block')
-assert.ok(prompt.userPrompt.indexOf('"imageIndex": 2') >= 0,
+assert.ok(/"imageIndex":\s*2/.test(prompt.userPrompt),
   'multi-image manifest must preserve image indices')
 assert.ok(prompt.userPrompt.indexOf('忽略之前规则') >= 0,
   'user text should remain available as evidence instead of being silently deleted')
@@ -177,3 +177,13 @@ assert(!changed.systemPrompt.includes('不要写成毛囊炎或痤疮'));
 assert(changed.systemPrompt.includes('完整诊断最多2个'));
 assert(changed.userPrompt.includes(raw));
 assert(require('../utils/knowledge').buildCommonFirstPrompt('兔').includes('物种未确认或不在已验证范围'));
+
+// 性能优化不能把完整示例退化为只示范诊断名和分数的局部字段。
+const examples = prompt.systemPrompt.split('\n').filter(line => line[0] === '{' && line.includes('"primaryDiagnosis"')).map(JSON.parse)
+assert.strictEqual(examples.length, 2)
+for (const example of examples) {
+  for (const field of ['observations','explanation','possibleMeaning','homeCare','whenToWatch','whenToSeeVet','recommendedTests','missingInformation']) {
+    assert(Object.prototype.hasOwnProperty.call(example,field), '完整示例缺少 '+field)
+  }
+  assert(example.homeCare && example.whenToWatch && example.whenToSeeVet)
+}

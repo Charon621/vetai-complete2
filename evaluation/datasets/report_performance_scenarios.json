@@ -1,0 +1,16 @@
+{
+  "version": "report-performance-2026.10.10.1",
+  "input_origin": "synthetic_engineering",
+  "label_author": "Codex",
+  "professional_review": false,
+  "development_exposure": "exposed_during_this_implementation",
+  "purpose": "参考上下文压缩后，保留逐条证据语义、来源定位与物种边界；不评估诊断准确率。",
+  "cases": [
+    {"id": "PERF-01", "query": {"species": "犬", "bodyPart": "爪部", "complaint": "反复瘙痒，食物过敏性皮炎"}, "expected": "bound_references"},
+    {"id": "PERF-02", "query": {"species": "猫", "bodyPart": "爪部", "complaint": "反复瘙痒，食物过敏性皮炎"}, "expected": "bound_references"},
+    {"id": "PERF-03", "query": {"species": "犬", "bodyPart": "腹部", "complaint": "腹部有脓疱，右耳有油腻的黄褐色分泌物和酸臭"}, "expected": "references"},
+    {"id": "PERF-04", "query": {"species": "猫", "complaint": "没有脱毛，没有瘙痒，没有红斑"}, "expected": "no_references"},
+    {"id": "PERF-05", "query": {"species": "兔", "bodyPart": "背部", "complaint": "背部脱毛有皮屑"}, "expected": "no_references"},
+    {"id": "PERF-06", "query": {"species": "犬", "bodyPart": "爪部", "complaint": "反复瘙痒，食物过敏性皮炎", "disableKnowledgeBase": true}, "expected": "no_references"}
+  ]
+}

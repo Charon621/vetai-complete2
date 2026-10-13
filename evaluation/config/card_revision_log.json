@@ -1,6 +1,6 @@
 {
   "kind": "card_revision_log",
-  "log_version": "1.0.0",
+  "log_version": "1.0.1",
   "created_on": "2026-10-04",
   "purpose": "B17-2：知识卡逐卡内容修订台账。运行时 KB 只带简短版本 hash（kb.KB_VERSION / B02 快照的逐卡语义哈希），逐字段变更历史与复核范围记录在这里，不重复 B02 快照职责。",
   "usage_rules": [
@@ -151,6 +151,19 @@
       "change_summary": "补足检查路径与证据边界；不包含治疗指导",
       "review_scope": "项目组整体复核，非兽医逐卡签署",
       "status": "pending_clinical_review"
+    },
+    {
+      "card_id": "insect_bite_犬_猫",
+      "changed_fields": [
+        "photoPatterns"
+      ],
+      "change_summary": "增量补充猫鼻部丘疹表型；仅照片整组匹配，犬/缺项/部位冲突不启用。证据INSECT-CAT-NASAL只支持文字片段，不证明规则诊断性能。",
+      "review_scope": "Codex原文比对，非兽医逐卡签署",
+      "changed_at": "2026-10-12",
+      "status": "pending_clinical_review",
+      "sourceRefs": [
+        "AAFP-REGIONAL-2023#page=12"
+      ]
     }
   ]
 }

@@ -5,10 +5,10 @@ cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
 })
 
-const PROMPT_VERSION = 'vetai-derm-v2.0.1'
+const PROMPT_VERSION = 'vetai-derm-v2.1.0'
 // 兼容版本窗口（BUG-G2）：小程序审核期间新旧版本共存，
 // 硬拒单一版本会让老版本用户全部不可用；可用环境变量 PROMPT_VERSIONS 追加。
-const SUPPORTED_PROMPT_VERSIONS = ['vetai-rag-observation-v1', 'vetai-derm-v2.0.1', 'vetai-derm-v2.0.0', 'vetai-derm-v1.9.0']
+const SUPPORTED_PROMPT_VERSIONS = ['vetai-rag-observation-v1', 'vetai-derm-v2.1.0', 'vetai-derm-v2.0.1', 'vetai-derm-v2.0.0', 'vetai-derm-v1.9.0']
   .concat(String(process.env.PROMPT_VERSIONS || '').split(',').map((v) => v.trim()).filter(Boolean))
 const MAX_EVENT_BYTES = 3.2 * 1024 * 1024
 const MAX_TEXT_CHARS = 30000
@@ -23,7 +23,7 @@ const SERVER_SAFETY_SYSTEM = [
 
 const PHASE_RULES = {
   'vision-precheck': { models: ['qwen3.8-flash'], maxTokens: 700, maxImages: 2, forceJson: true },
-  // 完整报告开启 medium 思考，输出额度包含思考与报告
+  // 完整报告使用总输出上限；旧 max_tokens 只限制正文，不能用于限制思考。
   'full-diagnosis': { models: ['qwen3.8-flash'], maxTokens: 8192, maxImages: 2, forceJson: true },
   'chat-ai': { models: ['qwen3.8-flash'], maxTokens: 500, maxImages: 0, forceJson: false }
 }
@@ -233,7 +233,16 @@ function sanitizePayload(payload, phase, promptVersion) {
     max_tokens: Math.max(1, Math.min(rule.maxTokens, Number(payload.max_tokens) || rule.maxTokens)),
     enable_thinking: phase === 'full-diagnosis'
   }
-  if (phase === 'full-diagnosis') sanitized.reasoning_effort = 'medium'
+  if (phase === 'full-diagnosis') {
+    // 不透传任意推理档位；显式预算避免 medium 隐含的长思考。为正文至少预留 2048。
+    const requested = Number(payload.max_completion_tokens)
+    sanitized.max_completion_tokens = Number.isFinite(requested) && requested > 0
+      ? Math.max(3072, Math.min(rule.maxTokens, Math.floor(requested))) : 6144
+    const thinking = Number(payload.thinking_budget)
+    sanitized.thinking_budget = Math.min(sanitized.max_completion_tokens - 2048,
+      Number.isFinite(thinking) && thinking > 0 ? Math.max(256, Math.min(4096, Math.floor(thinking))) : 2048)
+    delete sanitized.max_tokens
+  }
   if (rule.forceJson || (payload.response_format && payload.response_format.type === 'json_object')) {
     sanitized.response_format = { type: 'json_object' }
   }

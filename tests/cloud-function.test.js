@@ -212,12 +212,28 @@ async function run() {
   assert.deepStrictEqual(lastPayload.messages[1].content, [imgItem, imgItem], 'both report images forwarded')
   assert.deepStrictEqual(lastPayload.response_format, { type: 'json_object' }, 'report JSON mode retained')
   assert.strictEqual(lastPayload.enable_thinking, true, 'server report thinking enabled')
-  assert.strictEqual(lastPayload.reasoning_effort, 'medium', 'server enforces the confirmed medium setting')
-  assert.strictEqual(lastPayload.max_tokens, 8192, 'server caps combined report output')
+  assert.strictEqual(lastPayload.thinking_budget, 2048, 'server defaults to an explicit thinking budget')
+  assert.ok(!('reasoning_effort' in lastPayload), 'server must not send conflicting budget and effort')
+  assert.strictEqual(lastPayload.max_completion_tokens, 6144, 'old client receives default combined budget')
+  assert.ok(!('max_tokens' in lastPayload), 'full report must use combined budget')
   assert.strictEqual(lastRequestOptions.hostname, 'dashscope.aliyuncs.com', 'Alibaba host')
   assert.strictEqual(lastRequestOptions.path, '/compatible-mode/v1/chat/completions', 'Alibaba endpoint')
   assert.strictEqual(lastRequestOptions.headers.Authorization, 'Bearer test-api-key', 'new server credential used')
   assert.ok(!('thinking' in lastPayload), 'no DeepSeek-only thinking parameter')
+  // 同时传入旧参数、异常档位和超大预算也不能绕过服务器限额。
+  for (const [total, thinking, expectedTotal, expectedThinking] of [
+    [999999, 999999, 8192, 4096], [1, 999999, 3072, 1024], [6144, 2048, 6144, 2048],
+    ['invalid', -1, 6144, 2048], [4096.9, 512.8, 4096, 512]
+  ]) {
+    currentOpenId = 'budget-' + String(total)
+    const event = validEvent({ phase: 'full-diagnosis' })
+    Object.assign(event.payload, { max_tokens: 999999, max_completion_tokens: total, thinking_budget: thinking, reasoning_effort: 'xhigh' })
+    const result = await cloudFn.main(event)
+    assert.strictEqual(result.success, true)
+    assert.strictEqual(lastPayload.max_completion_tokens, expectedTotal)
+    assert.strictEqual(lastPayload.thinking_budget, expectedThinking)
+    assert.ok(!('max_tokens' in lastPayload) && !('reasoning_effort' in lastPayload))
+  }
   for (const phase of ['vision-precheck', 'chat-ai']) {
     currentOpenId = 'thinking-policy-' + phase
     const event = validEvent({ phase })
@@ -263,7 +279,7 @@ async function run() {
 
   res = await cloudFn.main(validEvent({ promptVersion: 'vetai-derm-v2.0.0' }))
   assert.strictEqual(res.success, true, 'previous prompt version remains compatible')
-  assert.strictEqual(res.promptVersion, 'vetai-derm-v2.0.1', 'server echoes its prompt version')
+  assert.strictEqual(res.promptVersion, 'vetai-derm-v2.1.0', 'server echoes its prompt version')
 
   res = await cloudFn.main(validEvent({ promptVersion: require('../utils/api').PROMPT_VERSION }))
   assert.strictEqual(res.success, true, 'actual client prompt version accepted')
